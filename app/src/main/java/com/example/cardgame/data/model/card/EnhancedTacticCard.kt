@@ -1,0 +1,36 @@
+package com.example.cardgame.data.model.card
+
+import com.example.cardgame.data.enum.TacticCardType
+import com.example.cardgame.data.enum.TargetType
+import com.example.cardgame.game.GameManager
+import com.example.cardgame.game.Player
+
+class EnhancedTacticCard(
+    id: Int,
+    name: String,
+    description: String,
+    manaCost: Int,
+    imagePath: String,
+    val cardType: TacticCardType,
+    val targetType: TargetType,
+    val effect: (Player, GameManager, Int?) -> Boolean
+) : Card(id, name, description, manaCost, imagePath) {
+
+    override fun play(player: Player, gameManager: GameManager, targetPosition: Int?): Boolean {
+        if (player.currentMana < manaCost) return false
+
+        // Check if a target is required and provided
+        if (targetType != TargetType.NONE && targetPosition == null) {
+            return false
+        }
+
+        val effectApplied = effect(player, gameManager, targetPosition)
+
+        if (effectApplied) {
+            player.currentMana -= manaCost
+            player.hand.remove(this)
+        }
+
+        return effectApplied
+    }
+}
