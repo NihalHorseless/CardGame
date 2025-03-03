@@ -125,7 +125,7 @@ fun AttackAnimation(
             val controlX = (startX + endX) / 2
             val controlY = (startY + endY) / 2 - 50f
 
-            path.quadraticBezierTo(controlX, controlY, endX, endY)
+            path.quadraticTo(controlX, controlY, endX, endY)
 
             // Draw the path with progress
             drawPath(

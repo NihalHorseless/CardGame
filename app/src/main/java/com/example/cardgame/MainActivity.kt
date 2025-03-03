@@ -12,7 +12,6 @@ import com.example.cardgame.ui.theme.CardGameTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val viewModel = GameViewModel()
         enableEdgeToEdge()
         setContent {
             CardGameTheme {

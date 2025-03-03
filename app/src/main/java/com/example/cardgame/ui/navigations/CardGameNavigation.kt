@@ -2,12 +2,14 @@ package com.example.cardgame.ui.navigations
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.cardgame.ui.screens.GameScreen
 import com.example.cardgame.ui.screens.MainMenuScreen
 import com.example.cardgame.ui.viewmodel.GameViewModel
+import com.example.cardgame.ui.viewmodel.GameViewModelFactory
 
 @Composable
 fun CardGameNavigation() {
@@ -23,8 +25,11 @@ fun CardGameNavigation() {
         }
 
         composable("game") {
-            val viewModel = remember { GameViewModel() }
-            GameScreen(viewModel = viewModel, onNavigateToMain = {
+            val gameViewModel: GameViewModel = viewModel(
+                factory = GameViewModelFactory(navController.context)
+            )
+
+            GameScreen(viewModel = gameViewModel, onNavigateToMain = {
                 navController.popBackStack(
                     route = "main_menu",
                     inclusive = false

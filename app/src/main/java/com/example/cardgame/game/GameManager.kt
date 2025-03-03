@@ -8,11 +8,18 @@ class GameManager {
     val turnManager = TurnManager(this)
     val formationManager = FormationManager()
     var gameState: GameState = GameState.NOT_STARTED
+    var winner: Player? = null
 
     fun startGame() {
         // Initialize players
         players.forEach { player ->
-            initializePlayer(player)
+            player.health = 30
+            player.currentMana = 0
+            player.hand.clear()
+            player.board.clearAllUnits()
+
+            // Draw initial hand
+            player.drawInitialHand(3)
         }
 
         gameState = GameState.IN_PROGRESS
@@ -23,7 +30,7 @@ class GameManager {
         players.forEach { player ->
             player.hand.clear()
             player.board.clearAllUnits()
-            player.deck.clear()
+            player.deck.cards.clear()
         }
 
         // Reset game state
@@ -56,7 +63,7 @@ class GameManager {
                 player.board.removeUnit(position)
             }
 
-            // Reapply formation effects after units are removed
+            // Reapply formation effects
             formationManager.applyFormationEffects(player)
         }
 
@@ -69,11 +76,13 @@ class GameManager {
     }
 
     fun checkWinCondition() {
+        // Game is over if any player's health is 0 or less
         val deadPlayers = players.filter { it.isDead() }
         if (deadPlayers.isNotEmpty()) {
             gameState = GameState.FINISHED
-            // Winner is the player who is not dead
-           // winner = players.firstOrNull { !it.isDead() }
+
+            // Determine winner
+            winner = players.firstOrNull { !it.isDead() }
         }
     }
 

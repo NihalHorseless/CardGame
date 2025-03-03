@@ -1,5 +1,7 @@
 package com.example.cardgame.data.model.card
 
+import com.example.cardgame.data.enum.UnitEra
+import com.example.cardgame.data.enum.UnitType
 import com.example.cardgame.data.model.abilities.Ability
 import com.example.cardgame.game.GameManager
 import com.example.cardgame.game.Player
@@ -13,6 +15,8 @@ class UnitCard(
     var attack: Int,
     var health: Int,
     var maxHealth: Int,
+    val unitType: UnitType,           // Combat role of the unit
+    val unitEra: UnitEra,
     val abilities: List<Ability> = emptyList(),
     var canAttackThisTurn: Boolean = false,
     var hasCharge: Boolean = false,
@@ -90,7 +94,7 @@ class UnitCard(
         return true
     }
 
-    private fun takeDamage(amount: Int) {
+    fun takeDamage(amount: Int) {
         val actualDamage = maxOf(0, amount)
         health -= actualDamage
     }

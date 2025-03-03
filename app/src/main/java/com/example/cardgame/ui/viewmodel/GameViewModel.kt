@@ -6,14 +6,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cardgame.data.enum.GameState
 import com.example.cardgame.data.model.card.Card
+import com.example.cardgame.data.model.card.Deck
 import com.example.cardgame.data.model.card.EnhancedTacticCard
 import com.example.cardgame.data.model.card.UnitCard
 import com.example.cardgame.data.model.formation.Formation
+import com.example.cardgame.data.repository.CardRepository
 import com.example.cardgame.game.GameManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class GameViewModel : ViewModel() {
+class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
+
     private val _gameManager = GameManager()
     val gameManager: GameManager get() = _gameManager
 
@@ -76,75 +79,48 @@ class GameViewModel : ViewModel() {
     private val _isPlayerWinner = mutableStateOf(false)
     val isPlayerWinner: State<Boolean> = _isPlayerWinner
 
+    // Available decks
+    private val _availableDecks = mutableStateOf<List<String>>(emptyList())
+    val availableDecks: State<List<String>> = _availableDecks
     init {
-        createSampleDecks()
-        initializeFormations()
+        loadAvailableDecks()
     }
 
-    fun startGame() {
-        // Show deck shuffle animation
-        _isDeckShuffleVisible.value = true
-
+    fun startGame(playerDeckName: String = "roman_deck", opponentDeckName: String = "medieval_deck") {
+        // Reset game over state
         _isGameOver.value = false
 
+        // Load decks
+        val playerDeck = cardRepository.loadDeck(playerDeckName)
+        val opponentDeck = cardRepository.loadDeck(opponentDeckName)
+
+        if (playerDeck == null || opponentDeck == null) {
+            _statusMessage.value = "Failed to load decks"
+            return
+        }
+
+        // Shuffle decks
+        playerDeck.shuffle()
+        opponentDeck.shuffle()
+
+        // Set player decks
+        _gameManager.players[0].setDeck(playerDeck)
+        _gameManager.players[1].setDeck(opponentDeck)
+
+        // Start the game
+        _gameManager.startGame()
+        updateAllGameStates()
+    }
+    fun getDeckInfo(deckName: String): Deck? {
+        return cardRepository.loadDeck(deckName)
+    }
+
+    private fun loadAvailableDecks() {
         viewModelScope.launch {
-            delay(2000) // Wait for animation
-            _isDeckShuffleVisible.value = false
-
-            _gameManager.startGame()
-            updateAllGameStates()
+            _availableDecks.value = cardRepository.getAvailableDeckNames()
         }
     }
 
-    private fun createSampleDecks() {
-        // Create decks with regular cards and enhanced tactical cards
-        val player1 = _gameManager.players[0]
-
-        // Unit cards
-        repeat(8) {
-            player1.deck.add(
-                UnitCard(
-                    id = 100 + it,
-                    name = "Soldier $it",
-                    description = "Basic soldier unit",
-                    manaCost = (it % 5) + 1,
-                    imagePath = "soldier_$it",
-                    attack = (it % 3) + 1,
-                    health = (it % 4) + 2,
-                    maxHealth = (it % 4) + 2
-                )
-            )
-        }
-
-        // Add tactical cards using factory
-     //   player1.deck.add(TacticalCardFactory.createFireballCard(201))
-     //   player1.deck.add(TacticalCardFactory.createHealingSpellCard(202))
-     //   player1.deck.add(TacticalCardFactory.createAoeFirestormCard(203))
-    //    player1.deck.add(TacticalCardFactory.createBuffAllCard(204))
-
-        // Player 2 deck
-        val player2 = _gameManager.players[1]
-        repeat(8) {
-            player2.deck.add(
-                UnitCard(
-                    id = 300 + it,
-                    name = "Enemy $it",
-                    description = "Enemy unit",
-                    manaCost = (it % 5) + 1,
-                    imagePath = "enemy_$it",
-                    attack = (it % 3) + 1,
-                    health = (it % 4) + 2,
-                    maxHealth = (it % 4) + 2
-                )
-            )
-        }
-
-        // Tactical cards for AI
-    //    player2.deck.add(TacticalCardFactory.createFireballCard(301))
-    //    player2.deck.add(TacticalCardFactory.createHealingSpellCard(302))
-   //     player2.deck.add(TacticalCardFactory.createAoeFirestormCard(303))
-   //     player2.deck.add(TacticalCardFactory.createBuffAllCard(304))
-    }
 
     private fun getPlayerBoardUnits(playerIndex: Int): List<UnitCard?> {
         val player = _gameManager.players[playerIndex]
@@ -187,6 +163,7 @@ class GameViewModel : ViewModel() {
             _statusMessage.value = "Cannot play this card"
         }
     }
+
     fun attackEnemyUnit(targetPosition: Int) {
         if (!_isPlayerTurn.value || _selectedUnitPosition.value == -1) return
 
@@ -402,7 +379,6 @@ class GameViewModel : ViewModel() {
     }
 
 
-
     // Get active formations for visualization
     fun getPlayerActiveFormations(): List<Formation> {
         return _gameManager.formationManager.getActiveFormations(_gameManager.players[0])
@@ -440,6 +416,7 @@ class GameViewModel : ViewModel() {
             updateAllGameStates()
         }
     }
+
     fun GameViewModel.getPlayerActiveFormations(): List<Formation> {
         return _gameManager.formationManager.getActiveFormations(_gameManager.players[0])
     }
@@ -458,8 +435,6 @@ class GameViewModel : ViewModel() {
     fun initializeFormations() {
         _gameManager.formationManager.initializePredefinedFormations()
     }
-
-
 
 
 }
