@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cardgame.data.enum.GameState
+import com.example.cardgame.data.enum.UnitType
 import com.example.cardgame.data.model.card.Card
 import com.example.cardgame.data.model.card.Deck
 import com.example.cardgame.data.model.card.EnhancedTacticCard
@@ -55,6 +56,63 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
     val statusMessage: State<String> = _statusMessage
 
     // Animation states
+
+    private val _playerMaxHealth = mutableStateOf(30)
+    val playerMaxHealth: State<Int> = _playerMaxHealth
+
+    private val _isAttackAnimationVisible = mutableStateOf(false)
+    val isAttackAnimationVisible: State<Boolean> = _isAttackAnimationVisible
+
+    private val _attackerPosition = mutableStateOf(Pair(0f, 0f))
+    val attackerPosition: State<Pair<Float, Float>> = _attackerPosition
+
+    private val _targetPosition = mutableStateOf(Pair(0f, 0f))
+    val targetPosition: State<Pair<Float, Float>> = _targetPosition
+
+    private val _isDamageNumberVisible = mutableStateOf(false)
+    val isDamageNumberVisible: State<Boolean> = _isDamageNumberVisible
+
+    private val _damageToShow = mutableStateOf(0)
+    val damageToShow: State<Int> = _damageToShow
+
+    private val _damagePosition = mutableStateOf(Pair(0f, 0f))
+    val damagePosition: State<Pair<Float, Float>> = _damagePosition
+
+    private val _isHealingEffect = mutableStateOf(false)
+    val isHealingEffect: State<Boolean> = _isHealingEffect
+
+    private val _isCardFlipping = mutableStateOf(false)
+    val isCardFlipping: State<Boolean> = _isCardFlipping
+
+    private val _isSimpleAttackVisible = mutableStateOf(false)
+    val isSimpleAttackVisible: State<Boolean> = _isSimpleAttackVisible
+
+    private val _attackingUnitType = mutableStateOf(UnitType.INFANTRY)
+    val attackingUnitType: State<UnitType> = _attackingUnitType
+
+    private val _attackTargetPosition = mutableStateOf(Pair(0f, 0f))
+    val attackTargetPosition: State<Pair<Float, Float>> = _attackTargetPosition
+
+    // Tracking slot positions for animations
+    private val slotPositions = mutableMapOf<Pair<Int, Boolean>, Pair<Float, Float>>()
+
+    fun registerSlotPosition(playerIndex: Int, slotIndex: Int, x: Float, y: Float) {
+        slotPositions[Pair(slotIndex, playerIndex == 0)] = Pair(x, y)
+    }
+
+
+    // Win Conditions
+    private val _isGameOver = mutableStateOf(false)
+    val isGameOver: State<Boolean> = _isGameOver
+
+    private val _isPlayerWinner = mutableStateOf(false)
+    val isPlayerWinner: State<Boolean> = _isPlayerWinner
+
+    // Available decks
+    private val _availableDecks = mutableStateOf<List<String>>(emptyList())
+    val availableDecks: State<List<String>> = _availableDecks
+
+    // Not Used Yet
     private val _isDeckShuffleVisible = mutableStateOf(false)
     val isDeckShuffleVisible: State<Boolean> = _isDeckShuffleVisible
 
@@ -67,21 +125,9 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
     private val _lastAttackDamage = mutableStateOf(0)
     val lastAttackDamage: State<Int> = _lastAttackDamage
 
-    private val _playerMaxHealth = mutableStateOf(30)
-    val playerMaxHealth: State<Int> = _playerMaxHealth
-
     private val _opponentMaxHealth = mutableStateOf(30)
     val opponentMaxHealth: State<Int> = _opponentMaxHealth
 
-    private val _isGameOver = mutableStateOf(false)
-    val isGameOver: State<Boolean> = _isGameOver
-
-    private val _isPlayerWinner = mutableStateOf(false)
-    val isPlayerWinner: State<Boolean> = _isPlayerWinner
-
-    // Available decks
-    private val _availableDecks = mutableStateOf<List<String>>(emptyList())
-    val availableDecks: State<List<String>> = _availableDecks
     init {
         loadAvailableDecks()
     }
@@ -163,6 +209,79 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
             _statusMessage.value = "Cannot play this card"
         }
     }
+    private fun attackWithSimpleAnimation(
+        attackerUnitType: UnitType,
+        targetPosition: Pair<Float, Float>,
+        damage: Int
+    ) {
+        viewModelScope.launch {
+            // Set up attack animation
+            _attackingUnitType.value = attackerUnitType
+            _attackTargetPosition.value = targetPosition
+            _isSimpleAttackVisible.value = true
+
+            // Wait for attack animation to complete
+            delay(800)
+            _isSimpleAttackVisible.value = false
+
+            // Show damage number
+            _damageToShow.value = damage
+            _damagePosition.value = targetPosition
+            _isHealingEffect.value = false
+            _isDamageNumberVisible.value = true
+
+            // Wait for damage number to fade
+            delay(800)
+            _isDamageNumberVisible.value = false
+        }
+    }
+
+    private fun attackWithAnimation(
+        attackerPlayerIndex: Int,
+        attackerSlotIndex: Int,
+        targetPlayerIndex: Int,
+        targetSlotIndex: Int,
+        damage: Int
+    ) {
+        viewModelScope.launch {
+            // Get positions
+            val attackerPos = slotPositions[Pair(attackerSlotIndex, attackerPlayerIndex == 0)]
+            val targetPos = slotPositions[Pair(targetSlotIndex, targetPlayerIndex == 0)]
+
+            if (attackerPos != null && targetPos != null) {
+                // Set up attack animation
+                _attackerPosition.value = attackerPos
+                _targetPosition.value = targetPos
+                _isAttackAnimationVisible.value = true
+
+                // Wait for attack animation to complete
+                delay(500)
+                _isAttackAnimationVisible.value = false
+
+                // Show damage number
+                _damageToShow.value = damage
+                _damagePosition.value = targetPos
+                _isHealingEffect.value = false
+                _isDamageNumberVisible.value = true
+
+                // Wait for damage number to fade
+                delay(800)
+                _isDamageNumberVisible.value = false
+            }
+        }
+    }
+
+    fun playCardWithAnimation(cardIndex: Int, targetPosition: Int? = null) {
+        viewModelScope.launch {
+            // Card flip animation
+            _isCardFlipping.value = true
+            delay(400)
+            _isCardFlipping.value = false
+
+            // Play the card
+            playCard(cardIndex, targetPosition)
+        }
+    }
 
     fun attackEnemyUnit(targetPosition: Int) {
         if (!_isPlayerTurn.value || _selectedUnitPosition.value == -1) return
@@ -171,21 +290,65 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
         val target = _gameManager.players[1].board.getUnitAt(targetPosition)
 
         if (attacker != null && target != null) {
-            val attackResult = attacker.attackUnit(target, _gameManager)
-            if (attackResult) {
-                _statusMessage.value = "Attack successful!"
-                _selectedUnitPosition.value = -1
-                updateAllGameStates()
-            } else {
-                if (_gameManager.players[1].board.hasTauntUnit() && !target.hasTaunt) {
-                    _statusMessage.value = "You must attack a unit with Taunt first!"
-                } else {
-                    _statusMessage.value = "Cannot attack with this unit"
+            // Check for taunt units
+            if (_gameManager.players[1].board.hasTauntUnit() && !target.hasTaunt) {
+                _statusMessage.value = "You must attack a unit with Taunt first!"
+                return
+            }
+
+            // Find target position for animation using the position map
+            val targetPos = slotPositions[Pair(targetPosition, false)]
+
+            if (targetPos != null) {
+                // Start attack animation
+                _attackingUnitType.value = attacker.unitType
+                _attackTargetPosition.value = targetPos
+                _isSimpleAttackVisible.value = true
+
+                // Attack logic after animation
+                viewModelScope.launch {
+                    // Wait for attack animation
+                    delay(800)
+                    _isSimpleAttackVisible.value = false
+
+                    // Show damage number
+                    _damageToShow.value = attacker.attack
+                    _damagePosition.value = targetPos
+                    _isHealingEffect.value = false
+                    _isDamageNumberVisible.value = true
+
+                    // Wait for damage number
+                    delay(800)
+                    _isDamageNumberVisible.value = false
+
+                    // Perform the actual attack
+                    val attackResult = attacker.attackUnit(target, _gameManager)
+                    if (attackResult) {
+                        _statusMessage.value = "Attack successful!"
+                        _selectedUnitPosition.value = -1
+                        updateAllGameStates()
+                    } else {
+                        _statusMessage.value = "Cannot attack with this unit"
+                    }
                 }
+            } else {
+                // Fallback if position tracking failed
+                _statusMessage.value = "Position tracking failed - try again"
             }
         }
     }
 
+    private var opponentPortraitPosition = Pair(0f, 0f)
+    private var playerPortraitPosition = Pair(0f, 0f)
+
+    fun registerOpponentPortraitPosition(x: Float, y: Float) {
+        // Store the opponent portrait position for direct attacks
+        opponentPortraitPosition = Pair(x, y)
+    }
+    fun registerPlayerPortraitPosition(x: Float, y: Float) {
+        // Store the player portrait position for AI attacks
+        playerPortraitPosition = Pair(x, y)
+    }
     /**
      * Attack the opponent directly
      */
@@ -195,17 +358,45 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
         val attacker = _gameManager.players[0].board.getUnitAt(_selectedUnitPosition.value)
 
         if (attacker != null) {
-            val attackResult = attacker.attackOpponent(_gameManager)
-            if (attackResult) {
-                _statusMessage.value = "Direct attack on opponent successful!"
-                _selectedUnitPosition.value = -1
-                updateAllGameStates()
+            // Check for taunt
+            if (_gameManager.players[1].board.hasTauntUnit()) {
+                _statusMessage.value = "You must attack a unit with Taunt first!"
+                return
+            }
 
-                // Check for game over
-                checkGameOver()
-            } else {
-                if (_gameManager.players[1].board.hasTauntUnit()) {
-                    _statusMessage.value = "You must attack a unit with Taunt first!"
+            // Use the registered opponent portrait position
+            val targetPos = opponentPortraitPosition
+
+            // Start attack animation
+            _attackingUnitType.value = attacker.unitType
+            _attackTargetPosition.value = targetPos
+            _isSimpleAttackVisible.value = true
+
+            // Attack logic after animation
+            viewModelScope.launch {
+                // Wait for attack animation
+                delay(800)
+                _isSimpleAttackVisible.value = false
+
+                // Show damage number
+                _damageToShow.value = attacker.attack
+                _damagePosition.value = targetPos
+                _isHealingEffect.value = false
+                _isDamageNumberVisible.value = true
+
+                // Wait for damage number
+                delay(800)
+                _isDamageNumberVisible.value = false
+
+                // Perform the actual attack
+                val attackResult = attacker.attackOpponent(_gameManager)
+                if (attackResult) {
+                    _statusMessage.value = "Direct attack on opponent successful!"
+                    _selectedUnitPosition.value = -1
+                    updateAllGameStates()
+
+                    // Check for game over
+                    checkGameOver()
                 } else {
                     _statusMessage.value = "Cannot attack with this unit"
                 }

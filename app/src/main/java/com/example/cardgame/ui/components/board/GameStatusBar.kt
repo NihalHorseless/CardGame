@@ -17,8 +17,6 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun GameStatusBar(
-    playerHealth: Int,
-    opponentHealth: Int,
     playerMana: Int,
     playerMaxMana: Int,
     isPlayerTurn: Boolean,
@@ -31,23 +29,9 @@ fun GameStatusBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Health displays
-        Row {
-            Text(
-                text = "$playerHealth",
-                color = Color.Green,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Text(
-                text = "$opponentHealth",
-                color = Color.Red,
-                fontWeight = FontWeight.Bold
-            )
-        }
+
 
         // Mana display
-        Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = "$playerMana/$playerMaxMana",
                 color = Color(0xFF3498DB),
@@ -61,6 +45,6 @@ fun GameStatusBar(
             ) {
                 Text("End Turn")
             }
-        }
+
     }
 }

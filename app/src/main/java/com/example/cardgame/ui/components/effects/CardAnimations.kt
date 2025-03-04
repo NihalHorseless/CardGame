@@ -3,6 +3,7 @@ package com.example.cardgame.ui.components.effects
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.EaseOutBack
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateDp
@@ -17,6 +18,7 @@ import androidx.compose.animation.shrinkOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -36,20 +38,30 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.cardgame.R
+import com.example.cardgame.data.enum.UnitType
+import kotlinx.coroutines.delay
+import kotlin.math.roundToInt
 
 // Card Play Animation
 @Composable
@@ -94,48 +106,62 @@ fun CardPlayAnimation(
 @Composable
 fun AttackAnimation(
     isAttacking: Boolean,
-    attackerPosition: Int,
-    targetPosition: Int,
-    boardSize: Int,
-    onAnimationComplete: () -> Unit
+    attackerX: Float,
+    attackerY: Float,
+    targetX: Float,
+    targetY: Float,
+    onAnimationComplete: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     var progress by remember { mutableStateOf(0f) }
     val animatedProgress by animateFloatAsState(
         targetValue = if (isAttacking) 1f else 0f,
-        animationSpec = tween(500, easing = FastOutSlowInEasing),
+        animationSpec = tween(500),
         finishedListener = { if (it == 1f) onAnimationComplete() }
     )
 
     progress = animatedProgress
 
+    LaunchedEffect(isAttacking) {
+        if (isAttacking) {
+            delay(500) // Animation duration
+            onAnimationComplete()
+        }
+    }
+
     if (isAttacking) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            // Calculate positions (would need adjustment based on actual layout)
-            val startX = (attackerPosition % 4) * (size.width / 4) + (size.width / 8)
-            val startY = size.height * 0.7f // Attacker is on bottom board
+        Canvas(modifier = modifier) {
+            val startX = attackerX
+            val startY = attackerY
+            val endX = targetX
+            val endY = targetY
 
-            val endX = (targetPosition % 4) * (size.width / 4) + (size.width / 8)
-            val endY = size.height * 0.3f // Target is on top board
-
-            // Draw attack path (could be an arrow or lightning bolt)
+            // Draw attack path as a curved line
             val path = Path()
             path.moveTo(startX, startY)
 
-            // Create curved attack path
+            // Create curved attack path with a control point
             val controlX = (startX + endX) / 2
             val controlY = (startY + endY) / 2 - 50f
 
             path.quadraticTo(controlX, controlY, endX, endY)
 
-            // Draw the path with progress
+            // Draw the path with progress animation
             drawPath(
                 path = path,
-                color = Color.Red,
-                style = Stroke(width = 5f),
-                alpha = progress
+                brush = Brush.linearGradient(
+                    colors = listOf(Color.Yellow, Color.Red),
+                    start = Offset(startX, startY),
+                    end = Offset(endX, endY)
+                ),
+                style = Stroke(
+                    width = 5f,
+                    cap = StrokeCap.Round
+                ),
+                alpha = progress * 0.8f
             )
 
-            // Draw attack effect at target
+            // Draw attack impact at target
             if (progress > 0.8f) {
                 drawCircle(
                     color = Color.Red,
@@ -199,21 +225,23 @@ fun FlippableCard(
     isFlipped: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val rotation = animateFloatAsState(
+    val rotation by animateFloatAsState(
         targetValue = if (isFlipped) 180f else 0f,
         animationSpec = tween(
-            durationMillis = 400,
-            easing = FastOutSlowInEasing
+            durationMillis = 400
         )
     )
 
     Box(
-        modifier = modifier.graphicsLayer {
-            rotationY = rotation.value
-            cameraDistance = 12f * density
-        }
+        modifier = modifier
+            .graphicsLayer {
+                rotationY = rotation
+                cameraDistance = 12f * density
+            },
+        contentAlignment = Alignment.Center
     ) {
-        if (rotation.value <= 90f) {
+        if (rotation <= 90f) {
+            // Show front
             Box(
                 Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -221,6 +249,7 @@ fun FlippableCard(
                 frontContent()
             }
         } else {
+            // Show back (reversed to account for the flip)
             Box(
                 Modifier
                     .fillMaxSize()
@@ -234,44 +263,136 @@ fun FlippableCard(
         }
     }
 }
+@Composable
+fun SimpleAttackAnimation(
+    isVisible: Boolean,
+    unitType: UnitType,
+    targetX: Float,
+    targetY: Float,
+    onAnimationComplete: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // Get appropriate weapon icon based on unit type
+    val weaponIconRes = when (unitType) {
+        UnitType.INFANTRY -> R.drawable.attack_infantry
+        UnitType.CAVALRY -> R.drawable.attack_cavalry
+        UnitType.ARTILLERY -> R.drawable.attack_artillery
+        UnitType.MISSILE -> R.drawable.attack_missile
+    }
+
+    // Animation states
+    val animatedScale by animateFloatAsState(
+        targetValue = if (isVisible) 1.5f else 0f,
+        animationSpec = tween(300, easing = EaseOutBack)
+    )
+
+    val animatedRotation by animateFloatAsState(
+        targetValue = if (isVisible) 360f else 0f,
+        animationSpec = tween(500)
+    )
+
+    val animatedAlpha by animateFloatAsState(
+        targetValue = if (isVisible) 1f else 0f,
+        animationSpec = tween(300)
+    )
+
+    // Trigger completion after animation plays
+    LaunchedEffect(isVisible) {
+        if (isVisible) {
+            delay(800) // Show the weapon for this duration
+            onAnimationComplete()
+        }
+    }
+
+    // Generate small random offsets for shaking effect
+    var shakeOffsetX by remember { mutableStateOf(0f) }
+    var shakeOffsetY by remember { mutableStateOf(0f) }
+
+    // Update shake effect
+    LaunchedEffect(isVisible) {
+        if (isVisible) {
+            while (true) {
+                shakeOffsetX = (-5..5).random().toFloat()
+                shakeOffsetY = (-5..5).random().toFloat()
+                delay(50) // Update shake every 50ms
+            }
+        }
+    }
+
+    if (isVisible) {
+        Box(modifier = modifier) {
+            // We use IntOffset for pixel-perfect positioning
+            val iconSize = 40.dp
+            val halfIconSizePx = with(LocalDensity.current) { iconSize.toPx() / 2 }
+
+            Image(
+                painter = painterResource(id = weaponIconRes),
+                contentDescription = "Attack Animation",
+                modifier = Modifier
+                    .size(iconSize)
+                    .offset {
+                        IntOffset(
+                            x = (targetX - halfIconSizePx + shakeOffsetX).roundToInt(),
+                            y = (targetY - halfIconSizePx + shakeOffsetY).roundToInt()
+                        )
+                    }
+                    .scale(animatedScale)
+                    .rotate(animatedRotation)
+                    .alpha(animatedAlpha)
+            )
+        }
+    }
+}
 
 // Damage Number Animation
 @Composable
 fun DamageNumberEffect(
     damage: Int,
-    position: Offset,
+    isHealing: Boolean = false,
+    x: Float,
+    y: Float,
     isVisible: Boolean,
-    onAnimationComplete: () -> Unit
+    onAnimationComplete: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
+    var yOffset by remember { mutableStateOf(0f) }
+    val animatedYOffset by animateFloatAsState(
+        targetValue = if (isVisible) -50f else 0f,
+        animationSpec = tween(800),
+        finishedListener = { if (it == -50f) onAnimationComplete() }
+    )
+
+    val textColor = if (isHealing) Color.Green else Color.Red
+    val prefix = if (isHealing) "+" else "-"
+
+    LaunchedEffect(isVisible) {
+        if (isVisible) {
+            delay(800)
+            onAnimationComplete()
+        }
+    }
+
     AnimatedVisibility(
         visible = isVisible,
         enter = fadeIn() + expandIn(expandFrom = Alignment.Center),
         exit = fadeOut() + shrinkOut(shrinkTowards = Alignment.Center)
     ) {
-        var yOffset by remember { mutableStateOf(0f) }
-        val animatedYOffset by animateFloatAsState(
-            targetValue = if (isVisible) -50f else 0f,
-            animationSpec = tween(800, easing = FastOutSlowInEasing),
-            finishedListener = { if (it == -50f) onAnimationComplete() }
-        )
-
         yOffset = animatedYOffset
 
         Box(
-            modifier = Modifier
-                .offset(x = position.x.dp, y = (position.y + yOffset).dp)
+            modifier = modifier
+                .offset(x = x.dp, y = (y + yOffset).dp)
                 .padding(4.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "-$damage",
-                color = Color.Red,
-                fontSize = 24.sp,
+                text = "$prefix$damage",
+                color = textColor,
+                fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 style = TextStyle(
                     shadow = Shadow(
                         color = Color.Black,
-                        offset = Offset(2f, 2f),
                         blurRadius = 4f
                     )
                 )

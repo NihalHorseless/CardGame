@@ -1,6 +1,10 @@
 package com.example.cardgame.ui.components.player
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,123 +18,245 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.cardgame.R
+import com.example.cardgame.data.enum.UnitEra
 import com.example.cardgame.data.model.card.Card
 import com.example.cardgame.data.model.card.UnitCard
+import com.example.cardgame.ui.components.board.UnitTypeIcon
 import com.example.cardgame.ui.components.effects.CardWithHoverEffect
 
 @Composable
 fun PlayerHand(
     cards: List<Card>,
     playerMana: Int,
-    onCardClick: (Int) -> Unit
+    onCardClick: (Int) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     LazyRow(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .height(150.dp)
-            .padding(4.dp)
+            .height(160.dp)
+            .padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy((-20).dp) // Overlapping cards
     ) {
-        items(cards.size) { index ->
-            val card = cards[index]
-            val canPlay = card.manaCost <= playerMana
+        itemsIndexed(cards) { index, card ->
+            val isPlayable = card.manaCost <= playerMana
 
-            // Use the hover effect component
-            CardWithHoverEffect(
-                modifier = Modifier.padding(horizontal = 4.dp),
-                content = {
-                    // Card content
-                    val cardColor = if (canPlay) Color(0xFF1E3C72) else Color(0xFF555555)
+            // Card hover effect
+            var isHovered by remember { mutableStateOf(false) }
+            val scale by animateFloatAsState(
+                targetValue = if (isHovered) 1.1f else 1f,
+                animationSpec = tween(200)
+            )
+            val elevationDp by animateFloatAsState(
+                targetValue = if (isHovered) 16f else 4f,
+                animationSpec = tween(200)
+            )
 
-                    Card(
-                        modifier = Modifier
-                            .height(140.dp)
-                            .width(100.dp)
-                            .clickable(enabled = canPlay) { onCardClick(index) },
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(4.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            // Card cost circle in top-left
-                            Box(
-                                modifier = Modifier
-                                    .padding(4.dp)
-                                    .size(24.dp)
-                                    .background(Color.Blue, RoundedCornerShape(12.dp)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = card.manaCost.toString(),
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-
-                            // Card name
-                            Text(
-                                text = card.name,
-                                color = Color.White,
-                                fontSize = 12.sp,
-                                textAlign = TextAlign.Center,
-                                maxLines = 1
-                            )
-
-                            Spacer(modifier = Modifier.height(4.dp))
-
-                            // Card stats for unit cards
-                            if (card is UnitCard) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceEvenly
-                                ) {
-                                    // Attack value
-                                    Box(
-                                        modifier = Modifier
-                                            .size(24.dp)
-                                            .background(Color.Red, RoundedCornerShape(12.dp)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = card.attack.toString(),
-                                            color = Color.White,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-
-                                    // Health value
-                                    Box(
-                                        modifier = Modifier
-                                            .size(24.dp)
-                                            .background(Color.Green, RoundedCornerShape(12.dp)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = card.health.toString(),
-                                            color = Color.White,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
+            Box(
+                modifier = Modifier
+                    .height(160.dp)
+                    .scale(scale)
+                    .padding(vertical = 8.dp)
+                    .pointerInput(Unit) {
+                        awaitPointerEventScope {
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                when {
+                                    event.type == PointerEventType.Enter -> isHovered = true
+                                    event.type == PointerEventType.Exit -> isHovered = false
                                 }
                             }
                         }
-                    }
-                }
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                // The card
+                HandCard(
+                    card = card,
+                    isPlayable = isPlayable,
+                    elevation = elevationDp.dp,
+                    onClick = { onCardClick(index) }
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Individual card in the player's hand
+ */
+@Composable
+fun HandCard(
+    card: Card,
+    isPlayable: Boolean,
+    elevation: Dp = 4.dp,
+    onClick: () -> Unit
+) {
+    val cardColor = if (card is UnitCard) {
+        when (card.unitEra) {
+            UnitEra.ANCIENT -> Color(0xFF8D6E63)    // Brown
+            UnitEra.ROMAN -> Color(0xFFB71C1C)      // Dark Red
+            UnitEra.MEDIEVAL -> Color(0xFF1A237E)   // Dark Blue
+            UnitEra.MODERN -> Color(0xFF212121)     // Dark Gray
+            else -> Color(0xFFFFFFFF) // White for Default
+        }
+    }
+    else {
+        Color(0xFF4527A0)
+    }
+
+    // Dim the card if it's not playable
+    val finalCardColor = if (isPlayable) cardColor else cardColor.copy(alpha = 0.5f)
+
+    Card(
+        modifier = Modifier
+            .width(100.dp)
+            .height(140.dp)
+            .shadow(
+                elevation = elevation,
+                shape = RoundedCornerShape(8.dp)
             )
+            .clickable(enabled = isPlayable) { onClick() },
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Card Background
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                finalCardColor,
+                                finalCardColor.copy(alpha = 0.7f)
+                            )
+                        )
+                    )
+            )
+
+            // Mana Cost (top left)
+            Box(
+                modifier = Modifier
+                    .size(30.dp)
+                    .align(Alignment.TopStart)
+                    .padding(4.dp)
+                    .background(Color(0xFF2196F3), CircleShape)
+                    .border(1.dp, Color.White, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = card.manaCost.toString(),
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+            }
+
+            // Card Name
+            Text(
+                text = card.name,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 4.dp, start = 32.dp, end = 4.dp)
+            )
+
+            // Card Content
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 30.dp, bottom = 30.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                if (card is UnitCard) {
+                    // Unit Type Icon
+                    UnitTypeIcon(
+                        unitType = card.unitType,
+                        modifier = Modifier.size(40.dp)
+                    )
+                } else {
+                    // Tactic Card Indicator
+                    Image(
+                        painter = painterResource(R.drawable.magic_effect_icon),
+                        contentDescription = "Tactic Card",
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
+            }
+
+            // Stats for Unit Cards
+            if (card is UnitCard) {
+                // Attack Value (bottom left)
+                Box(
+                    modifier = Modifier
+                        .size(30.dp)
+                        .align(Alignment.BottomStart)
+                        .padding(4.dp)
+                        .background(Color(0xFFFF9800), CircleShape)
+                        .border(1.dp, Color.White, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = card.attack.toString(),
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                }
+
+                // Health Value (bottom right)
+                Box(
+                    modifier = Modifier
+                        .size(30.dp)
+                        .align(Alignment.BottomEnd)
+                        .padding(4.dp)
+                        .background(Color.Green, CircleShape)
+                        .border(1.dp, Color.White, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = card.health.toString(),
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                }
+            }
         }
     }
 }

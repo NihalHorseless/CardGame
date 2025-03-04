@@ -12,7 +12,7 @@ import com.example.cardgame.data.model.card.UnitCard
 
 @Composable
 fun PlayerBoard(
-    units: List<UnitCard?>,
+    units: List<UnitCard>,
     selectedUnit: Int,
     onUnitClick: (Int) -> Unit
 ) {

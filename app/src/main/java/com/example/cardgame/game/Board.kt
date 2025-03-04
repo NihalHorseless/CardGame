@@ -2,7 +2,7 @@ package com.example.cardgame.game
 
 import com.example.cardgame.data.model.card.UnitCard
 
-class Board(val maxSize: Int = 7) {
+class Board(val maxSize: Int = 5) {
     private val slots = arrayOfNulls<UnitCard>(maxSize)
 
     fun placeUnit(unit: UnitCard, position: Int): Boolean {

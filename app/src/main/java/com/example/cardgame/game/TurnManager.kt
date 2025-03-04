@@ -13,7 +13,7 @@ class TurnManager(private val gameManager: GameManager) {
     fun startTurn() {
         currentPlayer?.let { player ->
             // Reset mana based on turn number (capped at max)
-            player.currentMana = Math.min(player.maxMana, turnNumber)
+            player.currentMana = player.maxMana.coerceAtMost(turnNumber)
 
             // Draw a card
             player.drawCard()
@@ -30,7 +30,7 @@ class TurnManager(private val gameManager: GameManager) {
         currentPlayer = if (currentPlayer == gameManager.players[0])
             gameManager.players[1] else gameManager.players[0]
 
-        turnNumber++
+        if (currentPlayer == gameManager.players[1]) turnNumber++
         startTurn()
     }
 }
