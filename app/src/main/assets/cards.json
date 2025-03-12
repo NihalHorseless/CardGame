@@ -108,6 +108,39 @@
     "hasTaunt": false
   },
   {
+    "id": 1201,
+    "name": "French Musketeers",
+    "description": "Napoleonic Era French Musketeer",
+    "manaCost": 5,
+    "imagePath": "",
+    "type": "unit",
+    "attack": 5,
+    "health": 4,
+    "maxHealth": 4,
+    "unitType": "MISSILE",
+    "unitEra": "NAPOLEONIC",
+    "abilities": [],
+    "hasCharge": false,
+    "hasTaunt": true
+  }
+,
+  {
+    "id": 1202,
+    "name": "French Lancers",
+    "description": "Napoleonic Era French Cavalry",
+    "manaCost": 6,
+    "imagePath": "",
+    "type": "unit",
+    "attack": 6,
+    "health": 5,
+    "maxHealth": 5,
+    "unitType": "CAVALRY",
+    "unitEra": "NAPOLEONIC",
+    "abilities": [],
+    "hasCharge": true,
+    "hasTaunt": false
+  },
+  {
     "id": 2001,
     "name": "Fireball",
     "description": "Deal 3 damage to a target unit",

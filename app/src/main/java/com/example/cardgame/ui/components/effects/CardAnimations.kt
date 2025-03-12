@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOutBack
+import androidx.compose.animation.core.EaseOutQuad
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateDp
@@ -63,111 +64,143 @@ import com.example.cardgame.data.enum.UnitType
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
-// Card Play Animation
 @Composable
-fun CardPlayAnimation(
+fun CardSlotAnimation(
     isVisible: Boolean,
-    onAnimationComplete: () -> Unit
-) {
-    AnimatedVisibility(
-        visible = isVisible,
-        enter = slideInVertically(initialOffsetY = { 300 }) + fadeIn(),
-        exit = slideOutVertically(targetOffsetY = { -300 }) + fadeOut()
-    ) {
-        val rotation = remember { Animatable(0f) }
-
-        LaunchedEffect(isVisible) {
-            if (isVisible) {
-                rotation.animateTo(
-                    targetValue = 720f,
-                    animationSpec = tween(800, easing = LinearEasing)
-                )
-                onAnimationComplete()
-            }
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .rotate(rotation.value),
-            contentAlignment = Alignment.Center
-        ) {
-            // Glowing effect
-            Canvas(modifier = Modifier.size(120.dp)) {
-                drawCircle(
-                    color = Color(0xFF00AAFF),
-                    radius = 100f,
-                    alpha = 0.6f
-                )
-            }
-        }
-    }
-}
-@Composable
-fun AttackAnimation(
-    isAttacking: Boolean,
-    attackerX: Float,
-    attackerY: Float,
     targetX: Float,
     targetY: Float,
     onAnimationComplete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var progress by remember { mutableStateOf(0f) }
-    val animatedProgress by animateFloatAsState(
-        targetValue = if (isAttacking) 1f else 0f,
-        animationSpec = tween(500),
-        finishedListener = { if (it == 1f) onAnimationComplete() }
+    // Simple fade in and scale up animation
+    val alpha by animateFloatAsState(
+        targetValue = if (isVisible) 1f else 0f,
+        animationSpec = tween(300)
     )
 
-    progress = animatedProgress
+    val scale by animateFloatAsState(
+        targetValue = if (isVisible) 1f else 0.5f,
+        animationSpec = tween(300, easing = EaseOutBack)
+    )
 
-    LaunchedEffect(isAttacking) {
-        if (isAttacking) {
-            delay(500) // Animation duration
+    LaunchedEffect(isVisible) {
+        if (isVisible) {
+            delay(300) // Animation duration
             onAnimationComplete()
         }
     }
 
-    if (isAttacking) {
-        Canvas(modifier = modifier) {
-            val startX = attackerX
-            val startY = attackerY
-            val endX = targetX
-            val endY = targetY
-
-            // Draw attack path as a curved line
-            val path = Path()
-            path.moveTo(startX, startY)
-
-            // Create curved attack path with a control point
-            val controlX = (startX + endX) / 2
-            val controlY = (startY + endY) / 2 - 50f
-
-            path.quadraticTo(controlX, controlY, endX, endY)
-
-            // Draw the path with progress animation
-            drawPath(
-                path = path,
-                brush = Brush.linearGradient(
-                    colors = listOf(Color.Yellow, Color.Red),
-                    start = Offset(startX, startY),
-                    end = Offset(endX, endY)
-                ),
-                style = Stroke(
-                    width = 5f,
-                    cap = StrokeCap.Round
-                ),
-                alpha = progress * 0.8f
-            )
-
-            // Draw attack impact at target
-            if (progress > 0.8f) {
+    if (isVisible) {
+        Box(
+            modifier = modifier
+                .offset(x = targetX.dp - 32.5.dp, y = targetY.dp - 40.dp)
+                .size(65.dp, 80.dp)
+                .scale(scale)
+                .alpha(alpha)
+        ) {
+            // A simple glowing effect
+            androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
                 drawCircle(
-                    color = Color.Red,
-                    radius = 40f * ((progress - 0.8f) * 5f),
-                    center = Offset(endX, endY),
-                    alpha = (1f - (progress - 0.8f) * 5f)
+                    color = androidx.compose.ui.graphics.Color(0xFF5271FF),
+                    radius = 60f,
+                    alpha = 0.5f * alpha
+                )
+            }
+        }
+    }
+}
+// Card Play Animation
+@Composable
+fun CardPlayAnimation(
+    isVisible: Boolean,
+    startX: Float,
+    startY: Float,
+    endX: Float,
+    endY: Float,
+    onAnimationComplete: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // Position animation
+    val animatedX by animateFloatAsState(
+        targetValue = if (isVisible) endX else startX,
+        animationSpec = tween(500, easing = EaseOutQuad)
+    )
+
+    val animatedY by animateFloatAsState(
+        targetValue = if (isVisible) endY else startY,
+        animationSpec = tween(500, easing = EaseOutQuad)
+    )
+
+    // Scale and rotate for dramatic effect
+    val scale by animateFloatAsState(
+        targetValue = if (isVisible) 1.5f else 0.8f,
+        animationSpec = tween(500, easing = EaseOutBack)
+    )
+
+    val rotation by animateFloatAsState(
+        targetValue = if (isVisible) 0f else -10f,
+        animationSpec = tween(500)
+    )
+
+    // Glow effect opacity
+    val glowAlpha by animateFloatAsState(
+        targetValue = if (isVisible) 0.7f else 0f,
+        animationSpec = tween(500)
+    )
+
+    LaunchedEffect(isVisible) {
+        if (isVisible) {
+            delay(1000) // Duration of animation
+            onAnimationComplete()
+        }
+    }
+
+    if (isVisible) {
+        Box(modifier = modifier) {
+            // Glow effect
+            androidx.compose.foundation.Canvas(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .alpha(glowAlpha)
+            ) {
+                drawCircle(
+                    color = Color(0xFF5271FF),
+                    radius = 150f,
+                    center = androidx.compose.ui.geometry.Offset(animatedX, animatedY),
+                    alpha = glowAlpha
+                )
+            }
+
+            // Particle effects (simplified)
+            for (i in 0..5) {
+                val particleDelay = i * 100
+                val particleScale by animateFloatAsState(
+                    targetValue = if (isVisible) 0f else 1f,
+                    animationSpec = tween(
+                        durationMillis = 500,
+                        delayMillis = particleDelay
+                    )
+                )
+
+                val particleAlpha by animateFloatAsState(
+                    targetValue = if (isVisible) 0f else 0.7f,
+                    animationSpec = tween(
+                        durationMillis = 500,
+                        delayMillis = particleDelay
+                    )
+                )
+
+                // Simple particle as a colored box
+                Box(
+                    modifier = Modifier
+                        .offset(
+                            x = (animatedX + (i * 20 - 50)).dp,
+                            y = (animatedY + (i % 3 * 20 - 30)).dp
+                        )
+                        .size(10.dp)
+                        .scale(particleScale)
+                        .alpha(particleAlpha)
+                        .background(Color(0xFFFFD700))
                 )
             }
         }

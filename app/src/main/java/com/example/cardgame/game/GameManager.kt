@@ -8,7 +8,7 @@ class GameManager {
     val turnManager = TurnManager(this)
     val formationManager = FormationManager()
     var gameState: GameState = GameState.NOT_STARTED
-    var winner: Player? = null
+    private var winner: Player? = null
 
     fun startGame() {
         // Initialize players

@@ -23,7 +23,7 @@ import androidx.compose.ui.zIndex
 import com.example.cardgame.ui.components.board.BoardWithFormationTracking
 import com.example.cardgame.ui.components.board.GameStatusBar
 import com.example.cardgame.ui.components.board.PlayerPortrait
-import com.example.cardgame.ui.components.effects.AttackAnimation
+import com.example.cardgame.ui.components.effects.CardSlotAnimation
 import com.example.cardgame.ui.components.effects.DamageNumberEffect
 import com.example.cardgame.ui.components.effects.SimpleAttackAnimation
 import com.example.cardgame.ui.components.player.PlayerHand
@@ -61,6 +61,10 @@ fun GameScreen(
     val damageToShow by viewModel.damageToShow
     val damagePosition by viewModel.damagePosition
     val isHealingEffect by viewModel.isHealingEffect
+
+    // Card Play Positions
+    val isCardAnimationVisible by viewModel.isCardAnimationVisible
+    val cardAnimationPosition by viewModel.cardAnimationPosition
 
     LaunchedEffect(key1 = Unit) {
         viewModel.startGame()
@@ -227,6 +231,16 @@ fun GameScreen(
                 y = damagePosition.second,
                 isVisible = isDamageNumberVisible,
                 onAnimationComplete = { /* Animation will be handled by ViewModel */ },
+                modifier = Modifier.fillMaxSize().zIndex(10f)
+            )
+        }
+
+        if (isCardAnimationVisible) {
+            CardSlotAnimation(
+                isVisible = isCardAnimationVisible,
+                targetX = cardAnimationPosition.first,
+                targetY = cardAnimationPosition.second,
+                onAnimationComplete = { /* Handled by ViewModel */ },
                 modifier = Modifier.fillMaxSize().zIndex(10f)
             )
         }

@@ -1,0 +1,13 @@
+{
+  "id": "player_test",
+  "name": "Player Deck",
+  "description": "A test deck featuring all military units",
+  "cardIds": [
+    1001, 1001, 1011, 1011,
+    1002, 1012, 1012,
+    1003, 1003,
+    1004, 1004, 1201, 1201,
+    2001, 1202,
+    2002, 1202
+  ]
+}

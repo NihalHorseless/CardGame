@@ -31,10 +31,15 @@ class UnitCard(
         player.hand.remove(this)
 
         val position = targetPosition ?: player.board.getFirstEmptyPosition()
-        player.board.placeUnit(this, position)
+
+        // Create a clone of the card to place on the board
+        val boardCard = this.clone()
+
+        // Place the cloned card on the board
+        player.board.placeUnit(boardCard, position)
 
         // Initialize attack availability based on charge ability
-        canAttackThisTurn = hasCharge
+        boardCard.canAttackThisTurn = boardCard.hasCharge
 
         // Apply formation effects
         gameManager.formationManager.applyFormationEffects(player)
@@ -114,5 +119,24 @@ class UnitCard(
     private fun shouldAttackTauntFirst(opponent: Player, target: UnitCard): Boolean {
         // Check if there are any taunt units that must be attacked first
         return opponent.board.hasTauntUnit() && !target.hasTaunt
+    }
+
+    fun clone(): UnitCard {
+        return UnitCard(
+            id = id,
+            name = name,
+            description = description,
+            manaCost = manaCost,
+            imagePath = imagePath,
+            attack = attack,
+            health = health,
+            maxHealth = maxHealth,
+            unitType = unitType,
+            unitEra = unitEra,
+            abilities = abilities.toList(), // Create a new list to avoid reference issues
+            canAttackThisTurn = canAttackThisTurn,
+            hasCharge = hasCharge,
+            hasTaunt = hasTaunt
+        )
     }
 }

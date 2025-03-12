@@ -1,6 +1,7 @@
 package com.example.cardgame.ui.viewmodel
 
 import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -25,25 +26,25 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
     private val _playerHandState = mutableStateOf<List<Card>>(_gameManager.players[0].hand)
     val playerHandState: State<List<Card>> = _playerHandState
 
-    private val _playerBoardState = mutableStateOf<List<UnitCard?>>(getPlayerBoardUnits(0))
+    private val _playerBoardState = mutableStateOf(getPlayerBoardUnits(0))
     val playerBoardState: State<List<UnitCard?>> = _playerBoardState
 
-    private val _opponentBoardState = mutableStateOf<List<UnitCard?>>(getPlayerBoardUnits(1))
+    private val _opponentBoardState = mutableStateOf(getPlayerBoardUnits(1))
     val opponentBoardState: State<List<UnitCard?>> = _opponentBoardState
 
-    private val _selectedUnitPosition = mutableStateOf(-1)
+    private val _selectedUnitPosition = mutableIntStateOf(-1)
     val selectedUnitPosition: State<Int> = _selectedUnitPosition
 
-    private val _playerMana = mutableStateOf(0)
+    private val _playerMana = mutableIntStateOf(0)
     val playerMana: State<Int> = _playerMana
 
-    private val _playerMaxMana = mutableStateOf(10)
+    private val _playerMaxMana = mutableIntStateOf(10)
     val playerMaxMana: State<Int> = _playerMaxMana
 
-    private val _playerHealth = mutableStateOf(30)
+    private val _playerHealth = mutableIntStateOf(30)
     val playerHealth: State<Int> = _playerHealth
 
-    private val _opponentHealth = mutableStateOf(30)
+    private val _opponentHealth = mutableIntStateOf(30)
     val opponentHealth: State<Int> = _opponentHealth
 
     private val _isPlayerTurn = mutableStateOf(true)
@@ -55,9 +56,16 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
     private val _statusMessage = mutableStateOf("")
     val statusMessage: State<String> = _statusMessage
 
+    // Card play animation states
+    private val _isCardAnimationVisible = mutableStateOf(false)
+    val isCardAnimationVisible: State<Boolean> = _isCardAnimationVisible
+
+    private val _cardAnimationPosition = mutableStateOf(Pair(0f, 0f))
+    val cardAnimationPosition: State<Pair<Float, Float>> = _cardAnimationPosition
+
     // Animation states
 
-    private val _playerMaxHealth = mutableStateOf(30)
+    private val _playerMaxHealth = mutableIntStateOf(30)
     val playerMaxHealth: State<Int> = _playerMaxHealth
 
     private val _isAttackAnimationVisible = mutableStateOf(false)
@@ -72,7 +80,7 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
     private val _isDamageNumberVisible = mutableStateOf(false)
     val isDamageNumberVisible: State<Boolean> = _isDamageNumberVisible
 
-    private val _damageToShow = mutableStateOf(0)
+    private val _damageToShow = mutableIntStateOf(0)
     val damageToShow: State<Int> = _damageToShow
 
     private val _damagePosition = mutableStateOf(Pair(0f, 0f))
@@ -122,17 +130,17 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
     private val _isTacticalCardAnimationVisible = mutableStateOf(false)
     val isTacticalCardAnimationVisible: State<Boolean> = _isTacticalCardAnimationVisible
 
-    private val _lastAttackDamage = mutableStateOf(0)
+    private val _lastAttackDamage = mutableIntStateOf(0)
     val lastAttackDamage: State<Int> = _lastAttackDamage
 
-    private val _opponentMaxHealth = mutableStateOf(30)
+    private val _opponentMaxHealth = mutableIntStateOf(30)
     val opponentMaxHealth: State<Int> = _opponentMaxHealth
 
     init {
         loadAvailableDecks()
     }
 
-    fun startGame(playerDeckName: String = "roman_deck", opponentDeckName: String = "medieval_deck") {
+    fun startGame(playerDeckName: String = "player_deck", opponentDeckName: String = "medieval_deck") {
         // Reset game over state
         _isGameOver.value = false
 
@@ -180,24 +188,51 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
 
         val player = _gameManager.players[0]
 
-        // Check if this is a tactical card for animation
-        val card = player.hand.getOrNull(cardIndex)
-        if (card is EnhancedTacticCard) {
-            _currentTacticalCard.value = card
-            _isTacticalCardAnimationVisible.value = true
+        // Check if card can be played
+        if (cardIndex >= player.hand.size || cardIndex < 0) return
+        if (player.hand[cardIndex].manaCost > player.currentMana) {
+            _statusMessage.value = "Not enough mana"
+            return
+        }
 
+        // Determine board position
+        val position = targetPosition ?: player.board.getFirstEmptyPosition()
+        if (position == -1) {
+            _statusMessage.value = "Board is full"
+            return
+        }
+
+        // Get animation target position
+        val boardPos = slotPositions[Pair(position, true)]
+
+        if (boardPos != null) {
+            // Set up animation
+            _cardAnimationPosition.value = boardPos
+            _isCardAnimationVisible.value = true
+
+            // Actually play the card after animation
             viewModelScope.launch {
-                delay(1500) // Wait for animation
-                _isTacticalCardAnimationVisible.value = false
+                delay(300) // Wait for animation
+                _isCardAnimationVisible.value = false
 
-                // Now play the card
-                val isCardPlayed = player.playCard(cardIndex, _gameManager, targetPosition)
-                handleCardPlayResult(isCardPlayed)
+                // Now actually play the card
+                val isCardPlayed = player.playCard(cardIndex, _gameManager, position)
+                if (isCardPlayed) {
+                    _statusMessage.value = "Card played successfully"
+                    updateAllGameStates()
+                } else {
+                    _statusMessage.value = "Cannot play this card"
+                }
             }
         } else {
-            // Regular card play
+            // Fallback if position isn't registered - just play without animation
             val isCardPlayed = player.playCard(cardIndex, _gameManager, targetPosition)
-            handleCardPlayResult(isCardPlayed)
+            if (isCardPlayed) {
+                _statusMessage.value = "Card played successfully"
+                updateAllGameStates()
+            } else {
+                _statusMessage.value = "Cannot play this card"
+            }
         }
     }
 
@@ -209,84 +244,12 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
             _statusMessage.value = "Cannot play this card"
         }
     }
-    private fun attackWithSimpleAnimation(
-        attackerUnitType: UnitType,
-        targetPosition: Pair<Float, Float>,
-        damage: Int
-    ) {
-        viewModelScope.launch {
-            // Set up attack animation
-            _attackingUnitType.value = attackerUnitType
-            _attackTargetPosition.value = targetPosition
-            _isSimpleAttackVisible.value = true
 
-            // Wait for attack animation to complete
-            delay(800)
-            _isSimpleAttackVisible.value = false
-
-            // Show damage number
-            _damageToShow.value = damage
-            _damagePosition.value = targetPosition
-            _isHealingEffect.value = false
-            _isDamageNumberVisible.value = true
-
-            // Wait for damage number to fade
-            delay(800)
-            _isDamageNumberVisible.value = false
-        }
-    }
-
-    private fun attackWithAnimation(
-        attackerPlayerIndex: Int,
-        attackerSlotIndex: Int,
-        targetPlayerIndex: Int,
-        targetSlotIndex: Int,
-        damage: Int
-    ) {
-        viewModelScope.launch {
-            // Get positions
-            val attackerPos = slotPositions[Pair(attackerSlotIndex, attackerPlayerIndex == 0)]
-            val targetPos = slotPositions[Pair(targetSlotIndex, targetPlayerIndex == 0)]
-
-            if (attackerPos != null && targetPos != null) {
-                // Set up attack animation
-                _attackerPosition.value = attackerPos
-                _targetPosition.value = targetPos
-                _isAttackAnimationVisible.value = true
-
-                // Wait for attack animation to complete
-                delay(500)
-                _isAttackAnimationVisible.value = false
-
-                // Show damage number
-                _damageToShow.value = damage
-                _damagePosition.value = targetPos
-                _isHealingEffect.value = false
-                _isDamageNumberVisible.value = true
-
-                // Wait for damage number to fade
-                delay(800)
-                _isDamageNumberVisible.value = false
-            }
-        }
-    }
-
-    fun playCardWithAnimation(cardIndex: Int, targetPosition: Int? = null) {
-        viewModelScope.launch {
-            // Card flip animation
-            _isCardFlipping.value = true
-            delay(400)
-            _isCardFlipping.value = false
-
-            // Play the card
-            playCard(cardIndex, targetPosition)
-        }
-    }
 
     fun attackEnemyUnit(targetPosition: Int) {
-        if (!_isPlayerTurn.value || _selectedUnitPosition.value == -1) return
+        if (!_isPlayerTurn.value || _selectedUnitPosition.intValue == -1) return
 
-        val attacker = _gameManager.players[0].board.getUnitAt(_selectedUnitPosition.value)
+        val attacker = _gameManager.players[0].board.getUnitAt(_selectedUnitPosition.intValue)
         val target = _gameManager.players[1].board.getUnitAt(targetPosition)
 
         if (attacker != null && target != null) {
@@ -312,7 +275,7 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
                     _isSimpleAttackVisible.value = false
 
                     // Show damage number
-                    _damageToShow.value = attacker.attack
+                    _damageToShow.intValue = attacker.attack
                     _damagePosition.value = targetPos
                     _isHealingEffect.value = false
                     _isDamageNumberVisible.value = true
@@ -325,7 +288,7 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
                     val attackResult = attacker.attackUnit(target, _gameManager)
                     if (attackResult) {
                         _statusMessage.value = "Attack successful!"
-                        _selectedUnitPosition.value = -1
+                        _selectedUnitPosition.intValue = -1
                         updateAllGameStates()
                     } else {
                         _statusMessage.value = "Cannot attack with this unit"
@@ -353,9 +316,9 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
      * Attack the opponent directly
      */
     fun attackOpponentDirectly() {
-        if (!_isPlayerTurn.value || _selectedUnitPosition.value == -1) return
+        if (!_isPlayerTurn.value || _selectedUnitPosition.intValue == -1) return
 
-        val attacker = _gameManager.players[0].board.getUnitAt(_selectedUnitPosition.value)
+        val attacker = _gameManager.players[0].board.getUnitAt(_selectedUnitPosition.intValue)
 
         if (attacker != null) {
             // Check for taunt
@@ -379,7 +342,7 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
                 _isSimpleAttackVisible.value = false
 
                 // Show damage number
-                _damageToShow.value = attacker.attack
+                _damageToShow.intValue = attacker.attack
                 _damagePosition.value = targetPos
                 _isHealingEffect.value = false
                 _isDamageNumberVisible.value = true
@@ -392,7 +355,7 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
                 val attackResult = attacker.attackOpponent(_gameManager)
                 if (attackResult) {
                     _statusMessage.value = "Direct attack on opponent successful!"
-                    _selectedUnitPosition.value = -1
+                    _selectedUnitPosition.intValue = -1
                     updateAllGameStates()
 
                     // Check for game over
@@ -409,31 +372,10 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
 
         val unit = _gameManager.players[0].board.getUnitAt(position)
         if (unit != null && unit.canAttackThisTurn) {
-            _selectedUnitPosition.value = position
+            _selectedUnitPosition.intValue = position
             _statusMessage.value = "Select a target to attack"
         } else {
             _statusMessage.value = "This unit cannot attack"
-        }
-    }
-
-    fun performAttack(targetPosition: Int) {
-        if (!_isPlayerTurn.value || _selectedUnitPosition.value == -1) return
-
-        val attacker = _gameManager.players[0].board.getUnitAt(_selectedUnitPosition.value)
-        val target = _gameManager.players[1].board.getUnitAt(targetPosition)
-
-        if (attacker != null && target != null) {
-            // Record damage for animation
-            _lastAttackDamage.value = attacker.attack
-
-            val attackResult = attacker.attackUnit(target, _gameManager)
-            if (attackResult) {
-                _statusMessage.value = "Attack successful!"
-                _selectedUnitPosition.value = -1
-                updateAllGameStates()
-            } else {
-                _statusMessage.value = "Cannot attack with this unit"
-            }
         }
     }
 
@@ -501,7 +443,7 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
 
                         if (aiUnitPosition != -1 && playerUnitPosition != -1) {
                             // Record for animation
-                            _lastAttackDamage.value = aiUnit.attack
+                            _lastAttackDamage.intValue = aiUnit.attack
 
                             // Trigger attack animation here if needed
 
@@ -539,11 +481,11 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
         _playerBoardState.value = getPlayerBoardUnits(0)
         _opponentBoardState.value = getPlayerBoardUnits(1)
 
-        _playerMana.value = _gameManager.players[0].currentMana
-        _playerMaxMana.value = _gameManager.players[0].maxMana
+        _playerMana.intValue = _gameManager.players[0].currentMana
+        _playerMaxMana.intValue = _gameManager.players[0].maxMana
 
-        _playerHealth.value = _gameManager.players[0].health
-        _opponentHealth.value = _gameManager.players[1].health
+        _playerHealth.intValue = _gameManager.players[0].health
+        _opponentHealth.intValue = _gameManager.players[1].health
 
         _isPlayerTurn.value = currentPlayer == _gameManager.players[0]
         _gameState.value = _gameManager.gameState
@@ -621,7 +563,6 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
 
     /**
      * Initialize the game with formations.
-     * Call this during the com.example.cardgame.ui.viewmodel.GameViewModel initialization.
      */
     fun initializeFormations() {
         _gameManager.formationManager.initializePredefinedFormations()
