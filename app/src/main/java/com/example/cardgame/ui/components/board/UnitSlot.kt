@@ -53,22 +53,26 @@ fun UnitSlot(
     unit: UnitCard?,
     isSelected: Boolean,
     isPlayerUnit: Boolean,
+    canAttack: Boolean = false,
+    canMove: Boolean = false,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val borderColor by animateColorAsState(
         targetValue = when {
             isSelected -> Color.Yellow
-            isPlayerUnit && unit?.canAttackThisTurn == true -> Color.Green
+            isPlayerUnit && canAttack -> Color.Red.copy(alpha = 0.7f)
+            isPlayerUnit && canMove -> Color.Blue.copy(alpha = 0.7f)
+            isPlayerUnit -> Color.Green
             else -> Color.Gray
         }
     )
 
     val borderWidth = if (isSelected) 3.dp else 1.dp
 
-    // Pulsating animation for cards that can attack
+    // Pulsating animation for cards that can take actions
     val pulseMagnitude by animateFloatAsState(
-        targetValue = if (isPlayerUnit && unit?.canAttackThisTurn == true && !isSelected) 1.1f else 1.0f,
+        targetValue = if (isPlayerUnit && (canAttack || canMove) && !isSelected) 1.1f else 1.0f,
         animationSpec = infiniteRepeatable(
             animation = tween(500, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -77,7 +81,7 @@ fun UnitSlot(
 
     // Selection animation
     val scale by animateFloatAsState(
-        targetValue = if (isSelected) 1.1f else if (isPlayerUnit && unit?.canAttackThisTurn == true) pulseMagnitude else 1.0f,
+        targetValue = if (isSelected) 1.1f else if (isPlayerUnit && (canAttack || canMove)) pulseMagnitude else 1.0f,
         animationSpec = tween(200)
     )
 
@@ -86,8 +90,10 @@ fun UnitSlot(
         UnitEra.ANCIENT -> Color(0xFF8D6E63)    // Brown
         UnitEra.ROMAN -> Color(0xFFB71C1C)      // Dark Red
         UnitEra.MEDIEVAL -> Color(0xFF1A237E)   // Dark Blue
+        UnitEra.NAPOLEONIC -> Color(0xFF4A148C) // Purple
+        UnitEra.GREAT_WAR -> Color(0xFF3E2723)  // Dark Brown
         UnitEra.MODERN -> Color(0xFF212121)     // Dark Gray
-        else -> Color(0xFF424242) // Gray for empty slot
+        null -> Color(0xFF424242) // Gray for empty slot
     }
 
     // This outer box contains both the card and the indicators
@@ -128,6 +134,33 @@ fun UnitSlot(
                             .size(50.dp)
                             .align(Alignment.Center)
                     )
+
+                    // Show action indicators for player units
+                    if (isPlayerUnit) {
+                        // Attack indicator
+                        if (canAttack) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopCenter)
+                                    .padding(top = 4.dp)
+                                    .size(14.dp)
+                                    .background(Color.Red, CircleShape)
+                                    .border(0.5.dp, Color.White, CircleShape)
+                            )
+                        }
+
+                        // Movement indicator
+                        if (canMove) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .padding(bottom = 4.dp)
+                                    .size(14.dp)
+                                    .background(Color.Blue, CircleShape)
+                                    .border(0.5.dp, Color.White, CircleShape)
+                            )
+                        }
+                    }
                 }
             } else {
                 // Empty slot
@@ -189,6 +222,7 @@ fun UnitSlot(
                     fontSize = 12.sp
                 )
             }
+
             // Taunt indicator
             if (unit.hasTaunt) {
                 Box(
@@ -203,6 +237,26 @@ fun UnitSlot(
                     Icon(
                         painter = painterResource(R.drawable.baseline_shield_24),
                         contentDescription = "Taunt",
+                        tint = Color.White,
+                        modifier = Modifier.size(12.dp)
+                    )
+                }
+            }
+
+            // Charge indicator
+            if (unit.hasCharge) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(4.dp)
+                        .size(18.dp)
+                        .background(Color(0xFFFFC107), CircleShape)
+                        .border(1.dp, Color.White, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.attack_cavalry),
+                        contentDescription = "Charge",
                         tint = Color.White,
                         modifier = Modifier.size(12.dp)
                     )

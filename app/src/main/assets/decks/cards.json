@@ -1,0 +1,172 @@
+[
+  {
+    "id": 1,
+    "name": "Roman Legionary",
+    "description": "Disciplined infantry unit with shield wall formation",
+    "manaCost": 3,
+    "imagePath": "unit_roman_legionary",
+    "type": "unit",
+    "attack": 3,
+    "health": 4,
+    "maxHealth": 4,
+    "unitType": "INFANTRY",
+    "unitEra": "ROMAN",
+    "abilities": [],
+    "hasCharge": false,
+    "hasTaunt": true
+  },
+  {
+    "id": 2,
+    "name": "Medieval Knight",
+    "description": "Heavily armored cavalry unit with powerful charge",
+    "manaCost": 5,
+    "imagePath": "unit_medieval_knight",
+    "type": "unit",
+    "attack": 5,
+    "health": 5,
+    "maxHealth": 5,
+    "unitType": "CAVALRY",
+    "unitEra": "MEDIEVAL",
+    "abilities": [
+      {
+        "abilityType": "charge"
+      }
+    ],
+    "hasCharge": true,
+    "hasTaunt": false
+  },
+  {
+    "id": 3,
+    "name": "Greek Archer",
+    "description": "Ranged unit with precision attacks",
+    "manaCost": 2,
+    "imagePath": "unit_greek_archer",
+    "type": "unit",
+    "attack": 2,
+    "health": 2,
+    "maxHealth": 2,
+    "unitType": "MISSILE",
+    "unitEra": "ANCIENT",
+    "abilities": [],
+    "hasCharge": false,
+    "hasTaunt": false
+  },
+  {
+    "id": 4,
+    "name": "Napoleonic Cannon",
+    "description": "Powerful artillery with area damage",
+    "manaCost": 6,
+    "imagePath": "unit_napoleonic_cannon",
+    "type": "unit",
+    "attack": 4,
+    "health": 4,
+    "maxHealth": 4,
+    "unitType": "ARTILLERY",
+    "unitEra": "NAPOLEONIC",
+    "abilities": [],
+    "hasCharge": false,
+    "hasTaunt": false
+  },
+  {
+    "id": 5,
+    "name": "Modern Tank",
+    "description": "Armored vehicle with devastating firepower",
+    "manaCost": 8,
+    "imagePath": "unit_modern_tank",
+    "type": "unit",
+    "attack": 7,
+    "health": 8,
+    "maxHealth": 8,
+    "unitType": "ARTILLERY",
+    "unitEra": "MODERN",
+    "abilities": [],
+    "hasCharge": false,
+    "hasTaunt": true
+  },
+  {
+    "id": 6,
+    "name": "Firebolt",
+    "description": "Deal 3 damage to a target unit",
+    "manaCost": 2,
+    "imagePath": "tactic_firebolt",
+    "type": "tactic",
+    "effectType": "direct_damage",
+    "effectValue": 3
+  },
+  {
+    "id": 7,
+    "name": "Healing Potion",
+    "description": "Restore 4 health to a friendly unit",
+    "manaCost": 2,
+    "imagePath": "tactic_healing_potion",
+    "type": "tactic",
+    "effectType": "heal",
+    "effectValue": 4
+  },
+  {
+    "id": 8,
+    "name": "Meteor Strike",
+    "description": "Deal 2 damage to all units in a 3x3 area",
+    "manaCost": 6,
+    "imagePath": "tactic_meteor_strike",
+    "type": "tactic",
+    "effectType": "area_effect",
+    "effectValue": 2
+  },
+  {
+    "id": 9,
+    "name": "Battle Cry",
+    "description": "Increase a unit's attack by 2",
+    "manaCost": 3,
+    "imagePath": "tactic_battle_cry",
+    "type": "tactic",
+    "effectType": "buff_attack",
+    "effectValue": 2
+  },
+  {
+    "id": 10,
+    "name": "Great War Soldier",
+    "description": "Trench warfare specialist",
+    "manaCost": 3,
+    "imagePath": "unit_ww1_soldier",
+    "type": "unit",
+    "attack": 3,
+    "health": 3,
+    "maxHealth": 3,
+    "unitType": "INFANTRY",
+    "unitEra": "GREAT_WAR",
+    "abilities": [],
+    "hasCharge": false,
+    "hasTaunt": false
+  },
+  {
+    "id": 11,
+    "name": "Egyptian Chariot",
+    "description": "Fast desert raider with multiple attacks",
+    "manaCost": 4,
+    "imagePath": "unit_egyptian_chariot",
+    "type": "unit",
+    "attack": 3,
+    "health": 3,
+    "maxHealth": 3,
+    "unitType": "CAVALRY",
+    "unitEra": "ANCIENT",
+    "abilities": [
+      {
+        "abilityType": "charge"
+      }
+    ],
+    "hasCharge": true,
+    "hasTaunt": false
+  },
+  {
+    "id": 12,
+    "name": "Reinforcements",
+    "description": "Draw two cards from your deck",
+    "manaCost": 4,
+    "imagePath": "tactic_reinforcements",
+    "type": "tactic",
+    "effectType": "draw_cards",
+    "effectValue": 2
+  }
+]

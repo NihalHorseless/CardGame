@@ -6,34 +6,65 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cardgame.data.enum.GameState
+import com.example.cardgame.data.enum.InteractionMode
 import com.example.cardgame.data.enum.UnitType
 import com.example.cardgame.data.model.card.Card
 import com.example.cardgame.data.model.card.Deck
-import com.example.cardgame.data.model.card.EnhancedTacticCard
 import com.example.cardgame.data.model.card.UnitCard
-import com.example.cardgame.data.model.formation.Formation
 import com.example.cardgame.data.repository.CardRepository
 import com.example.cardgame.game.GameManager
+import com.example.cardgame.game.PlayerContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
-
     private val _gameManager = GameManager()
     val gameManager: GameManager get() = _gameManager
 
-    // UI States - same as before
+    // Get contexts for the player and opponent
+    private val _playerContext get() = _gameManager.getPlayerContextById(0)
+    val playerContext: PlayerContext get() = _playerContext
+
+    private val _opponentContext get() = _gameManager.getPlayerContextById(1)
+    val opponentContext: PlayerContext get() = _opponentContext
+
+    // Available decks
+    private val _availableDecks = mutableStateOf<List<String>>(emptyList())
+    val availableDecks: State<List<String>> = _availableDecks
+
+    // Selected decks
+    private val _selectedPlayerDeck = mutableStateOf<String?>(null)
+    val selectedPlayerDeck: State<String?> = _selectedPlayerDeck
+
+    private val _selectedOpponentDeck = mutableStateOf<String?>(null)
+    val selectedOpponentDeck: State<String?> = _selectedOpponentDeck
+
+    // Basic game state
     private val _playerHandState = mutableStateOf<List<Card>>(_gameManager.players[0].hand)
     val playerHandState: State<List<Card>> = _playerHandState
 
-    private val _playerBoardState = mutableStateOf(getPlayerBoardUnits(0))
-    val playerBoardState: State<List<UnitCard?>> = _playerBoardState
+    private val _gameBoardState = mutableStateOf<Array<Array<UnitCard?>>>(
+        Array(_gameManager.gameBoard.rows) {
+            arrayOfNulls(_gameManager.gameBoard.columns)
+        }
+    )
+    val gameBoardState: State<Array<Array<UnitCard?>>> = _gameBoardState
 
-    private val _opponentBoardState = mutableStateOf(getPlayerBoardUnits(1))
-    val opponentBoardState: State<List<UnitCard?>> = _opponentBoardState
+    // Selected cell on the unified board
+    private val _selectedCell = mutableStateOf<Pair<Int, Int>?>(null)
+    val selectedCell: State<Pair<Int, Int>?> = _selectedCell
 
-    private val _selectedUnitPosition = mutableIntStateOf(-1)
-    val selectedUnitPosition: State<Int> = _selectedUnitPosition
+    // Valid move destinations for the selected unit
+    private val _validMoveDestinations = mutableStateOf<List<Pair<Int, Int>>>(emptyList())
+    val validMoveDestinations: State<List<Pair<Int, Int>>> = _validMoveDestinations
+
+    // Valid attack targets for the selected unit
+    private val _validAttackTargets = mutableStateOf<List<Pair<Int, Int>>>(emptyList())
+    val validAttackTargets: State<List<Pair<Int, Int>>> = _validAttackTargets
+
+    // Current interaction mode
+    private val _interactionMode = mutableStateOf(InteractionMode.DEFAULT)
+    val interactionMode: State<InteractionMode> = _interactionMode
 
     private val _playerMana = mutableIntStateOf(0)
     val playerMana: State<Int> = _playerMana
@@ -56,27 +87,37 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
     private val _statusMessage = mutableStateOf("")
     val statusMessage: State<String> = _statusMessage
 
-    // Card play animation states
+    // Animation states
     private val _isCardAnimationVisible = mutableStateOf(false)
     val isCardAnimationVisible: State<Boolean> = _isCardAnimationVisible
 
     private val _cardAnimationPosition = mutableStateOf(Pair(0f, 0f))
     val cardAnimationPosition: State<Pair<Float, Float>> = _cardAnimationPosition
 
-    // Animation states
+    // Attack animation states
+    private val _isSimpleAttackVisible = mutableStateOf(false)
+    val isSimpleAttackVisible: State<Boolean> = _isSimpleAttackVisible
 
-    private val _playerMaxHealth = mutableIntStateOf(30)
-    val playerMaxHealth: State<Int> = _playerMaxHealth
+    private val _attackingUnitType = mutableStateOf(UnitType.INFANTRY)
+    val attackingUnitType: State<UnitType> = _attackingUnitType
 
-    private val _isAttackAnimationVisible = mutableStateOf(false)
-    val isAttackAnimationVisible: State<Boolean> = _isAttackAnimationVisible
+    private val _attackTargetPosition = mutableStateOf(Pair(0f, 0f))
+    val attackTargetPosition: State<Pair<Float, Float>> = _attackTargetPosition
 
-    private val _attackerPosition = mutableStateOf(Pair(0f, 0f))
-    val attackerPosition: State<Pair<Float, Float>> = _attackerPosition
+    // Movement animation state
+    private val _isUnitMovingAnimation = mutableStateOf(false)
+    val isUnitMovingAnimation: State<Boolean> = _isUnitMovingAnimation
 
-    private val _targetPosition = mutableStateOf(Pair(0f, 0f))
-    val targetPosition: State<Pair<Float, Float>> = _targetPosition
+    private val _moveStartPosition = mutableStateOf(Pair(0f, 0f))
+    val moveStartPosition: State<Pair<Float, Float>> = _moveStartPosition
 
+    private val _moveEndPosition = mutableStateOf(Pair(0f, 0f))
+    val moveEndPosition: State<Pair<Float, Float>> = _moveEndPosition
+
+    private val _movingUnitType = mutableStateOf(UnitType.INFANTRY)
+    val movingUnitType: State<UnitType> = _movingUnitType
+
+    // Damage animation
     private val _isDamageNumberVisible = mutableStateOf(false)
     val isDamageNumberVisible: State<Boolean> = _isDamageNumberVisible
 
@@ -89,58 +130,73 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
     private val _isHealingEffect = mutableStateOf(false)
     val isHealingEffect: State<Boolean> = _isHealingEffect
 
-    private val _isCardFlipping = mutableStateOf(false)
-    val isCardFlipping: State<Boolean> = _isCardFlipping
-
-    private val _isSimpleAttackVisible = mutableStateOf(false)
-    val isSimpleAttackVisible: State<Boolean> = _isSimpleAttackVisible
-
-    private val _attackingUnitType = mutableStateOf(UnitType.INFANTRY)
-    val attackingUnitType: State<UnitType> = _attackingUnitType
-
-    private val _attackTargetPosition = mutableStateOf(Pair(0f, 0f))
-    val attackTargetPosition: State<Pair<Float, Float>> = _attackTargetPosition
-
-    // Tracking slot positions for animations
-    private val slotPositions = mutableMapOf<Pair<Int, Boolean>, Pair<Float, Float>>()
-
-    fun registerSlotPosition(playerIndex: Int, slotIndex: Int, x: Float, y: Float) {
-        slotPositions[Pair(slotIndex, playerIndex == 0)] = Pair(x, y)
-    }
-
-
-    // Win Conditions
+    // Win conditions
     private val _isGameOver = mutableStateOf(false)
     val isGameOver: State<Boolean> = _isGameOver
 
     private val _isPlayerWinner = mutableStateOf(false)
     val isPlayerWinner: State<Boolean> = _isPlayerWinner
 
-    // Available decks
-    private val _availableDecks = mutableStateOf<List<String>>(emptyList())
-    val availableDecks: State<List<String>> = _availableDecks
-
-    // Not Used Yet
-    private val _isDeckShuffleVisible = mutableStateOf(false)
-    val isDeckShuffleVisible: State<Boolean> = _isDeckShuffleVisible
-
-    private val _currentTacticalCard = mutableStateOf<EnhancedTacticCard?>(null)
-    val currentTacticalCard: State<EnhancedTacticCard?> = _currentTacticalCard
-
-    private val _isTacticalCardAnimationVisible = mutableStateOf(false)
-    val isTacticalCardAnimationVisible: State<Boolean> = _isTacticalCardAnimationVisible
-
-    private val _lastAttackDamage = mutableIntStateOf(0)
-    val lastAttackDamage: State<Int> = _lastAttackDamage
-
-    private val _opponentMaxHealth = mutableIntStateOf(30)
-    val opponentMaxHealth: State<Int> = _opponentMaxHealth
+    // Position tracking for animations
+    private val cellPositions = mutableMapOf<Pair<Int, Int>, Pair<Float, Float>>()
 
     init {
+        // Load available decks when ViewModel is created
         loadAvailableDecks()
     }
 
-    fun startGame(playerDeckName: String = "player_deck", opponentDeckName: String = "medieval_deck") {
+    /**
+     * Loads the list of available decks from the CardRepository
+     */
+    private fun loadAvailableDecks() {
+        viewModelScope.launch {
+            val deckNames = cardRepository.getAvailableDeckNames()
+            _availableDecks.value = deckNames
+
+            // Set default selections if decks are available
+            if (deckNames.isNotEmpty()) {
+                // Take the first deck for player and second for opponent by default
+                _selectedPlayerDeck.value = deckNames.firstOrNull()
+                _selectedOpponentDeck.value = deckNames.getOrNull(1) ?: deckNames.firstOrNull()
+            }
+        }
+    }
+
+    /**
+     * Sets the selected deck for the player
+     */
+    fun setPlayerDeck(deckName: String) {
+        _selectedPlayerDeck.value = deckName
+    }
+
+    /**
+     * Sets the selected deck for the opponent
+     */
+    fun setOpponentDeck(deckName: String) {
+        _selectedOpponentDeck.value = deckName
+    }
+
+    /**
+     * Gets detailed information about a specific deck
+     */
+    fun getDeckInfo(deckName: String): Deck? {
+        return cardRepository.loadDeck(deckName)
+    }
+
+    fun registerCellPosition(row: Int, col: Int, x: Float, y: Float) {
+        cellPositions[Pair(row, col)] = Pair(x, y)
+    }
+
+    fun startGame() {
+        // Check if decks are selected
+        val playerDeckName = _selectedPlayerDeck.value
+        val opponentDeckName = _selectedOpponentDeck.value
+
+        if (playerDeckName == null || opponentDeckName == null) {
+            _statusMessage.value = "Please select decks for both players"
+            return
+        }
+
         // Reset game over state
         _isGameOver.value = false
 
@@ -148,8 +204,13 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
         val playerDeck = cardRepository.loadDeck(playerDeckName)
         val opponentDeck = cardRepository.loadDeck(opponentDeckName)
 
-        if (playerDeck == null || opponentDeck == null) {
-            _statusMessage.value = "Failed to load decks"
+        if (playerDeck == null) {
+            _statusMessage.value = "Failed to load player deck: $playerDeckName"
+            return
+        }
+
+        if (opponentDeck == null) {
+            _statusMessage.value = "Failed to load opponent deck: $opponentDeckName"
             return
         }
 
@@ -164,174 +225,343 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
         // Start the game
         _gameManager.startGame()
         updateAllGameStates()
-    }
-    fun getDeckInfo(deckName: String): Deck? {
-        return cardRepository.loadDeck(deckName)
+
+        _statusMessage.value = "Game started with decks: $playerDeckName vs $opponentDeckName"
     }
 
-    private fun loadAvailableDecks() {
-        viewModelScope.launch {
-            _availableDecks.value = cardRepository.getAvailableDeckNames()
+    /**
+     * Updates the board state representation from the GameManager
+     */
+    private fun updateBoardState() {
+        val boardRows = _gameManager.gameBoard.rows
+        val boardCols = _gameManager.gameBoard.columns
+
+        val boardState = Array(boardRows) { row ->
+            Array(boardCols) { col ->
+                _gameManager.gameBoard.getUnitAt(row, col)
+            }
         }
+
+        _gameBoardState.value = boardState
     }
 
+    /**
+     * Updates all game state from the GameManager
+     */
+    private fun updateAllGameStates() {
+        val currentPlayer = _gameManager.turnManager.currentPlayer ?: return
 
-    private fun getPlayerBoardUnits(playerIndex: Int): List<UnitCard?> {
-        val player = _gameManager.players[playerIndex]
-        return (0 until player.board.maxSize).map { position ->
-            player.board.getUnitAt(position)
-        }
+        // Update hand
+        _playerHandState.value = _gameManager.players[0].hand
+
+        // Update board
+        updateBoardState()
+
+        // Update player stats
+        _playerMana.intValue = _gameManager.players[0].currentMana
+        _playerMaxMana.intValue = _gameManager.players[0].maxMana
+        _playerHealth.intValue = _gameManager.players[0].health
+        _opponentHealth.intValue = _gameManager.players[1].health
+
+        // Update turn state
+        _isPlayerTurn.value = currentPlayer.id == 0
+        _gameState.value = _gameManager.gameState
+
+        // Reset selection state
+        _selectedCell.value = null
+        _validMoveDestinations.value = emptyList()
+        _validAttackTargets.value = emptyList()
+        _interactionMode.value = InteractionMode.DEFAULT
+
+        // Check for game over
+        checkGameOver()
     }
 
-    fun playCard(cardIndex: Int, targetPosition: Int? = null) {
+    /**
+     * Handles clicking on a cell in the unified board
+     */
+    /**
+     * Handles clicking on a cell in the unified board with direct interaction style
+     */
+    fun onCellClick(row: Int, col: Int) {
         if (!_isPlayerTurn.value) return
 
-        val player = _gameManager.players[0]
+        val clickedUnit = _gameManager.gameBoard.getUnitAt(row, col)
+        val unitOwner = clickedUnit?.let { _gameManager.gameBoard.getUnitOwner(it) }
 
-        // Check if card can be played
-        if (cardIndex >= player.hand.size || cardIndex < 0) return
-        if (player.hand[cardIndex].manaCost > player.currentMana) {
-            _statusMessage.value = "Not enough mana"
-            return
-        }
+        // If no unit is selected yet, and player clicks on their own unit
+        if (_selectedCell.value == null && clickedUnit != null && unitOwner == 0) {
+            // Select the unit and immediately show movement and attack options
+            _selectedCell.value = Pair(row, col)
 
-        // Determine board position
-        val position = targetPosition ?: player.board.getFirstEmptyPosition()
-        if (position == -1) {
-            _statusMessage.value = "Board is full"
-            return
-        }
+            // Show valid attack targets if unit can attack
+            if (clickedUnit.canAttackThisTurn) {
+                _validAttackTargets.value = playerContext.getValidAttackTargets(row, col, _gameManager)
+            } else {
+                _validAttackTargets.value = emptyList()
+            }
 
-        // Get animation target position
-        val boardPos = slotPositions[Pair(position, true)]
+            // Show valid movement destinations if unit can move
+            if (playerContext.canUnitMove(row, col, _gameManager)) {
+                _validMoveDestinations.value = playerContext.getValidMoveDestinations(row, col, _gameManager)
+                _statusMessage.value = "Select a destination to move to, or a target to attack."
+            } else {
+                _validMoveDestinations.value = emptyList()
 
-        if (boardPos != null) {
-            // Set up animation
-            _cardAnimationPosition.value = boardPos
-            _isCardAnimationVisible.value = true
-
-            // Actually play the card after animation
-            viewModelScope.launch {
-                delay(300) // Wait for animation
-                _isCardAnimationVisible.value = false
-
-                // Now actually play the card
-                val isCardPlayed = player.playCard(cardIndex, _gameManager, position)
-                if (isCardPlayed) {
-                    _statusMessage.value = "Card played successfully"
-                    updateAllGameStates()
+                if (clickedUnit.canAttackThisTurn) {
+                    _statusMessage.value = "Select a target to attack."
                 } else {
-                    _statusMessage.value = "Cannot play this card"
+                    _statusMessage.value = "This unit has already acted this turn."
                 }
             }
-        } else {
-            // Fallback if position isn't registered - just play without animation
-            val isCardPlayed = player.playCard(cardIndex, _gameManager, targetPosition)
-            if (isCardPlayed) {
-                _statusMessage.value = "Card played successfully"
+        }
+        // If a unit is selected and player clicks on a valid move destination
+        else if (_selectedCell.value != null && Pair(row, col) in _validMoveDestinations.value) {
+            val (selectedRow, selectedCol) = _selectedCell.value!!
+            executeMove(selectedRow, selectedCol, row, col)
+        }
+        // If a unit is selected and player clicks on a valid attack target
+        else if (_selectedCell.value != null && Pair(row, col) in _validAttackTargets.value) {
+            val (selectedRow, selectedCol) = _selectedCell.value!!
+            executeAttack(selectedRow, selectedCol, row, col)
+        }
+        // If player clicks on another of their units, select that unit instead
+        else if (clickedUnit != null && unitOwner == 0) {
+            // Clear previous selection
+            _selectedCell.value = null
+            _validMoveDestinations.value = emptyList()
+            _validAttackTargets.value = emptyList()
+
+            // Select the new unit (call onCellClick recursively)
+            onCellClick(row, col)
+        }
+        // If player clicks elsewhere, clear selection
+        else {
+            _selectedCell.value = null
+            _validMoveDestinations.value = emptyList()
+            _validAttackTargets.value = emptyList()
+            _statusMessage.value = ""
+        }
+    }
+
+    /**
+     * Execute a movement action
+     */
+    private fun executeMove(fromRow: Int, fromCol: Int, toRow: Int, toCol: Int) {
+        val unit = _gameManager.gameBoard.getUnitAt(fromRow, fromCol) ?: return
+
+        // Get start and end positions for animation
+        val startPos = cellPositions[Pair(fromRow, fromCol)] ?: return
+        val endPos = cellPositions[Pair(toRow, toCol)] ?: return
+
+        // Set up movement animation
+        _moveStartPosition.value = startPos
+        _moveEndPosition.value = endPos
+        _movingUnitType.value = unit.unitType
+        _isUnitMovingAnimation.value = true
+
+        // Execute the movement after animation
+        viewModelScope.launch {
+            delay(500) // Animation duration
+            _isUnitMovingAnimation.value = false
+
+            val moveResult = playerContext.moveUnit(fromRow, fromCol, toRow, toCol, _gameManager)
+
+            if (moveResult) {
+                _statusMessage.value = "Unit moved successfully."
+
+                // Update the selected cell to the new position
+                _selectedCell.value = Pair(toRow, toCol)
+
+                // Clear movement destinations since unit has moved
+                _validMoveDestinations.value = emptyList()
+
+                // If the unit can still attack, show attack targets
+                if (unit.canAttackThisTurn) {
+                    _validAttackTargets.value = playerContext.getValidAttackTargets(toRow, toCol, _gameManager)
+                    _statusMessage.value = "Select a target to attack or click elsewhere to cancel."
+                } else {
+                    _validAttackTargets.value = emptyList()
+
+                    // Auto-deselect if no further actions are possible
+                    _selectedCell.value = null
+                }
+
                 updateAllGameStates()
             } else {
-                _statusMessage.value = "Cannot play this card"
+                _statusMessage.value = "Move failed."
+                _selectedCell.value = null
+                _validMoveDestinations.value = emptyList()
+                _validAttackTargets.value = emptyList()
             }
         }
     }
 
-    private fun handleCardPlayResult(isCardPlayed: Boolean) {
-        if (isCardPlayed) {
-            _statusMessage.value = "Card played successfully"
-            updateAllGameStates()
-        } else {
-            _statusMessage.value = "Cannot play this card"
-        }
-    }
+    // Other methods remain the same...
 
-
-    fun attackEnemyUnit(targetPosition: Int) {
-        if (!_isPlayerTurn.value || _selectedUnitPosition.intValue == -1) return
-
-        val attacker = _gameManager.players[0].board.getUnitAt(_selectedUnitPosition.intValue)
-        val target = _gameManager.players[1].board.getUnitAt(targetPosition)
-
-        if (attacker != null && target != null) {
-            // Check for taunt units
-            if (_gameManager.players[1].board.hasTauntUnit() && !target.hasTaunt) {
-                _statusMessage.value = "You must attack a unit with Taunt first!"
-                return
-            }
-
-            // Find target position for animation using the position map
-            val targetPos = slotPositions[Pair(targetPosition, false)]
-
-            if (targetPos != null) {
-                // Start attack animation
-                _attackingUnitType.value = attacker.unitType
-                _attackTargetPosition.value = targetPos
-                _isSimpleAttackVisible.value = true
-
-                // Attack logic after animation
-                viewModelScope.launch {
-                    // Wait for attack animation
-                    delay(800)
-                    _isSimpleAttackVisible.value = false
-
-                    // Show damage number
-                    _damageToShow.intValue = attacker.attack
-                    _damagePosition.value = targetPos
-                    _isHealingEffect.value = false
-                    _isDamageNumberVisible.value = true
-
-                    // Wait for damage number
-                    delay(800)
-                    _isDamageNumberVisible.value = false
-
-                    // Perform the actual attack
-                    val attackResult = attacker.attackUnit(target, _gameManager)
-                    if (attackResult) {
-                        _statusMessage.value = "Attack successful!"
-                        _selectedUnitPosition.intValue = -1
-                        updateAllGameStates()
-                    } else {
-                        _statusMessage.value = "Cannot attack with this unit"
-                    }
-                }
-            } else {
-                // Fallback if position tracking failed
-                _statusMessage.value = "Position tracking failed - try again"
-            }
-        }
-    }
-
-    private var opponentPortraitPosition = Pair(0f, 0f)
-    private var playerPortraitPosition = Pair(0f, 0f)
-
-    fun registerOpponentPortraitPosition(x: Float, y: Float) {
-        // Store the opponent portrait position for direct attacks
-        opponentPortraitPosition = Pair(x, y)
-    }
-    fun registerPlayerPortraitPosition(x: Float, y: Float) {
-        // Store the player portrait position for AI attacks
-        playerPortraitPosition = Pair(x, y)
-    }
     /**
-     * Attack the opponent directly
+     * Update UI state when unit is selected
      */
-    fun attackOpponentDirectly() {
-        if (!_isPlayerTurn.value || _selectedUnitPosition.intValue == -1) return
+    private fun updateUnitSelectionState(row: Int, col: Int) {
+        val unit = _gameManager.gameBoard.getUnitAt(row, col) ?: return
 
-        val attacker = _gameManager.players[0].board.getUnitAt(_selectedUnitPosition.intValue)
+        // Show valid movement destinations if unit can move
+        if (playerContext.canUnitMove(row, col, _gameManager)) {
+            _validMoveDestinations.value = playerContext.getValidMoveDestinations(row, col, _gameManager)
+        } else {
+            _validMoveDestinations.value = emptyList()
+        }
 
-        if (attacker != null) {
-            // Check for taunt
-            if (_gameManager.players[1].board.hasTauntUnit()) {
-                _statusMessage.value = "You must attack a unit with Taunt first!"
-                return
+        // Show valid attack targets if unit can attack
+        if (unit.canAttackThisTurn) {
+            _validAttackTargets.value = playerContext.getValidAttackTargets(row, col, _gameManager)
+        } else {
+            _validAttackTargets.value = emptyList()
+        }
+    }
+
+    /**
+     * Handle cell click when in default interaction mode
+     */
+    private fun handleDefaultModeClick(row: Int, col: Int, clickedUnit: UnitCard?, unitOwner: Int?) {
+        when {
+            // Click on own unit - select it and show options
+            clickedUnit != null && unitOwner == 0 -> {
+                _selectedCell.value = Pair(row, col)
+
+                // Check if unit can attack
+                if (clickedUnit.canAttackThisTurn) {
+                    _validAttackTargets.value = playerContext.getValidAttackTargets(row, col, _gameManager)
+                } else {
+                    _validAttackTargets.value = emptyList()
+                }
+
+                // Check if unit can move
+                if (playerContext.canUnitMove(row, col, _gameManager)) {
+                    _validMoveDestinations.value = playerContext.getValidMoveDestinations(row, col, _gameManager)
+                    _statusMessage.value = "Unit selected. Click 'Move' or 'Attack' button."
+                } else {
+                    _validMoveDestinations.value = emptyList()
+                    _statusMessage.value = "Unit selected. This unit has already moved."
+                }
             }
 
-            // Use the registered opponent portrait position
-            val targetPos = opponentPortraitPosition
+            // Click on enemy unit - if we have a unit selected, try to attack
+            clickedUnit != null && unitOwner == 1 && _selectedCell.value != null -> {
+                val (selectedRow, selectedCol) = _selectedCell.value!!
+                val attackerUnit = _gameManager.gameBoard.getUnitAt(selectedRow, selectedCol)
 
+                if (attackerUnit != null && Pair(row, col) in _validAttackTargets.value) {
+                    executeAttack(selectedRow, selectedCol, row, col)
+                } else {
+                    _statusMessage.value = "Cannot attack that target."
+                }
+            }
+
+            // Click on empty cell - deselect
+            else -> {
+                _selectedCell.value = null
+                _validMoveDestinations.value = emptyList()
+                _validAttackTargets.value = emptyList()
+                _statusMessage.value = ""
+            }
+        }
+    }
+
+    /**
+     * Handle cell click when in unit attacking mode
+     */
+    private fun handleAttackModeClick(row: Int, col: Int) {
+        val selectedCell = _selectedCell.value ?: return
+
+        // Check if the clicked cell is a valid attack target
+        if (Pair(row, col) in _validAttackTargets.value) {
+            executeAttack(selectedCell.first, selectedCell.second, row, col)
+        } else {
+            // Cancel attack mode
+            _interactionMode.value = InteractionMode.DEFAULT
+            _statusMessage.value = "Attack canceled."
+        }
+    }
+
+    /**
+     * Handle cell click when in unit moving mode
+     */
+    private fun handleMoveModeClick(row: Int, col: Int) {
+        val selectedCell = _selectedCell.value ?: return
+
+        // Check if the clicked cell is a valid movement destination
+        if (Pair(row, col) in _validMoveDestinations.value) {
+            executeMove(selectedCell.first, selectedCell.second, row, col)
+        } else {
+            // Cancel move mode
+            _interactionMode.value = InteractionMode.DEFAULT
+            _statusMessage.value = "Move canceled."
+        }
+    }
+
+    /**
+     * Handle cell click when in card targeting mode
+     */
+    private fun handleCardTargetingModeClick(row: Int, col: Int) {
+        // This would be implemented when card targeting is added
+        _interactionMode.value = InteractionMode.DEFAULT
+    }
+
+    /**
+     * Switch to movement mode for the selected unit
+     */
+    fun enterMoveMode() {
+        if (!_isPlayerTurn.value) return
+        if (_selectedCell.value == null) return
+
+        val (row, col) = _selectedCell.value!!
+        val unit = _gameManager.gameBoard.getUnitAt(row, col) ?: return
+
+        if (playerContext.canUnitMove(row, col, _gameManager)) {
+            _interactionMode.value = InteractionMode.UNIT_MOVING
+            _validMoveDestinations.value = playerContext.getValidMoveDestinations(row, col, _gameManager)
+            _statusMessage.value = "Select a destination to move to."
+        } else {
+            _statusMessage.value = "This unit cannot move."
+        }
+    }
+
+    /**
+     * Switch to attack mode for the selected unit
+     */
+    fun enterAttackMode() {
+        if (!_isPlayerTurn.value) return
+        if (_selectedCell.value == null) return
+
+        val (row, col) = _selectedCell.value!!
+        val unit = _gameManager.gameBoard.getUnitAt(row, col) ?: return
+
+        if (unit.canAttackThisTurn) {
+            _interactionMode.value = InteractionMode.UNIT_ATTACKING
+            _validAttackTargets.value = playerContext.getValidAttackTargets(row, col, _gameManager)
+            _statusMessage.value = "Select a target to attack."
+        } else {
+            _statusMessage.value = "This unit cannot attack."
+        }
+    }
+
+    /**
+     * Execute a movement action
+     */
+
+
+    /**
+     * Execute an attack between units with animations
+     */
+    private fun executeAttack(attackerRow: Int, attackerCol: Int, targetRow: Int, targetCol: Int) {
+        // Get target position for animation
+        val targetPos = cellPositions[Pair(targetRow, targetCol)]
+        val attackerUnit = _gameManager.gameBoard.getUnitAt(attackerRow, attackerCol) ?: return
+
+        if (targetPos != null) {
             // Start attack animation
-            _attackingUnitType.value = attacker.unitType
+            _attackingUnitType.value = attackerUnit.unitType
             _attackTargetPosition.value = targetPos
             _isSimpleAttackVisible.value = true
 
@@ -342,7 +572,7 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
                 _isSimpleAttackVisible.value = false
 
                 // Show damage number
-                _damageToShow.intValue = attacker.attack
+                _damageToShow.intValue = attackerUnit.attack
                 _damagePosition.value = targetPos
                 _isHealingEffect.value = false
                 _isDamageNumberVisible.value = true
@@ -351,35 +581,178 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
                 delay(800)
                 _isDamageNumberVisible.value = false
 
-                // Perform the actual attack
-                val attackResult = attacker.attackOpponent(_gameManager)
-                if (attackResult) {
-                    _statusMessage.value = "Direct attack on opponent successful!"
-                    _selectedUnitPosition.intValue = -1
-                    updateAllGameStates()
+                // Perform the actual attack using contexts
+                val attackResult = _gameManager.executeAttackWithContext(
+                    playerContext,
+                    attackerRow,
+                    attackerCol,
+                    targetRow,
+                    targetCol
+                )
 
-                    // Check for game over
-                    checkGameOver()
+                if (attackResult) {
+                    _statusMessage.value = "Attack successful!"
+                    _selectedCell.value = null
+                    _validAttackTargets.value = emptyList()
+                    _validMoveDestinations.value = emptyList()
+                    _interactionMode.value = InteractionMode.DEFAULT
+                    updateAllGameStates()
                 } else {
                     _statusMessage.value = "Cannot attack with this unit"
+                    _interactionMode.value = InteractionMode.DEFAULT
                 }
+            }
+        } else {
+            // Fallback if position tracking failed
+            val attackResult = _gameManager.executeAttackWithContext(
+                playerContext,
+                attackerRow,
+                attackerCol,
+                targetRow,
+                targetCol
+            )
+
+            if (attackResult) {
+                _statusMessage.value = "Attack successful!"
+                _selectedCell.value = null
+                _validAttackTargets.value = emptyList()
+                _validMoveDestinations.value = emptyList()
+                _interactionMode.value = InteractionMode.DEFAULT
+                updateAllGameStates()
+            } else {
+                _statusMessage.value = "Cannot attack with this unit"
+                _interactionMode.value = InteractionMode.DEFAULT
             }
         }
     }
 
-    fun selectUnitForAttack(position: Int) {
-        if (!_isPlayerTurn.value) return
+    /**
+     * Attack the opponent directly
+     */
+    fun attackOpponentDirectly() {
+        if (!_isPlayerTurn.value || _selectedCell.value == null) return
 
-        val unit = _gameManager.players[0].board.getUnitAt(position)
-        if (unit != null && unit.canAttackThisTurn) {
-            _selectedUnitPosition.intValue = position
-            _statusMessage.value = "Select a target to attack"
+        val (row, col) = _selectedCell.value!!
+
+        if (playerContext.canAttackOpponentDirectly(row, col, _gameManager)) {
+            // Execute direct attack
+            val attackResult = _gameManager.executeDirectAttackWithContext(playerContext, row, col)
+
+            if (attackResult) {
+                _statusMessage.value = "Direct attack successful!"
+                _selectedCell.value = null
+                _validAttackTargets.value = emptyList()
+                _validMoveDestinations.value = emptyList()
+                updateAllGameStates()
+            } else {
+                _statusMessage.value = "Cannot attack opponent directly"
+            }
         } else {
-            _statusMessage.value = "This unit cannot attack"
+            _statusMessage.value = "This unit cannot reach the opponent"
         }
     }
 
+    /**
+     * Play a card from the player's hand to a specific position on the board
+     */
+    fun playCard(cardIndex: Int, targetRow: Int, targetCol: Int) {
+        if (!_isPlayerTurn.value) return
+
+        // Check if card can be played
+        if (cardIndex >= playerContext.player.hand.size || cardIndex < 0) return
+        if (playerContext.player.hand[cardIndex].manaCost > playerContext.player.currentMana) {
+            _statusMessage.value = "Not enough mana"
+            return
+        }
+
+        // Check if the position is valid
+        if (!_gameManager.gameBoard.isPositionEmpty(targetRow, targetCol)) {
+            _statusMessage.value = "This position is already occupied"
+            return
+        }
+
+        // Check if the position is in the player's deployment zone
+        if (!playerContext.isInDeploymentZone(targetRow, targetCol)) {
+            _statusMessage.value = "You can only deploy in your zone"
+            return
+        }
+
+        // Get animation target position
+        val cellPos = cellPositions[Pair(targetRow, targetCol)]
+
+        if (cellPos != null) {
+            // Set up animation
+            _cardAnimationPosition.value = cellPos
+            _isCardAnimationVisible.value = true
+
+            // Actually play the card after animation
+            viewModelScope.launch {
+                delay(300) // Wait for animation
+                _isCardAnimationVisible.value = false
+
+                // Now actually play the card using the context
+                val isCardPlayed = playerContext.playCard(
+                    cardIndex,
+                    _gameManager,
+                    Pair(targetRow, targetCol)
+                )
+
+                if (isCardPlayed) {
+                    _statusMessage.value = "Card played successfully"
+                    updateAllGameStates()
+                } else {
+                    _statusMessage.value = "Cannot play this card"
+                }
+            }
+        } else {
+            // Fallback if position isn't registered - just play without animation
+            val isCardPlayed = playerContext.playCard(
+                cardIndex,
+                _gameManager,
+                Pair(targetRow, targetCol)
+            )
+
+            if (isCardPlayed) {
+                _statusMessage.value = "Card played successfully"
+                updateAllGameStates()
+            } else {
+                _statusMessage.value = "Cannot play this card"
+            }
+        }
+    }
+
+    /**
+     * Convenience method to play a card without specifying a target
+     * It will find the first available position in the player's deployment zone
+     */
+    fun playCard(cardIndex: Int) {
+        if (!_isPlayerTurn.value) return
+
+        // Check if card can be played
+        if (cardIndex >= playerContext.player.hand.size || cardIndex < 0) return
+        if (playerContext.player.hand[cardIndex].manaCost > playerContext.player.currentMana) {
+            _statusMessage.value = "Not enough mana"
+            return
+        }
+
+        // Find an empty position in the player's deployment zone
+        val position = playerContext.getFirstEmptyPosition()
+
+        if (position == null) {
+            _statusMessage.value = "No space to deploy"
+            return
+        }
+
+        // Play the card to this position
+        playCard(cardIndex, position.first, position.second)
+    }
+
     fun endTurn() {
+        _selectedCell.value = null
+        _validMoveDestinations.value = emptyList()
+        _validAttackTargets.value = emptyList()
+        _interactionMode.value = InteractionMode.DEFAULT
+
         _gameManager.turnManager.endTurn()
         updateAllGameStates()
 
@@ -391,68 +764,110 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
 
     private fun simulateAITurn() {
         viewModelScope.launch {
-            val ai = _gameManager.players[1]
+            // AI plays cards
+            delay(500) // Think time
 
-            // AI tries to play cards with animation
-            delay(500) // Animation delay
-
-            // Try to play tactical cards first for visual effect
-            var cardPlayed = false
-            for (i in ai.hand.indices) {
-                val card = ai.hand[i]
-                if (card is EnhancedTacticCard) {
-                    _currentTacticalCard.value = card
-                    _isTacticalCardAnimationVisible.value = true
-
-                    delay(1500) // Wait for animation
-                    _isTacticalCardAnimationVisible.value = false
-
-                    // Now play the card
-                    if (ai.playCard(i, _gameManager)) {
-                        updateAllGameStates()
-                        cardPlayed = true
-                        break
-                    }
-                }
-            }
-
-            // If no tactical card was played, try unit cards
-            if (!cardPlayed) {
-                for (i in ai.hand.indices) {
-                    if (ai.playCard(i, _gameManager)) {
-                        updateAllGameStates()
-                        delay(500) // Animation delay between actions
-                        break
-                    }
-                }
-            }
-
-            // AI attacks with animation
-            delay(500)
-            val aiUnits = ai.board.getAllUnits()
-            val playerUnits = _gameManager.players[0].board.getAllUnits()
-
-            if (playerUnits.isNotEmpty()) {
-                for (aiUnit in aiUnits) {
-                    if (aiUnit.canAttackThisTurn) {
-                        val targetUnit = playerUnits.first()
-
-                        // Find positions for animation
-                        val aiUnitPosition = findUnitPosition(1, aiUnit)
-                        val playerUnitPosition = findUnitPosition(0, targetUnit)
-
-                        if (aiUnitPosition != -1 && playerUnitPosition != -1) {
-                            // Record for animation
-                            _lastAttackDamage.intValue = aiUnit.attack
-
-                            // Trigger attack animation here if needed
-
-                            // Perform the attack
-                            aiUnit.attackUnit(targetUnit, _gameManager)
+            // Try to play a card
+            for (i in opponentContext.player.hand.indices) {
+                val card = opponentContext.player.hand[i]
+                if (card.manaCost <= opponentContext.player.currentMana) {
+                    val position = opponentContext.getFirstEmptyPosition()
+                    if (position != null) {
+                        val isCardPlayed = opponentContext.playCard(i, _gameManager, position)
+                        if (isCardPlayed) {
                             updateAllGameStates()
                             delay(500) // Animation delay
+                            break // Play one card per turn for simplicity
                         }
                     }
+                }
+            }
+
+            // AI moves units
+            delay(500)
+
+            // Get movable units
+            val movableUnits = opponentContext.getMovableUnits(_gameManager)
+
+            for (unit in movableUnits) {
+                val position = _gameManager.gameBoard.getUnitPosition(unit) ?: continue
+                val validMoves = _gameManager.getValidMoveDestinations(unit)
+
+                if (validMoves.isNotEmpty()) {
+                    // Simple AI strategy: move toward player's side
+                    val bestMove = validMoves.minByOrNull { it.first } // Move to lowest row (toward player)
+
+                    if (bestMove != null) {
+                        // Animate the move
+                        val startPos = cellPositions[position] ?: continue
+                        val endPos = cellPositions[bestMove] ?: continue
+
+                        _moveStartPosition.value = startPos
+                        _moveEndPosition.value = endPos
+                        _movingUnitType.value = unit.unitType
+                        _isUnitMovingAnimation.value = true
+
+                        delay(500) // Animation duration
+                        _isUnitMovingAnimation.value = false
+
+                        // Execute the move
+                        _gameManager.moveUnit(unit, bestMove.first, bestMove.second)
+                        updateAllGameStates()
+                        delay(300)
+                    }
+                }
+            }
+
+            // AI attacks
+            delay(500)
+
+            // Get all AI units
+            val aiUnits = opponentContext.units
+
+            // Try to attack with each unit
+            for (aiUnit in aiUnits.filter { it.canAttackThisTurn }) {
+                // Find the unit's position
+                val aiUnitPos = _gameManager.gameBoard.getUnitPosition(aiUnit) ?: continue
+
+                // Find a target (simple AI just attacks the first valid target it finds)
+                val validTargets = opponentContext.getValidAttackTargets(
+                    aiUnitPos.first,
+                    aiUnitPos.second,
+                    _gameManager
+                )
+
+                if (validTargets.isNotEmpty()) {
+                    val target = validTargets.first()
+
+                    // Execute the attack
+                    val targetPos = cellPositions[target] ?: continue
+
+                    // Animation
+                    _attackingUnitType.value = aiUnit.unitType
+                    _attackTargetPosition.value = targetPos
+                    _isSimpleAttackVisible.value = true
+
+                    delay(800)
+                    _isSimpleAttackVisible.value = false
+
+                    // Show damage number
+                    _damageToShow.intValue = aiUnit.attack
+                    _damagePosition.value = targetPos
+                    _isHealingEffect.value = false
+                    _isDamageNumberVisible.value = true
+
+                    delay(800)
+                    _isDamageNumberVisible.value = false
+
+                    // Execute attack
+                    _gameManager.executeAttack(aiUnit, target.first, target.second)
+                    updateAllGameStates()
+                    delay(300)
+                } else if (opponentContext.canAttackOpponentDirectly(aiUnitPos.first, aiUnitPos.second, _gameManager)) {
+                    // Direct attack on player
+                    _gameManager.executeDirectAttack(aiUnit, 0)
+                    updateAllGameStates()
+                    delay(500)
                 }
             }
 
@@ -463,37 +878,9 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
         }
     }
 
-    // Helper function to find a unit's position on the board
-    private fun findUnitPosition(playerIndex: Int, unit: UnitCard): Int {
-        val board = _gameManager.players[playerIndex].board
-        for (i in 0 until board.maxSize) {
-            if (board.getUnitAt(i) == unit) {
-                return i
-            }
-        }
-        return -1
-    }
-
-    private fun updateAllGameStates() {
-        val currentPlayer = _gameManager.turnManager.currentPlayer ?: return
-
-        _playerHandState.value = _gameManager.players[0].hand
-        _playerBoardState.value = getPlayerBoardUnits(0)
-        _opponentBoardState.value = getPlayerBoardUnits(1)
-
-        _playerMana.intValue = _gameManager.players[0].currentMana
-        _playerMaxMana.intValue = _gameManager.players[0].maxMana
-
-        _playerHealth.intValue = _gameManager.players[0].health
-        _opponentHealth.intValue = _gameManager.players[1].health
-
-        _isPlayerTurn.value = currentPlayer == _gameManager.players[0]
-        _gameState.value = _gameManager.gameState
-
-        // Check for game over after state update
-        checkGameOver()
-    }
-
+    /**
+     * Check for game over condition
+     */
     private fun checkGameOver() {
         // Game is over if any player's health is 0 or less
         val playerIsDead = _gameManager.players[0].health <= 0
@@ -510,64 +897,4 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
             _gameManager.gameState = GameState.FINISHED
         }
     }
-
-
-    // Get active formations for visualization
-    fun getPlayerActiveFormations(): List<Formation> {
-        return _gameManager.formationManager.getActiveFormations(_gameManager.players[0])
-    }
-
-    fun getOpponentActiveFormations(): List<Formation> {
-        return _gameManager.formationManager.getActiveFormations(_gameManager.players[1])
-    }
-
-    // Methods for tactical card targeting UI
-    fun playTacticalCardWithTarget(cardIndex: Int, targetPosition: Int) {
-        if (!_isPlayerTurn.value) return
-
-        val player = _gameManager.players[0]
-        val card = player.hand.getOrNull(cardIndex) as? EnhancedTacticCard ?: return
-
-        _currentTacticalCard.value = card
-        _isTacticalCardAnimationVisible.value = true
-
-        viewModelScope.launch {
-            delay(1500) // Wait for animation
-            _isTacticalCardAnimationVisible.value = false
-
-            // Play the card with target
-            val isCardPlayed = player.playCard(cardIndex, _gameManager, targetPosition)
-            handleCardPlayResult(isCardPlayed)
-        }
-    }
-
-    // Handle card draw animation
-    fun animateCardDraw() {
-        viewModelScope.launch {
-            // Logic for card draw animation
-            // This could trigger UI animations when new cards are added to hand
-            updateAllGameStates()
-        }
-    }
-
-    fun GameViewModel.getPlayerActiveFormations(): List<Formation> {
-        return _gameManager.formationManager.getActiveFormations(_gameManager.players[0])
-    }
-
-    /**
-     * Gets the list of active formations for the opponent.
-     */
-    fun GameViewModel.getOpponentActiveFormations(): List<Formation> {
-        return _gameManager.formationManager.getActiveFormations(_gameManager.players[1])
-    }
-
-    /**
-     * Initialize the game with formations.
-     */
-    fun initializeFormations() {
-        _gameManager.formationManager.initializePredefinedFormations()
-    }
-
-
 }
-

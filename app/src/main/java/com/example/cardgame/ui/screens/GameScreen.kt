@@ -3,16 +3,18 @@ package com.example.cardgame.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.boundsInWindow
@@ -20,40 +22,41 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import com.example.cardgame.ui.components.board.BoardWithFormationTracking
+import com.example.cardgame.ui.components.board.GameBoard
 import com.example.cardgame.ui.components.board.GameStatusBar
 import com.example.cardgame.ui.components.board.PlayerPortrait
+import com.example.cardgame.ui.components.effects.BoardHighlights
 import com.example.cardgame.ui.components.effects.CardSlotAnimation
 import com.example.cardgame.ui.components.effects.DamageNumberEffect
 import com.example.cardgame.ui.components.effects.SimpleAttackAnimation
+import com.example.cardgame.ui.components.effects.UnitMovementAnimation
 import com.example.cardgame.ui.components.player.PlayerHand
 import com.example.cardgame.ui.viewmodel.GameViewModel
+
 
 @Composable
 fun GameScreen(
     viewModel: GameViewModel,
     onNavigateToMain: () -> Unit
 ) {
-    // Player Properties
+    // Game state
     val playerHand by viewModel.playerHandState
-    val playerBoard by viewModel.playerBoardState
+    val gameBoardState by viewModel.gameBoardState
+    val selectedCell by viewModel.selectedCell
     val playerMana by viewModel.playerMana
     val playerMaxMana by viewModel.playerMaxMana
     val playerHealth by viewModel.playerHealth
-    val selectedUnit by viewModel.selectedUnitPosition
-
-    // Opponent Properties
-    val opponentBoard by viewModel.opponentBoardState
     val opponentHealth by viewModel.opponentHealth
-
-    // Game state
-    val gameState by viewModel.gameState
     val isGameOver by viewModel.isGameOver
     val isPlayerWinner by viewModel.isPlayerWinner
     val isPlayerTurn by viewModel.isPlayerTurn
     val statusMessage by viewModel.statusMessage
 
-    // Animation States
+    // Movement and attack highlighting
+    val validMoveDestinations by viewModel.validMoveDestinations
+    val validAttackTargets by viewModel.validAttackTargets
+
+    // Animation states
     val isSimpleAttackVisible by viewModel.isSimpleAttackVisible
     val attackingUnitType by viewModel.attackingUnitType
     val attackTargetPosition by viewModel.attackTargetPosition
@@ -61,10 +64,17 @@ fun GameScreen(
     val damageToShow by viewModel.damageToShow
     val damagePosition by viewModel.damagePosition
     val isHealingEffect by viewModel.isHealingEffect
-
-    // Card Play Positions
     val isCardAnimationVisible by viewModel.isCardAnimationVisible
     val cardAnimationPosition by viewModel.cardAnimationPosition
+
+    // Movement animation
+    val isUnitMovingAnimation by viewModel.isUnitMovingAnimation
+    val moveStartPosition by viewModel.moveStartPosition
+    val moveEndPosition by viewModel.moveEndPosition
+    val movingUnitType by viewModel.movingUnitType
+
+    // Map to store cell positions for animations
+    val cellPositionsMap = mutableMapOf<Pair<Int, Int>, Pair<Float, Float>>()
 
     LaunchedEffect(key1 = Unit) {
         viewModel.startGame()
@@ -76,7 +86,7 @@ fun GameScreen(
         if (isGameOver) {
             GameOverScreen(
                 isPlayerWinner = isPlayerWinner,
-                onReturnToMainMenu = { onNavigateToMain() }
+                onReturnToMainMenu = onNavigateToMain
             )
         } else {
             Column(
@@ -96,120 +106,126 @@ fun GameScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Opponent's portrait
-                PlayerPortrait(
-                    playerName = "Opponent",
-                    health = opponentHealth,
-                    maxHealth = viewModel.playerMaxHealth.value,
-                    isCurrentPlayer = !isPlayerTurn,
-                    isTargetable = selectedUnit != -1,
-                    onPortraitClick = { viewModel.attackOpponentDirectly() },
+                // Top row with portraits
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 16.dp)
-                        .onGloballyPositioned { coordinates ->
-                            // Register the center position of the opponent portrait
-                            val bounds = coordinates.boundsInWindow()
-                            val centerX = bounds.center.x
-                            val centerY = bounds.center.y
-                            viewModel.registerOpponentPortraitPosition(centerX, centerY)
-                        }
-                )
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Opponent's portrait
+                    PlayerPortrait(
+                        playerName = "Opponent",
+                        health = opponentHealth,
+                        maxHealth = 30,
+                        isCurrentPlayer = !isPlayerTurn,
+                        isTargetable = selectedCell != null &&
+                                viewModel.playerContext.canAttackOpponentDirectly(
+                                    selectedCell!!.first,
+                                    selectedCell!!.second,
+                                    viewModel.gameManager
+                                ),
+                        onPortraitClick = { viewModel.attackOpponentDirectly() },
+                        modifier = Modifier
+                            .onGloballyPositioned { coordinates ->
+                                // Register the center position of the opponent portrait
+                                val bounds = coordinates.boundsInWindow()
+                                val centerX = bounds.center.x
+                                val centerY = bounds.center.y
+                                // viewModel.registerOpponentPortraitPosition(centerX, centerY)
+                            }
+                    )
 
-                // Opponent's board
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    // Game status (turn, mana)
+                    GameStatusBar(
+                        playerMana = playerMana,
+                        playerMaxMana = playerMaxMana,
+                        isPlayerTurn = isPlayerTurn,
+                        onEndTurn = { viewModel.endTurn() }
+                    )
+                }
+
+                // Unified game board
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(horizontal = 8.dp)
+                        .padding(horizontal = 16.dp)
                 ) {
-                    val activeOpponentFormations = viewModel.getOpponentActiveFormations()
-                    BoardWithFormationTracking(
-                        units = opponentBoard,
-                        selectedUnit = selectedUnit,
-                        isPlayerBoard = false,
-                        onUnitClick = { position ->
-                            if (selectedUnit != -1) {
-                                viewModel.attackEnemyUnit(position)
+                    GameBoard(
+                        gameBoard = viewModel.gameManager.gameBoard,
+                        gameManager = viewModel.gameManager,
+                        selectedCell = selectedCell,
+                        currentPlayerId = 0, // Player's ID
+                        onCellClick = { row, col ->
+                            viewModel.onCellClick(row, col)
+                        },
+                        registerCellPosition = { row, col, x, y ->
+                            viewModel.registerCellPosition(row, col, x, y)
+                            cellPositionsMap[Pair(row, col)] = Pair(x, y)
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
+
+                    // Highlight valid moves and attack targets
+                    if (validMoveDestinations.isNotEmpty() || validAttackTargets.isNotEmpty()) {
+                        BoardHighlights(
+                            validMoveDestinations = validMoveDestinations,
+                            validAttackTargets = validAttackTargets,
+                            cellPositions = cellPositionsMap,
+                            modifier = Modifier.fillMaxSize().zIndex(5f)
+                        )
+                    }
+                }
+
+                // Bottom row with player's portrait and hand
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Player's portrait
+                    PlayerPortrait(
+                        playerName = "Player",
+                        health = playerHealth,
+                        maxHealth = 30,
+                        isCurrentPlayer = isPlayerTurn,
+                        isTargetable = false,
+                        onPortraitClick = { /* No action needed */ },
+                        modifier = Modifier
+                            .onGloballyPositioned { coordinates ->
+                                // Register the center position of the player portrait
+                                val bounds = coordinates.boundsInWindow()
+                                val centerX = bounds.center.x
+                                val centerY = bounds.center.y
+                                // viewModel.registerPlayerPortraitPosition(centerX, centerY)
+                            }
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    // Player's hand
+                    PlayerHand(
+                        cards = playerHand,
+                        playerMana = playerMana,
+                        onCardClick = { index ->
+                            // If a cell is selected for deployment, play the card there
+                            if (selectedCell != null) {
+                                viewModel.playCard(index, selectedCell!!.first, selectedCell!!.second)
+                            } else {
+                                // Otherwise, play to first available spot
+                                viewModel.playCard(index)
                             }
                         },
-                        registerPositions = { index, x, y ->
-                            viewModel.registerSlotPosition(1, index, x, y)
-                        },
-                        activeFormations = activeOpponentFormations,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(120.dp)
-                            .padding(4.dp)
+                        modifier = Modifier.weight(1f)
                     )
                 }
-
-                GameStatusBar(
-                    playerMana = playerMana,
-                    playerMaxMana = playerMaxMana,
-                    isPlayerTurn = isPlayerTurn,
-                    onEndTurn = { viewModel.endTurn() }
-                )
-
-                // Player's board
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 8.dp)
-                ) {
-                    val activePlayerFormations = viewModel.getPlayerActiveFormations()
-                    BoardWithFormationTracking(
-                        units = playerBoard,
-                        selectedUnit = selectedUnit,
-                        isPlayerBoard = true,
-                        onUnitClick = { position -> viewModel.selectUnitForAttack(position) },
-                        registerPositions = { index, x, y ->
-                            viewModel.registerSlotPosition(0, index, x, y)
-                        },
-                        activeFormations = activePlayerFormations,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(120.dp)
-                            .padding(4.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Player's hand
-                PlayerHand(
-                    cards = playerHand,
-                    playerMana = playerMana,
-                    onCardClick = { index -> viewModel.playCard(index) }
-                )
-
-                // Player's portrait
-                PlayerPortrait(
-                    playerName = "Player",
-                    health = playerHealth,
-                    maxHealth = viewModel.playerMaxHealth.value,
-                    isCurrentPlayer = isPlayerTurn,
-                    isTargetable = false,
-                    onPortraitClick = { /* No action needed */ },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 16.dp)
-                        .onGloballyPositioned { coordinates ->
-                            // Register the center position of the player portrait
-                            val bounds = coordinates.boundsInWindow()
-                            val centerX = bounds.center.x
-                            val centerY = bounds.center.y
-                            viewModel.registerPlayerPortraitPosition(centerX, centerY)
-                        }
-                )
             }
         }
 
-        // Animation layers - these are drawn on top of everything else
-        // Place them inside the main Box but outside the Column and GameOverScreen
-        // Use zIndex to ensure they appear on top
-
+        // Animation layers
         // Attack animation
         if (isSimpleAttackVisible) {
             SimpleAttackAnimation(
@@ -235,6 +251,7 @@ fun GameScreen(
             )
         }
 
+        // Card play animation
         if (isCardAnimationVisible) {
             CardSlotAnimation(
                 isVisible = isCardAnimationVisible,
@@ -244,6 +261,19 @@ fun GameScreen(
                 modifier = Modifier.fillMaxSize().zIndex(10f)
             )
         }
+
+        // Unit movement animation
+        if (isUnitMovingAnimation) {
+            UnitMovementAnimation(
+                isVisible = isUnitMovingAnimation,
+                unitType = movingUnitType,
+                startX = moveStartPosition.first,
+                startY = moveStartPosition.second,
+                endX = moveEndPosition.first,
+                endY = moveEndPosition.second,
+                onAnimationComplete = { /* Handled by ViewModel */ },
+                modifier = Modifier.fillMaxSize().zIndex(10f)
+            )
+        }
     }
 }
-

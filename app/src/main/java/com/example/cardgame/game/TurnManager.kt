@@ -4,6 +4,10 @@ class TurnManager(private val gameManager: GameManager) {
     var currentPlayer: Player? = null
     var turnNumber: Int = 0
 
+    // Keep track of the current player context
+    private val currentPlayerContext: PlayerContext?
+        get() = currentPlayer?.let { gameManager.getPlayerContext(it) }
+
     fun startGame() {
         turnNumber = 1
         currentPlayer = gameManager.players[0]
@@ -19,9 +23,13 @@ class TurnManager(private val gameManager: GameManager) {
             player.drawCard()
 
             // Reset units for attack
-            player.board.getAllUnits().forEach { unit ->
+            val context = gameManager.getPlayerContext(player)
+            context.units.forEach { unit ->
                 unit.canAttackThisTurn = true
             }
+
+            // Reset movement for this player's units
+            gameManager.movementManager.resetMovement(player.id)
         }
     }
 

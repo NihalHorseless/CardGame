@@ -24,79 +24,59 @@ class UnitCard(
 ) : Card(id, name, description, manaCost, imagePath) {
 
     override fun play(player: Player, gameManager: GameManager, targetPosition: Int?): Boolean {
+        // This method is now handled differently in the Player class
+        // We'll use a simplified version for compatibility
+
         if (player.currentMana < manaCost) return false
-        if (player.board.isFull()) return false
+
+        val boardPosition = if (targetPosition != null) {
+            // Convert the linear position to a 2D position
+            // This is just a simple conversion for backward compatibility
+            val row = targetPosition / gameManager.gameBoard.columns
+            val col = targetPosition % gameManager.gameBoard.columns
+            Pair(row, col)
+        } else {
+            gameManager.gameBoard.getFirstEmptyPositionInDeploymentZone(player.id) ?: return false
+        }
+
+        // Find empty position in player's deployment zone
+        val (row, col) = boardPosition
+
+        if (!gameManager.gameBoard.isPositionEmpty(row, col)) return false
 
         player.currentMana -= manaCost
         player.hand.remove(this)
 
-        val position = targetPosition ?: player.board.getFirstEmptyPosition()
-
         // Create a clone of the card to place on the board
         val boardCard = this.clone()
 
-        // Place the cloned card on the board
-        player.board.placeUnit(boardCard, position)
+        // Place on the board
+        gameManager.gameBoard.placeUnit(boardCard, row, col, player.id)
 
         // Initialize attack availability based on charge ability
         boardCard.canAttackThisTurn = boardCard.hasCharge
-
-        // Apply formation effects
-        gameManager.formationManager.applyFormationEffects(player)
 
         return true
     }
 
     /**
-     * Attack an enemy unit
+     * Attack an enemy unit at the specified position
      */
-    fun attackUnit(target: UnitCard, gameManager: GameManager): Boolean {
-        if (!canAttackThisTurn) return false
-
-        // Check for taunt units
-        val opponent = gameManager.getOpponentOf(getOwningPlayer(gameManager)) ?: return false
-        if (shouldAttackTauntFirst(opponent, target)) {
-            return false // Must attack a taunt unit
-        }
-
-        // Deal damage to target
-        target.takeDamage(attack)
-        // Take damage from target
-        this.takeDamage(target.attack)
-
-        // Check for destructions
-        gameManager.checkForDestroyedUnits()
-
-        // Unit has attacked this turn
-        canAttackThisTurn = false
-
-        return true
+    fun attackUnit(targetRow: Int, targetCol: Int, gameManager: GameManager): Boolean {
+        return gameManager.executeAttack(this, targetRow, targetCol)
     }
 
     /**
      * Attack the enemy player directly
      */
     fun attackOpponent(gameManager: GameManager): Boolean {
-        if (!canAttackThisTurn) return false
+        // Determine the owner of this unit
+        val ownerId = gameManager.gameBoard.getUnitOwner(this) ?: return false
 
-        // Get the opponent
-        val opponent = gameManager.getOpponentOf(getOwningPlayer(gameManager)) ?: return false
+        // Get the opponent's player ID
+        val opponentId = if (ownerId == 0) 1 else 0
 
-        // Check for taunt - cannot attack opponent directly if there are taunt units
-        if (opponent.board.hasTauntUnit()) {
-            return false
-        }
-
-        // Deal damage to opponent
-        opponent.takeDamage(attack)
-
-        // Unit has attacked this turn
-        canAttackThisTurn = false
-
-        // Check win condition
-        gameManager.checkWinCondition()
-
-        return true
+        return gameManager.executeDirectAttack(this, opponentId)
     }
 
     fun takeDamage(amount: Int) {
@@ -109,17 +89,6 @@ class UnitCard(
     }
 
     fun isDead(): Boolean = health <= 0
-
-    private fun getOwningPlayer(gameManager: GameManager): Player? {
-        return gameManager.players.find { player ->
-            player.board.getAllUnits().contains(this)
-        }
-    }
-
-    private fun shouldAttackTauntFirst(opponent: Player, target: UnitCard): Boolean {
-        // Check if there are any taunt units that must be attacked first
-        return opponent.board.hasTauntUnit() && !target.hasTaunt
-    }
 
     fun clone(): UnitCard {
         return UnitCard(
