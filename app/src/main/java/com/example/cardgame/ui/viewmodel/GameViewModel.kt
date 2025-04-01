@@ -140,6 +140,19 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
     // Position tracking for animations
     private val cellPositions = mutableMapOf<Pair<Int, Int>, Pair<Float, Float>>()
 
+
+    // Selected card index for deployment
+    private val _selectedCardIndex = mutableStateOf<Int?>(null)
+    val selectedCardIndex: State<Int?> = _selectedCardIndex
+
+    // Valid deployment positions when a card is selected
+    private val _validDeploymentPositions = mutableStateOf<List<Pair<Int, Int>>>(emptyList())
+    val validDeploymentPositions: State<List<Pair<Int, Int>>> = _validDeploymentPositions
+
+    // Current player ID (default to player 0)
+    private val _currentPlayerId = mutableIntStateOf(0)
+    val currentPlayerId: State<Int> = _currentPlayerId
+
     init {
         // Load available decks when ViewModel is created
         loadAvailableDecks()
@@ -228,6 +241,89 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
 
         _statusMessage.value = "Game started with decks: $playerDeckName vs $opponentDeckName"
     }
+    /**
+     * Gets valid deployment positions for a player based on their ID.
+     * Player 0 can deploy in the bottom two rows (3-4 in a 5x5 board)
+     * Player 1 can deploy in the top two rows (0-1 in a 5x5 board)
+     */
+    fun getValidDeploymentPositions(playerId: Int): List<Pair<Int, Int>> {
+        val validPositions = mutableListOf<Pair<Int, Int>>()
+
+        // Define row ranges based on player ID
+        val rowRange = if (playerId == 0) {
+            (gameManager.gameBoard.rows - 2) until gameManager.gameBoard.rows // Bottom two rows for player 0
+        } else {
+            0 until 2 // Top two rows for player 1
+        }
+
+        // Add all empty cells in the valid rows
+        for (row in rowRange) {
+            for (col in 0 until gameManager.gameBoard.columns) {
+                if (gameManager.gameBoard.getUnitAt(row, col) == null) {
+                    validPositions.add(Pair(row, col))
+                }
+            }
+        }
+
+        return validPositions
+    }
+    /**
+     * Handle card selection from hand
+     */
+    fun onCardSelected(cardIndex: Int) {
+        if (!_isPlayerTurn.value) return
+
+        val hand = _playerHandState.value
+        if (cardIndex < 0 || cardIndex >= hand.size) return
+
+        val card = hand[cardIndex]
+
+        // Only handle unit cards for now
+        if (card is UnitCard) {
+            // Check if player has enough mana
+            if (_playerMana.value < card.manaCost) {
+                _statusMessage.value = "Not enough mana!"
+                return
+            }
+
+            // Set interaction mode to card targeting
+            _interactionMode.value = InteractionMode.CARD_TARGETING
+            _selectedCardIndex.value = cardIndex
+
+            // Get valid deployment positions
+            _validDeploymentPositions.value = getValidDeploymentPositions(0) // 0 is player ID
+
+            _statusMessage.value = "Select a position to deploy the unit"
+        } else {
+            // For now, just play non-unit cards automatically
+            playCard(cardIndex)
+        }
+    }
+    private fun deployCardAtPosition(row: Int, col: Int) {
+        val cardIndex = _selectedCardIndex.value ?: return
+
+        if (cardIndex < 0 || cardIndex >= _playerHandState.value.size) return
+
+        // Check if position is valid
+        if (!_validDeploymentPositions.value.contains(Pair(row, col))) {
+            _statusMessage.value = "Cannot deploy here"
+            return
+        }
+
+        // Play the card at this position
+        playCard(cardIndex, row, col)
+
+        // Reset deployment state
+        _selectedCardIndex.value = null
+        _validDeploymentPositions.value = emptyList()
+        _interactionMode.value = InteractionMode.DEFAULT
+    }
+    fun cancelDeployment() {
+        _selectedCardIndex.value = null
+        _validDeploymentPositions.value = emptyList()
+        _interactionMode.value = InteractionMode.DEFAULT
+        _statusMessage.value = "Deployment cancelled"
+    }
 
     /**
      * Updates the board state representation from the GameManager
@@ -286,10 +382,21 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
     fun onCellClick(row: Int, col: Int) {
         if (!_isPlayerTurn.value) return
 
+        // If in deployment mode, try to place the unit
+        if (_interactionMode.value == InteractionMode.CARD_TARGETING) {
+            if (_validDeploymentPositions.value.contains(Pair(row, col))) {
+                deployCardAtPosition(row, col)
+            } else {
+                _statusMessage.value = "Cannot deploy unit at this position"
+            }
+            return
+        }
+
+        // Otherwise handle normal unit selection/movement/attack
         val clickedUnit = _gameManager.gameBoard.getUnitAt(row, col)
         val unitOwner = clickedUnit?.let { _gameManager.gameBoard.getUnitOwner(it) }
 
-        // If no unit is selected yet, and player clicks on their own unit
+        // Regular unit selection logic...
         if (_selectedCell.value == null && clickedUnit != null && unitOwner == 0) {
             // Select the unit and immediately show movement and attack options
             _selectedCell.value = Pair(row, col)
@@ -343,6 +450,7 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
             _statusMessage.value = ""
         }
     }
+
 
     /**
      * Execute a movement action

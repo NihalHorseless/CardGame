@@ -2,6 +2,7 @@ package com.example.cardgame.ui.components.player
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -36,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -58,6 +60,7 @@ import com.example.cardgame.ui.components.effects.CardWithHoverEffect
 fun PlayerHand(
     cards: List<Card>,
     playerMana: Int,
+    selectedCardIndex: Int? = null,  // Added parameter for selected card
     onCardClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -70,15 +73,16 @@ fun PlayerHand(
     ) {
         itemsIndexed(cards) { index, card ->
             val isPlayable = card.manaCost <= playerMana
+            val isSelected = index == selectedCardIndex
 
             // Card hover effect
             var isHovered by remember { mutableStateOf(false) }
             val scale by animateFloatAsState(
-                targetValue = if (isHovered) 1.1f else 1f,
+                targetValue = if (isHovered || isSelected) 1.1f else 1f,
                 animationSpec = tween(200)
             )
             val elevationDp by animateFloatAsState(
-                targetValue = if (isHovered) 16f else 4f,
+                targetValue = if (isHovered || isSelected) 16f else 4f,
                 animationSpec = tween(200)
             )
 
@@ -104,6 +108,7 @@ fun PlayerHand(
                 HandCard(
                     card = card,
                     isPlayable = isPlayable,
+                    isSelected = isSelected,  // Pass selection state
                     elevation = elevationDp.dp,
                     onClick = { onCardClick(index) }
                 )
@@ -119,6 +124,7 @@ fun PlayerHand(
 fun HandCard(
     card: Card,
     isPlayable: Boolean,
+    isSelected: Boolean = false,  // Added parameter for selection state
     elevation: Dp = 4.dp,
     onClick: () -> Unit
 ) {
@@ -144,6 +150,12 @@ fun HandCard(
             .height(140.dp)
             .shadow(
                 elevation = elevation,
+                shape = RoundedCornerShape(8.dp)
+            )
+            // Add a border if selected
+            .border(
+                width = if (isSelected) 2.dp else 0.dp,
+                color = if (isSelected) Color(0xFF4CAF50) else Color.Transparent,
                 shape = RoundedCornerShape(8.dp)
             )
             .clickable(enabled = isPlayable) { onClick() },
@@ -254,6 +266,19 @@ fun HandCard(
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp
+                    )
+                }
+            }
+
+            // Selection indicator
+            if (isSelected) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    // Draw a glowing effect around the card
+                    drawCircle(
+                        color = Color(0x334CAF50), // Semi-transparent green
+                        radius = 100f,
+                        center = center,
+                        blendMode = BlendMode.SrcOver
                     )
                 }
             }

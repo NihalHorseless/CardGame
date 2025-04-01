@@ -149,18 +149,20 @@ class GameManager {
         if (!attacker.canAttackThisTurn) return false
 
         // Check if target is protected by adjacent taunt units
-        // This is the main change - we now check if the unit is protected by taunt
         if (tauntManager.isProtectedByTaunt(targetUnit)) {
             return false // Cannot attack units protected by taunt
         }
 
-        // Check attack range (for now, just adjacent cells)
+        // Calculate Manhattan distance
         val (attackerRow, attackerCol) = attackerPos
         val manhattanDistance = Math.abs(attackerRow - targetRow) + Math.abs(attackerCol - targetCol)
 
-        // For basic implementation, only allow attacking adjacent units
-        // Could be expanded based on unit type (artillery could attack from distance, etc.)
-        return manhattanDistance == 1
+        // Get the attack range limits based on unit type
+        val minRange = movementManager.getMinAttackRange(attacker)
+        val maxRange = movementManager.getAttackRange(attacker)
+
+        // Check if the target is within attack range
+        return manhattanDistance >= minRange && manhattanDistance <= maxRange
     }
 
     /**
@@ -176,8 +178,17 @@ class GameManager {
 
         // Deal damage to target
         targetUnit.takeDamage(attacker.attack)
-        // Take damage from target
-        attacker.takeDamage(targetUnit.attack)
+
+        // Check if this is a ranged attack (based on Manhattan distance)
+        val attackerPos = gameBoard.getUnitPosition(attacker) ?: return false
+        val (attackerRow, attackerCol) = attackerPos
+        val manhattanDistance = Math.abs(attackerRow - targetRow) + Math.abs(attackerCol - targetCol)
+
+        // Only take counterattack damage if the attack is melee range (distance = 1)
+        if (manhattanDistance == 1) {
+            // Take damage from target (counterattack)
+            attacker.takeDamage(targetUnit.attack)
+        }
 
         // Check for destructions
         checkForDestroyedUnits()
@@ -186,6 +197,32 @@ class GameManager {
         attacker.canAttackThisTurn = false
 
         return true
+    }
+    /**
+     * Gets valid deployment positions for a player based on their ID.
+     * Player 0 can deploy in the first two rows (0-1)
+     * Player 1 can deploy in the last two rows (3-4 in a 5x5 board)
+     */
+    fun getValidDeploymentPositions(playerId: Int): List<Pair<Int, Int>> {
+        val validPositions = mutableListOf<Pair<Int, Int>>()
+
+        // Define row ranges based on player ID
+        val rowRange = if (playerId == 0) {
+            0 until 2 // First two rows for player 0
+        } else {
+            (gameBoard.rows - 2) until gameBoard.rows // Last two rows for player 1
+        }
+
+        // Add all empty cells in the valid rows
+        for (row in rowRange) {
+            for (col in 0 until gameBoard.columns) {
+                if (gameBoard.getUnitAt(row, col) == null) {
+                    validPositions.add(Pair(row, col))
+                }
+            }
+        }
+
+        return validPositions
     }
 
     /**
@@ -252,7 +289,7 @@ class GameManager {
         return movementManager.getValidMoveDestinations(unit)
     }
     /**
-     * Get all valid attack targets considering taunt protection
+     * Get all valid attack targets considering taunt protection and range
      */
     fun getValidAttackTargetsForUnit(unit: UnitCard): List<Pair<Int, Int>> {
         val unitPos = gameBoard.getUnitPosition(unit) ?: return emptyList()
@@ -265,21 +302,25 @@ class GameManager {
         // Get the opponent's player ID
         val opponentId = if (unitOwnerId == 0) 1 else 0
 
-        // Check adjacent cells for potential targets
-        val adjacentPositions = listOf(
-            Pair(row - 1, col), // above
-            Pair(row + 1, col), // below
-            Pair(row, col - 1), // left
-            Pair(row, col + 1)  // right
-        )
+        // Get the attack range based on unit type
+        val minRange = movementManager.getMinAttackRange(unit)
+        val maxRange = movementManager.getAttackRange(unit)
 
-        return adjacentPositions.filter { (targetRow, targetCol) ->
-            // Check if position is valid and has an enemy unit
-            if (targetRow < 0 || targetRow >= gameBoard.rows ||
-                targetCol < 0 || targetCol >= gameBoard.columns) {
-                return@filter false
+        // Generate all possible positions within attack range
+        val potentialTargets = mutableListOf<Pair<Int, Int>>()
+
+        // Check all positions within Manhattan distance between min and max range
+        for (targetRow in 0 until gameBoard.rows) {
+            for (targetCol in 0 until gameBoard.columns) {
+                val distance = Math.abs(row - targetRow) + Math.abs(col - targetCol)
+                if (distance >= minRange && distance <= maxRange) {
+                    potentialTargets.add(Pair(targetRow, targetCol))
+                }
             }
+        }
 
+        return potentialTargets.filter { (targetRow, targetCol) ->
+            // Check if position has an enemy unit
             val targetUnit = gameBoard.getUnitAt(targetRow, targetCol)
             if (targetUnit == null || gameBoard.getUnitOwner(targetUnit) != opponentId) {
                 return@filter false

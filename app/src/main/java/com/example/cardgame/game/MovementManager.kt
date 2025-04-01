@@ -23,6 +23,21 @@ class MovementManager(private val gameBoard: Board) {
         }
     }
 
+    fun getAttackRange(unit: UnitCard): Int {
+        return when (unit.unitType) {
+            UnitType.MISSILE -> 2
+            UnitType.ARTILLERY -> 3
+            else -> 1 // Infantry and Cavalry have melee range
+        }
+    }
+
+    fun getMinAttackRange(unit: UnitCard): Int {
+        return when (unit.unitType) {
+            UnitType.ARTILLERY -> 2 // Artillery can't attack adjacent units
+            else -> 1 // All other units can attack adjacent units
+        }
+    }
+
     /**
      * Reset movement for all units at the start of a player's turn
      */

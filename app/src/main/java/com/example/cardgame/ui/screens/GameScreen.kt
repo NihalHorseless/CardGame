@@ -9,6 +9,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,6 +26,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import com.example.cardgame.data.enum.InteractionMode
 import com.example.cardgame.ui.components.board.GameBoard
 import com.example.cardgame.ui.components.board.GameStatusBar
 import com.example.cardgame.ui.components.board.PlayerPortrait
@@ -72,6 +77,11 @@ fun GameScreen(
     val moveStartPosition by viewModel.moveStartPosition
     val moveEndPosition by viewModel.moveEndPosition
     val movingUnitType by viewModel.movingUnitType
+
+    // Deployment system states
+    val selectedCardIndex by viewModel.selectedCardIndex
+    val validDeploymentPositions by viewModel.validDeploymentPositions
+    val interactionMode by viewModel.interactionMode
 
     // Map to store cell positions for animations
     val cellPositionsMap = mutableMapOf<Pair<Int, Int>, Pair<Float, Float>>()
@@ -128,11 +138,9 @@ fun GameScreen(
                         onPortraitClick = { viewModel.attackOpponentDirectly() },
                         modifier = Modifier
                             .onGloballyPositioned { coordinates ->
-                                // Register the center position of the opponent portrait
                                 val bounds = coordinates.boundsInWindow()
                                 val centerX = bounds.center.x
                                 val centerY = bounds.center.y
-                                // viewModel.registerOpponentPortraitPosition(centerX, centerY)
                             }
                     )
 
@@ -158,6 +166,9 @@ fun GameScreen(
                         gameManager = viewModel.gameManager,
                         selectedCell = selectedCell,
                         currentPlayerId = 0, // Player's ID
+                        validDeploymentPositions = validDeploymentPositions,
+                        validMoveDestinations = validMoveDestinations,  // Pass move destinations
+                        validAttackTargets = validAttackTargets,       // Pass attack targets
                         onCellClick = { row, col ->
                             viewModel.onCellClick(row, col)
                         },
@@ -170,13 +181,17 @@ fun GameScreen(
 
                     // Highlight valid moves and attack targets
                     if (validMoveDestinations.isNotEmpty() || validAttackTargets.isNotEmpty()) {
+                        /*
                         BoardHighlights(
                             validMoveDestinations = validMoveDestinations,
                             validAttackTargets = validAttackTargets,
                             cellPositions = cellPositionsMap,
                             modifier = Modifier.fillMaxSize().zIndex(5f)
                         )
+
+                         */
                     }
+
                 }
 
                 // Bottom row with player's portrait and hand
@@ -194,14 +209,11 @@ fun GameScreen(
                         isCurrentPlayer = isPlayerTurn,
                         isTargetable = false,
                         onPortraitClick = { /* No action needed */ },
-                        modifier = Modifier
-                            .onGloballyPositioned { coordinates ->
-                                // Register the center position of the player portrait
-                                val bounds = coordinates.boundsInWindow()
-                                val centerX = bounds.center.x
-                                val centerY = bounds.center.y
-                                // viewModel.registerPlayerPortraitPosition(centerX, centerY)
-                            }
+                        modifier = Modifier.onGloballyPositioned { coordinates ->
+                            val bounds = coordinates.boundsInWindow()
+                            val centerX = bounds.center.x
+                            val centerY = bounds.center.y
+                        }
                     )
 
                     Spacer(modifier = Modifier.width(8.dp))
@@ -210,15 +222,8 @@ fun GameScreen(
                     PlayerHand(
                         cards = playerHand,
                         playerMana = playerMana,
-                        onCardClick = { index ->
-                            // If a cell is selected for deployment, play the card there
-                            if (selectedCell != null) {
-                                viewModel.playCard(index, selectedCell!!.first, selectedCell!!.second)
-                            } else {
-                                // Otherwise, play to first available spot
-                                viewModel.playCard(index)
-                            }
-                        },
+                        selectedCardIndex = selectedCardIndex,  // Pass selected card index
+                        onCardClick = { index -> viewModel.onCardSelected(index) },  // Use the new onCardSelected method
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -264,7 +269,7 @@ fun GameScreen(
 
         // Unit movement animation
         if (isUnitMovingAnimation) {
-            UnitMovementAnimation(
+        /*    UnitMovementAnimation(
                 isVisible = isUnitMovingAnimation,
                 unitType = movingUnitType,
                 startX = moveStartPosition.first,
@@ -274,6 +279,29 @@ fun GameScreen(
                 onAnimationComplete = { /* Handled by ViewModel */ },
                 modifier = Modifier.fillMaxSize().zIndex(10f)
             )
+
+         */
+        }
+
+        // Cancel button for deployment mode
+        if (interactionMode == InteractionMode.CARD_TARGETING) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+                    .zIndex(15f)
+            ) {
+                FloatingActionButton(
+                    onClick = { viewModel.cancelDeployment() },
+                    containerColor = Color.Red
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Cancel",
+                        tint = Color.White
+                    )
+                }
+            }
         }
     }
 }

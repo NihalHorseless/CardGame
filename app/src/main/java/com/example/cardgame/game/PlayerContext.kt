@@ -168,6 +168,12 @@ class PlayerContext(val player: Player, val gameBoard: Board) {
         // Use the new taunt-aware method in the GameManager
         return gameManager.getValidAttackTargetsForUnit(unit)
     }
+    /**
+     * Gets valid deployment positions for the current player.
+     */
+    fun getValidDeploymentPositions(gameManager: GameManager): List<Pair<Int, Int>> {
+        return gameManager.getValidDeploymentPositions(player.id)
+    }
 
     /**
      * Checks if a unit can perform a direct attack on the opponent.
