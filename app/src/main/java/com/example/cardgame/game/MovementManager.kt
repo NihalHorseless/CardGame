@@ -112,8 +112,8 @@ class MovementManager(private val gameBoard: Board) {
                     continue
                 }
 
-                // Skip if occupied
-                if (!gameBoard.isPositionEmpty(nextRow, nextCol)) {
+                // Skip if occupied by unit OR fortification
+                if (!gameBoard.isPositionCompletelyEmpty(nextRow, nextCol)) {
                     continue
                 }
 

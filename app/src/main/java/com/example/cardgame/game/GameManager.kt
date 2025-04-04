@@ -1,7 +1,10 @@
 package com.example.cardgame.game
 
+import com.example.cardgame.data.enum.FortificationType
 import com.example.cardgame.data.enum.GameState
+import com.example.cardgame.data.enum.UnitType
 import com.example.cardgame.data.model.abilities.TauntManager
+import com.example.cardgame.data.model.card.FortificationCard
 import com.example.cardgame.data.model.card.UnitCard
 import com.example.cardgame.data.model.formation.FormationManager
 
@@ -97,6 +100,9 @@ class GameManager {
             }
         }
 
+        // Also check for destroyed fortifications
+        checkForDestroyedFortifications()
+
         // Check win condition
         checkWinCondition()
     }
@@ -164,6 +170,55 @@ class GameManager {
         // Check if the target is within attack range
         return manhattanDistance >= minRange && manhattanDistance <= maxRange
     }
+    /**
+     * Gets the damage multiplier for an attack based on unit type matchups
+     * - Cavalry deals double damage to Missile and Artillery units
+     * - Infantry deals double damage to Cavalry
+     */
+    private fun getDamageMultiplier(attacker: UnitCard, defender: UnitCard): Float {
+        return when {
+            // Cavalry deals double damage to Missile and Artillery units
+            attacker.unitType == UnitType.CAVALRY &&
+                    (defender.unitType == UnitType.MISSILE || defender.unitType == UnitType.ARTILLERY) -> 2.0f
+
+            // Infantry deals double damage to Cavalry
+            attacker.unitType == UnitType.INFANTRY && defender.unitType == UnitType.CAVALRY -> 2.0f
+
+            // Normal damage for other matchups
+            else -> 1.0f
+        }
+    }
+    /**
+     * Calculate the actual damage to be dealt based on unit type matchups
+     */
+    private fun calculateDamage(attacker: UnitCard, defender: UnitCard): Int {
+        val baseAttack = attacker.attack
+        val multiplier = getDamageMultiplier(attacker, defender)
+
+        // Apply multiplier and round to nearest integer
+        return (baseAttack * multiplier).toInt()
+    }
+    /**
+     * Check if the attack will have a counter bonus (dealing extra damage)
+     */
+    fun hasCounterBonus(attacker: UnitCard, defender: UnitCard): Boolean {
+        return getDamageMultiplier(attacker, defender) > 1.0f
+    }
+    /**
+     * Get a description of why the counter bonus applies
+     */
+    fun getCounterDescription(attacker: UnitCard, defender: UnitCard): String? {
+        return when {
+            attacker.unitType == UnitType.CAVALRY &&
+                    (defender.unitType == UnitType.MISSILE || defender.unitType == UnitType.ARTILLERY) ->
+                "Cavalry is effective against ${defender.unitType.name.lowercase()} units!"
+
+            attacker.unitType == UnitType.INFANTRY && defender.unitType == UnitType.CAVALRY ->
+                "Infantry is effective against cavalry units!"
+
+            else -> null
+        }
+    }
 
     /**
      * Executes an attack between two units.
@@ -176,8 +231,11 @@ class GameManager {
 
         val targetUnit = gameBoard.getUnitAt(targetRow, targetCol) ?: return false
 
+        // Calculate damage with counter system
+        val damage = calculateDamage(attacker, targetUnit)
+
         // Deal damage to target
-        targetUnit.takeDamage(attacker.attack)
+        targetUnit.takeDamage(damage)
 
         // Check if this is a ranged attack (based on Manhattan distance)
         val attackerPos = gameBoard.getUnitPosition(attacker) ?: return false
@@ -186,8 +244,9 @@ class GameManager {
 
         // Only take counterattack damage if the attack is melee range (distance = 1)
         if (manhattanDistance == 1) {
-            // Take damage from target (counterattack)
-            attacker.takeDamage(targetUnit.attack)
+            // Take damage from target's counterattack - also apply counter system
+            val counterAttackDamage = calculateDamage(targetUnit, attacker)
+            attacker.takeDamage(counterAttackDamage)
         }
 
         // Check for destructions
@@ -197,6 +256,64 @@ class GameManager {
         attacker.canAttackThisTurn = false
 
         return true
+    }
+    fun executeFortificationAttack(fortification: FortificationCard, targetRow: Int, targetCol: Int): Boolean {
+        // Only towers can attack
+        if (fortification.fortType != FortificationType.TOWER) return false
+
+        // Check if fortification can attack this turn
+        if (!fortification.canAttackThisTurn) return false
+
+        // Get the fortification's position
+        val fortPos = gameBoard.getFortificationPosition(fortification) ?: return false
+        val (fortRow, fortCol) = fortPos
+
+        // Get fortification's owner
+        val fortOwner = gameBoard.getFortificationOwner(fortification) ?: return false
+
+        // Get the target unit
+        val targetUnit = gameBoard.getUnitAt(targetRow, targetCol)
+
+        // Can only attack enemy units
+        if (targetUnit == null) return false
+        val targetUnitOwner = gameBoard.getUnitOwner(targetUnit) ?: return false
+        if (targetUnitOwner == fortOwner) return false
+
+        // Check if target is in range (towers have range 2)
+        val distance = Math.abs(fortRow - targetRow) + Math.abs(fortCol - targetCol)
+        if (distance > 2) return false // Tower range is 2
+
+        // Deal damage to target (no counter-attack since fortifications are static)
+        targetUnit.takeDamage(fortification.attack)
+
+        // Fortification has attacked this turn
+        fortification.canAttackThisTurn = false
+
+        // Check for destroyed units
+        checkForDestroyedUnits()
+
+        return true
+    }
+    fun checkForDestroyedFortifications() {
+        // Find destroyed fortifications
+        val destroyedFortifications = mutableListOf<FortificationCard>()
+
+        for (row in 0 until gameBoard.rows) {
+            for (col in 0 until gameBoard.columns) {
+                val fortification = gameBoard.getFortificationAt(row, col)
+                if (fortification != null && fortification.isDestroyed()) {
+                    destroyedFortifications.add(fortification)
+                }
+            }
+        }
+
+        // Remove destroyed fortifications
+        destroyedFortifications.forEach { fortification ->
+            val position = gameBoard.getFortificationPosition(fortification)
+            if (position != null) {
+                gameBoard.removeFortification(position.first, position.second)
+            }
+        }
     }
     /**
      * Gets valid deployment positions for a player based on their ID.
@@ -208,15 +325,15 @@ class GameManager {
 
         // Define row ranges based on player ID
         val rowRange = if (playerId == 0) {
-            0 until 2 // First two rows for player 0
+            (gameBoard.rows - 2) until gameBoard.rows // Bottom two rows for player 0
         } else {
-            (gameBoard.rows - 2) until gameBoard.rows // Last two rows for player 1
+            0 until 2 // Top two rows for player 1
         }
 
-        // Add all empty cells in the valid rows
+        // Add all COMPLETELY empty cells in the valid rows
         for (row in rowRange) {
             for (col in 0 until gameBoard.columns) {
-                if (gameBoard.getUnitAt(row, col) == null) {
+                if (gameBoard.isPositionCompletelyEmpty(row, col)) {
                     validPositions.add(Pair(row, col))
                 }
             }

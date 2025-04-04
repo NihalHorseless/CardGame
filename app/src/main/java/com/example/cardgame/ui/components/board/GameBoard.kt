@@ -25,11 +25,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
+import com.example.cardgame.data.enum.FortificationType
+import com.example.cardgame.data.model.card.FortificationCard
 import com.example.cardgame.data.model.card.UnitCard
 import com.example.cardgame.game.Board
 import com.example.cardgame.game.GameManager
@@ -45,13 +50,13 @@ fun GameBoard(
     selectedCell: Pair<Int, Int>?,
     currentPlayerId: Int,
     validDeploymentPositions: List<Pair<Int, Int>> = emptyList(),
-    validMoveDestinations: List<Pair<Int, Int>> = emptyList(),  // Add this parameter
-    validAttackTargets: List<Pair<Int, Int>> = emptyList(),     // Add this parameter
+    validMoveDestinations: List<Pair<Int, Int>> = emptyList(),
+    validAttackTargets: List<Pair<Int, Int>> = emptyList(),
     onCellClick: (row: Int, col: Int) -> Unit,
     registerCellPosition: (row: Int, col: Int, x: Float, y: Float) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Pulsing animation for highlighting
+    // Animation state for pulsing effect
     val infiniteTransition = rememberInfiniteTransition()
     val pulseAlpha by infiniteTransition.animateFloat(
         initialValue = 0.4f,
@@ -98,10 +103,16 @@ fun GameBoard(
                     val unit = gameBoard.getUnitAt(row, col)
                     val unitOwner = unit?.let { gameBoard.getUnitOwner(it) }
                     val isPlayerUnit = unitOwner == currentPlayerId
+
+                    // Add fortification handling
+                    val fortification = gameBoard.getFortificationAt(row, col)
+                    val fortificationOwner = fortification?.let { gameBoard.getFortificationOwner(it) }
+                    val isPlayerFortification = fortificationOwner == currentPlayerId
+
                     val isSelected = selectedCell == Pair(row, col)
                     val isNeutralZone = row == gameBoard.rows / 2 // Middle row (row 2) is neutral
 
-                    // Check if this is a valid deployment/move/attack position
+                    // Check for highlighting types
                     val isDeploymentPosition = validDeploymentPositions.contains(Pair(row, col))
                     val isMoveDestination = validMoveDestinations.contains(Pair(row, col))
                     val isAttackTarget = validAttackTargets.contains(Pair(row, col))
@@ -115,6 +126,11 @@ fun GameBoard(
                         unit.canAttackThisTurn
                     } else false
 
+                    // Determine if fortification (tower) can attack
+                    val canFortificationAttack = if (fortification != null && isPlayerFortification) {
+                        fortification.fortType == FortificationType.TOWER && fortification.canAttackThisTurn
+                    } else false
+
                     // Wrap with position tracker
                     CellPositionTracker(
                         row = row,
@@ -125,19 +141,22 @@ fun GameBoard(
                             .aspectRatio(1f)
                             .padding(2.dp)
                     ) {
-                        // Display cell with or without unit
+                        // Display cell with unit, fortification, or empty
                         UnifiedBoardCell(
                             unit = unit,
+                            fortification = fortification,
                             isSelected = isSelected,
                             isPlayerUnit = isPlayerUnit,
+                            isPlayerFortification = isPlayerFortification,
                             isNeutralZone = isNeutralZone,
-                            isDeploymentZone = isInDeploymentZone(row, gameBoard.rows, unitOwner ?: -1),
+                            isDeploymentZone = isInDeploymentZone(row, gameBoard.rows, unitOwner ?: fortificationOwner ?: -1),
                             isDeploymentPosition = isDeploymentPosition,
                             isMoveDestination = isMoveDestination,
                             isAttackTarget = isAttackTarget,
-                            pulseAlpha = pulseAlpha,  // Pass animation state
+                            pulseAlpha = pulseAlpha,
                             canMove = canMove,
                             canAttack = canAttack,
+                            canFortificationAttack = canFortificationAttack,
                             onClick = { onCellClick(row, col) },
                             modifier = Modifier.fillMaxSize()
                         )
@@ -148,12 +167,14 @@ fun GameBoard(
     }
 }
 
-// Update the UnifiedBoardCell to show all highlight types
+
 @Composable
 fun UnifiedBoardCell(
     unit: UnitCard?,
+    fortification: FortificationCard?, // Add this parameter
     isSelected: Boolean,
     isPlayerUnit: Boolean,
+    isPlayerFortification: Boolean = false, // Add this parameter
     isNeutralZone: Boolean,
     isDeploymentZone: Boolean,
     isDeploymentPosition: Boolean = false,
@@ -162,6 +183,7 @@ fun UnifiedBoardCell(
     pulseAlpha: Float = 0.6f,
     canMove: Boolean = false,
     canAttack: Boolean = false,
+    canFortificationAttack: Boolean = false, // Add this parameter
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -170,7 +192,7 @@ fun UnifiedBoardCell(
         isSelected -> Color(0xFFFFD700).copy(alpha = 0.3f) // Gold highlight for selected
         isDeploymentPosition -> Color(0x3300FF00) // Green highlight for deployment
         isNeutralZone -> Color(0xFF7A6F9B).copy(alpha = 0.3f) // Purple tint for neutral zone
-        isDeploymentZone -> if (isPlayerUnit || unit == null)
+        isDeploymentZone -> if ((isPlayerUnit && unit != null) || (isPlayerFortification && fortification != null) || (unit == null && fortification == null))
             Color(0xFF1F3F77).copy(alpha = 0.3f) // Blue tint for player deployment zone
         else
             Color(0xFF771F1F).copy(alpha = 0.3f) // Red tint for opponent deployment zone
@@ -203,25 +225,39 @@ fun UnifiedBoardCell(
             ),
         contentAlignment = Alignment.Center
     ) {
-        // Base cell content (unit or empty)
-        if (unit != null) {
-            // Use the enhanced UnitSlot component to display the unit with action indicators
-            UnitSlot(
-                unit = unit,
-                isSelected = isSelected,
-                isPlayerUnit = isPlayerUnit,
-                canMove = canMove,
-                canAttack = canAttack,
-                onClick = onClick,
-                modifier = Modifier.fillMaxSize(0.9f)
-            )
-        } else {
+        // Base cell content (unit, fortification, or empty)
+        when {
+            // If there's a unit, display it
+            unit != null -> {
+                UnitSlot(
+                    unit = unit,
+                    isSelected = isSelected,
+                    isPlayerUnit = isPlayerUnit,
+                    canMove = canMove,
+                    canAttack = canAttack,
+                    onClick = onClick,
+                    modifier = Modifier.fillMaxSize(0.9f)
+                )
+            }
+            // If there's a fortification, display it
+            fortification != null -> {
+                FortificationSlot(
+                    fortification = fortification,
+                    isSelected = isSelected,
+                    isPlayerFortification = isPlayerFortification,
+                    canAttack = canFortificationAttack,
+                    onClick = onClick,
+                    modifier = Modifier.fillMaxSize(0.9f)
+                )
+            }
             // Empty cell - still clickable
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clickable { onClick() }
-            )
+            else -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable { onClick() }
+                )
+            }
         }
 
         // Draw move destination indicator (blue circle)
@@ -274,6 +310,63 @@ fun UnifiedBoardCell(
                     color = Color(0xFFF44336), // Red
                     radius = size.minDimension * 0.06f,
                     center = center,
+                    alpha = pulseAlpha
+                )
+            }
+        }
+
+        // Specifically for deployment positions, add a more distinctive indicator
+        if (isDeploymentPosition) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                // Calculate size for the indicator - slightly smaller than the cell
+                val size = Size(
+                    width = this.size.width * 0.85f,
+                    height = this.size.height * 0.85f
+                )
+                val topLeft = Offset(
+                    x = (this.size.width - size.width) / 2,
+                    y = (this.size.height - size.height) / 2
+                )
+
+                // Draw a semi-transparent green rectangle
+                drawRect(
+                    color = Color(0x3300FF00), // Translucent green
+                    topLeft = topLeft,
+                    size = size
+                )
+
+                // Draw dashed outline
+                drawRect(
+                    color = Color(0xFF00FF00), // Solid green
+                    topLeft = topLeft,
+                    size = size,
+                    style = Stroke(
+                        width = 2f,
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(5f, 5f), 0f)
+                    ),
+                    alpha = pulseAlpha
+                )
+
+                // Add a "+" symbol in the center
+                val centerX = center.x
+                val centerY = center.y
+                val plusSize = size.minDimension * 0.3f
+
+                // Horizontal line of the plus
+                drawLine(
+                    color = Color(0xFF00FF00),
+                    start = Offset(centerX - plusSize/2, centerY),
+                    end = Offset(centerX + plusSize/2, centerY),
+                    strokeWidth = 3.dp.toPx(),
+                    alpha = pulseAlpha
+                )
+
+                // Vertical line of the plus
+                drawLine(
+                    color = Color(0xFF00FF00),
+                    start = Offset(centerX, centerY - plusSize/2),
+                    end = Offset(centerX, centerY + plusSize/2),
+                    strokeWidth = 3.dp.toPx(),
                     alpha = pulseAlpha
                 )
             }

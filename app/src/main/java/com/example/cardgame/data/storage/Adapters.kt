@@ -1,10 +1,12 @@
 package com.example.cardgame.data.storage
 
+import com.example.cardgame.data.enum.FortificationType
 import com.example.cardgame.data.enum.UnitEra
 import com.example.cardgame.data.enum.UnitType
 import com.example.cardgame.data.model.abilities.Ability
 import com.example.cardgame.data.model.abilities.ChargeAbility
 import com.example.cardgame.data.model.card.Card
+import com.example.cardgame.data.model.card.FortificationCard
 import com.example.cardgame.data.model.card.TacticCard
 import com.example.cardgame.data.model.card.UnitCard
 import com.example.cardgame.game.GameManager
@@ -39,6 +41,15 @@ class CardTypeAdapter : JsonSerializer<Card>, JsonDeserializer<Card> {
                 jsonObject.add("abilities", context.serialize(src.abilities))
                 jsonObject.addProperty("hasCharge", src.hasCharge)
                 jsonObject.addProperty("hasTaunt", src.hasTaunt)
+            }
+            is FortificationCard -> {
+                // New: Fortification card serialization
+                jsonObject.addProperty("type", "fortification")
+                jsonObject.addProperty("attack", src.attack)
+                jsonObject.addProperty("health", src.health)
+                jsonObject.addProperty("maxHealth", src.maxHealth)
+                jsonObject.addProperty("fortType", src.fortType.name)
+                jsonObject.addProperty("canAttackThisTurn", src.canAttackThisTurn)
             }
             is TacticCard -> {
                 jsonObject.addProperty("type", "tactic")
@@ -90,6 +101,29 @@ class CardTypeAdapter : JsonSerializer<Card>, JsonDeserializer<Card> {
                     abilities = abilities,
                     hasCharge = hasCharge,
                     hasTaunt = hasTaunt
+                )
+            }
+            "fortification" -> {
+                // New: Fortification card deserialization
+                val attack = jsonObject.get("attack").asInt
+                val health = jsonObject.get("health").asInt
+                val maxHealth = jsonObject.get("maxHealth").asInt
+
+                // Parse the fortification type
+                val fortTypeStr = jsonObject.get("fortType").asString
+                val fortType = FortificationType.valueOf(fortTypeStr)
+
+                FortificationCard(
+                    id = id,
+                    name = name,
+                    description = description,
+                    manaCost = manaCost,
+                    imagePath = imagePath,
+                    attack = attack,
+                    health = health,
+                    maxHealth = maxHealth,
+                    fortType = fortType,
+                    canAttackThisTurn = false
                 )
             }
             "tactic" -> {

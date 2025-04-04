@@ -1,5 +1,7 @@
 package com.example.cardgame.game
 
+import com.example.cardgame.data.enum.FortificationType
+
 class TurnManager(private val gameManager: GameManager) {
     var currentPlayer: Player? = null
     var turnNumber: Int = 0
@@ -26,6 +28,13 @@ class TurnManager(private val gameManager: GameManager) {
             val context = gameManager.getPlayerContext(player)
             context.units.forEach { unit ->
                 unit.canAttackThisTurn = true
+            }
+
+            // Reset fortifications for attack (towers only)
+            context.fortifications.forEach { fortification ->
+                if (fortification.fortType == FortificationType.TOWER) {
+                    fortification.canAttackThisTurn = true
+                }
             }
 
             // Reset movement for this player's units

@@ -168,5 +168,53 @@
     "type": "tactic",
     "effectType": "draw_cards",
     "effectValue": 2
+  },
+  {
+    "id": 13,
+    "name": "Wooden Wall",
+    "description": "Basic defensive structure with moderate health",
+    "manaCost": 2,
+    "imagePath": "fortification_wooden_wall",
+    "type": "fortification",
+    "attack": 0,
+    "health": 5,
+    "maxHealth": 5,
+    "fortType": "WALL"
+  },
+  {
+    "id": 14,
+    "name": "Stone Wall",
+    "description": "Sturdy defensive structure with high health",
+    "manaCost": 4,
+    "imagePath": "fortification_stone_wall",
+    "type": "fortification",
+    "attack": 0,
+    "health": 8,
+    "maxHealth": 8,
+    "fortType": "WALL"
+  },
+  {
+    "id": 15,
+    "name": "Archer Tower",
+    "description": "Basic attack tower with range 2",
+    "manaCost": 3,
+    "imagePath": "fortification_archer_tower",
+    "type": "fortification",
+    "attack": 2,
+    "health": 4,
+    "maxHealth": 4,
+    "fortType": "TOWER"
+  },
+  {
+    "id": 16,
+    "name": "Watch Tower",
+    "description": "Advanced attack tower with range 2",
+    "manaCost": 5,
+    "imagePath": "fortification_watch_tower",
+    "type": "fortification",
+    "attack": 3,
+    "health": 6,
+    "maxHealth": 6,
+    "fortType": "TOWER"
   }
 ]

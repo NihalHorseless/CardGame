@@ -3,11 +3,10 @@
   "name": "Roman Legion",
   "description": "A balanced deck featuring Roman military units",
   "cardIds": [
-    1001, 1001, 1001, 1001,
-    1002, 1002, 1002,
-    1003, 1003,
-    1004, 1004, 1004, 1004,
-    2001, 2001,
-    2002, 2002
+    2, 2, 2, 2, 2, 2, 2, 2, 2,
+    1, 1, 1, 1, 1,
+    7,
+    15,
+    13, 13
   ]
 }

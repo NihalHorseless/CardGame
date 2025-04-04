@@ -1,5 +1,6 @@
 package com.example.cardgame.game
 
+import com.example.cardgame.data.model.card.FortificationCard
 import com.example.cardgame.data.model.card.UnitCard
 
 /**
@@ -11,6 +12,16 @@ class Board(val rows: Int = 5, val columns: Int = 5) {
 
     // Player ID to track ownership of each unit
     private val unitOwners = mutableMapOf<UnitCard, Int>()
+
+    /**
+     * 2D array to store fortifications, null means no fortification
+     */
+    private val fortificationGrid = Array(rows) { arrayOfNulls<FortificationCard>(columns) }
+
+    /**
+     * Map to track ownership of fortifications
+     */
+    private val fortificationOwners = mutableMapOf<FortificationCard, Int>()
 
     /**
      * Places a unit on the board at the specified position.
@@ -29,6 +40,19 @@ class Board(val rows: Int = 5, val columns: Int = 5) {
         unitOwners[unit] = ownerId
         return true
     }
+    /**
+     * Places a fortification on the board at the specified position.
+     */
+    fun placeFortification(fortification: FortificationCard, row: Int, col: Int, ownerId: Int): Boolean {
+        if (row < 0 || row >= rows || col < 0 || col >= columns) return false
+
+        // Check if the cell is empty (no unit and no fortification)
+        if (grid[row][col] != null || fortificationGrid[row][col] != null) return false
+
+        fortificationGrid[row][col] = fortification
+        fortificationOwners[fortification] = ownerId
+        return true
+    }
 
     /**
      * Removes a unit from the specified position.
@@ -39,6 +63,18 @@ class Board(val rows: Int = 5, val columns: Int = 5) {
             if (unit != null) {
                 unitOwners.remove(unit)
                 grid[row][col] = null
+            }
+        }
+    }
+    /**
+     * Removes a fortification from the specified position.
+     */
+    fun removeFortification(row: Int, col: Int) {
+        if (row in 0 until rows && col in 0 until columns) {
+            val fortification = fortificationGrid[row][col]
+            if (fortification != null) {
+                fortificationOwners.remove(fortification)
+                fortificationGrid[row][col] = null
             }
         }
     }
@@ -72,6 +108,58 @@ class Board(val rows: Int = 5, val columns: Int = 5) {
         }
         return null
     }
+    /**
+     * Gets the fortification at the specified position.
+     */
+    fun getFortificationAt(row: Int, col: Int): FortificationCard? {
+        return if (row in 0 until rows && col in 0 until columns) {
+            fortificationGrid[row][col]
+        } else null
+    }
+
+    fun getFortificationOwner(fortification: FortificationCard): Int? = fortificationOwners[fortification]
+
+    /**
+     * Gets the position of a fortification on the board.
+     */
+    fun getFortificationPosition(fortification: FortificationCard): Pair<Int, Int>? {
+        for (row in 0 until rows) {
+            for (col in 0 until columns) {
+                if (fortificationGrid[row][col] == fortification) {
+                    return Pair(row, col)
+                }
+            }
+        }
+        return null
+    }
+
+    /**
+     * Gets all fortifications belonging to a specific player.
+     */
+    fun getPlayerFortifications(playerId: Int): List<FortificationCard> {
+        return fortificationOwners.entries
+            .filter { it.value == playerId }
+            .map { it.key }
+    }
+
+    /**
+     * Checks if a position is truly empty (no units and no fortifications).
+     */
+    fun isPositionCompletelyEmpty(row: Int, col: Int): Boolean {
+        return isPositionEmpty(row, col) && getFortificationAt(row, col) == null
+    }
+
+    /**
+     * Clears all fortifications from the board.
+     */
+    fun clearAllFortifications() {
+        for (row in 0 until rows) {
+            for (col in 0 until columns) {
+                fortificationGrid[row][col] = null
+            }
+        }
+        fortificationOwners.clear()
+    }
 
     /**
      * Gets all units belonging to a specific player.
@@ -86,8 +174,9 @@ class Board(val rows: Int = 5, val columns: Int = 5) {
      * Checks if a position on the board is empty.
      */
     fun isPositionEmpty(row: Int, col: Int): Boolean {
-        return getUnitAt(row, col) == null
+        return getUnitAt(row, col) == null && getFortificationAt(row, col) == null
     }
+
 
     /**
      * Gets all units on the board.

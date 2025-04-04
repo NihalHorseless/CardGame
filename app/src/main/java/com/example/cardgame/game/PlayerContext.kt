@@ -1,6 +1,8 @@
 package com.example.cardgame.game
 
+import com.example.cardgame.data.enum.FortificationType
 import com.example.cardgame.data.model.card.Card
+import com.example.cardgame.data.model.card.FortificationCard
 import com.example.cardgame.data.model.card.UnitCard
 
 /**
@@ -17,6 +19,13 @@ class PlayerContext(val player: Player, val gameBoard: Board) {
      */
     val units: List<UnitCard>
         get() = gameBoard.getPlayerUnits(player.id)
+
+    /**
+     * Gets all fortifications owned by this player.
+     */
+    val fortifications: List<FortificationCard>
+        get() = gameBoard.getPlayerFortifications(player.id)
+
 
     /**
      * Gets a unit at a specific board position if it belongs to this player.
@@ -107,6 +116,20 @@ class PlayerContext(val player: Player, val gameBoard: Board) {
     }
 
     /**
+     * Places a fortification on the board at the specified position.
+     * Returns true if placement was successful.
+     */
+    fun placeFortification(fortification: FortificationCard, row: Int, col: Int): Boolean {
+        // Check if position is in player's deployment zone
+        if (!isInDeploymentZone(row, col)) return false
+
+        // Check if the position is completely empty (no units and no fortifications)
+        if (!gameBoard.isPositionCompletelyEmpty(row, col)) return false
+
+        return gameBoard.placeFortification(fortification, row, col, player.id)
+    }
+
+    /**
      * Plays a card to the specified position.
      * For unit cards, this places them on the board.
      * For other cards, it delegates to their play method.
@@ -119,40 +142,81 @@ class PlayerContext(val player: Player, val gameBoard: Board) {
         // Check if player can afford the card
         if (player.currentMana < card.manaCost) return false
 
-        // For unit cards, handle placement
-        if (card is UnitCard) {
-            // Get target position or find an empty one
-            val position = targetPosition ?: getFirstEmptyPosition() ?: return false
+        when (card) {
+            is UnitCard -> {
+                // Get target position or find an empty one
+                val position = targetPosition ?: getFirstEmptyPosition() ?: return false
 
-            // Check if position is in player's deployment zone
-            if (!isInDeploymentZone(position.first, position.second)) return false
+                // Check if position is in player's deployment zone
+                if (!isInDeploymentZone(position.first, position.second)) return false
 
-            // Pay the mana cost
-            player.currentMana -= card.manaCost
+                // Check if the position is completely empty
+                if (!gameBoard.isPositionCompletelyEmpty(position.first, position.second)) return false
 
-            // Remove card from hand
-            player.hand.remove(card)
+                // Pay the mana cost
+                player.currentMana -= card.manaCost
 
-            // Clone the card for the board
-            val boardCard = card.clone()
+                // Remove card from hand
+                player.hand.remove(card)
 
-            // Place the cloned card on the unified board
-            val (row, col) = position
-            val placed = gameBoard.placeUnit(boardCard, row, col, player.id)
+                // Clone the card for the board
+                val boardCard = card.clone()
 
-            if (placed) {
-                // Initialize attack availability based on charge ability
-                boardCard.canAttackThisTurn = boardCard.hasCharge
-                return true
+                // Place the cloned card on the unified board
+                val (row, col) = position
+                val placed = gameBoard.placeUnit(boardCard, row, col, player.id)
+
+                if (placed) {
+                    // Initialize attack availability based on charge ability
+                    boardCard.canAttackThisTurn = boardCard.hasCharge
+                    return true
+                }
+
+                // If placement failed, refund the cost and return the card to hand
+                player.currentMana += card.manaCost
+                player.hand.add(card)
+                return false
             }
+            is FortificationCard -> {
+                // Get target position or find an empty one
+                val position = targetPosition ?: getFirstEmptyPosition() ?: return false
 
-            // If placement failed, refund the cost and return the card to hand
-            player.currentMana += card.manaCost
-            player.hand.add(card)
-            return false
-        } else {
-            // For non-unit cards, delegate to the card's play method
-            return card.play(player, gameManager, null)
+                // Check if position is in player's deployment zone
+                if (!isInDeploymentZone(position.first, position.second)) return false
+
+                // Check if the position is completely empty
+                if (!gameBoard.isPositionCompletelyEmpty(position.first, position.second)) return false
+
+                // Pay the mana cost
+                player.currentMana -= card.manaCost
+
+                // Remove card from hand
+                player.hand.remove(card)
+
+                // Clone the card for the board
+                val boardFortification = card.clone()
+
+                // Place the cloned fortification on the board
+                val (row, col) = position
+                val placed = gameBoard.placeFortification(boardFortification, row, col, player.id)
+
+                if (placed) {
+                    // Initialize attack availability for towers
+                    if (boardFortification.fortType == FortificationType.TOWER) {
+                        boardFortification.canAttackThisTurn = true
+                    }
+                    return true
+                }
+
+                // If placement failed, refund the cost and return the card to hand
+                player.currentMana += card.manaCost
+                player.hand.add(card)
+                return false
+            }
+            else -> {
+                // For non-unit cards, delegate to the card's play method
+                return card.play(player, gameManager, null)
+            }
         }
     }
 

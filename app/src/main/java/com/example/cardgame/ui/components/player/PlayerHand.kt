@@ -52,7 +52,10 @@ import androidx.compose.ui.unit.sp
 import com.example.cardgame.R
 import com.example.cardgame.data.enum.UnitEra
 import com.example.cardgame.data.model.card.Card
+import com.example.cardgame.data.model.card.FortificationCard
+import com.example.cardgame.data.model.card.TacticCard
 import com.example.cardgame.data.model.card.UnitCard
+import com.example.cardgame.ui.components.board.FortificationTypeIcon
 import com.example.cardgame.ui.components.board.UnitTypeIcon
 import com.example.cardgame.ui.components.effects.CardWithHoverEffect
 
@@ -136,8 +139,7 @@ fun HandCard(
             UnitEra.MODERN -> Color(0xFF212121)     // Dark Gray
             else -> Color(0xFFFFFFFF) // White for Default
         }
-    }
-    else {
+    } else {
         Color(0xFF4527A0)
     }
 
@@ -215,15 +217,22 @@ fun HandCard(
                     .padding(top = 30.dp, bottom = 30.dp),
                 contentAlignment = Alignment.Center
             ) {
-                if (card is UnitCard) {
-                    // Unit Type Icon
-                    UnitTypeIcon(
+                when (card) {
+                    is UnitCard -> UnitTypeIcon(
                         unitType = card.unitType,
                         modifier = Modifier.size(40.dp)
                     )
-                } else {
-                    // Tactic Card Indicator
-                    Image(
+
+                    is FortificationCard -> FortificationTypeIcon(
+                        fortType = card.fortType,
+                        modifier = Modifier.size(40.dp)
+                    )
+                    is TacticCard -> Image(
+                        painter = painterResource(R.drawable.magic_effect_icon),
+                        contentDescription = "Tactic Card",
+                        modifier = Modifier.size(40.dp)
+                    )
+                    else -> Image(
                         painter = painterResource(R.drawable.magic_effect_icon),
                         contentDescription = "Tactic Card",
                         modifier = Modifier.size(40.dp)

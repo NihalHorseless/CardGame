@@ -5,11 +5,13 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.cardgame.data.enum.FortificationType
 import com.example.cardgame.data.enum.GameState
 import com.example.cardgame.data.enum.InteractionMode
 import com.example.cardgame.data.enum.UnitType
 import com.example.cardgame.data.model.card.Card
 import com.example.cardgame.data.model.card.Deck
+import com.example.cardgame.data.model.card.FortificationCard
 import com.example.cardgame.data.model.card.UnitCard
 import com.example.cardgame.data.repository.CardRepository
 import com.example.cardgame.game.GameManager
@@ -149,6 +151,10 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
     private val _validDeploymentPositions = mutableStateOf<List<Pair<Int, Int>>>(emptyList())
     val validDeploymentPositions: State<List<Pair<Int, Int>>> = _validDeploymentPositions
 
+    // Flag to indicate if the last attack had a counter bonus
+    private val _isCounterBonus = mutableStateOf(false)
+    val isCounterBonus: State<Boolean> = _isCounterBonus
+
     // Current player ID (default to player 0)
     private val _currentPlayerId = mutableIntStateOf(0)
     val currentPlayerId: State<Int> = _currentPlayerId
@@ -278,8 +284,8 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
 
         val card = hand[cardIndex]
 
-        // Only handle unit cards for now
-        if (card is UnitCard) {
+        // Handle both unit and fortification cards the same way
+        if (card is UnitCard || card is FortificationCard) {
             // Check if player has enough mana
             if (_playerMana.value < card.manaCost) {
                 _statusMessage.value = "Not enough mana!"
@@ -293,9 +299,9 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
             // Get valid deployment positions
             _validDeploymentPositions.value = getValidDeploymentPositions(0) // 0 is player ID
 
-            _statusMessage.value = "Select a position to deploy the unit"
+            _statusMessage.value = "Select a position to deploy"
         } else {
-            // For now, just play non-unit cards automatically
+            // For non-unit cards, just play them directly
             playCard(cardIndex)
         }
     }
@@ -382,21 +388,51 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
     fun onCellClick(row: Int, col: Int) {
         if (!_isPlayerTurn.value) return
 
-        // If in deployment mode, try to place the unit
+        // If in deployment mode, try to place the unit or fortification
         if (_interactionMode.value == InteractionMode.CARD_TARGETING) {
             if (_validDeploymentPositions.value.contains(Pair(row, col))) {
                 deployCardAtPosition(row, col)
             } else {
-                _statusMessage.value = "Cannot deploy unit at this position"
+                _statusMessage.value = "Cannot deploy at this position"
             }
             return
         }
 
-        // Otherwise handle normal unit selection/movement/attack
         val clickedUnit = _gameManager.gameBoard.getUnitAt(row, col)
         val unitOwner = clickedUnit?.let { _gameManager.gameBoard.getUnitOwner(it) }
 
-        // Regular unit selection logic...
+        // Check for fortifications
+        val clickedFortification = _gameManager.gameBoard.getFortificationAt(row, col)
+        val fortificationOwner = clickedFortification?.let { _gameManager.gameBoard.getFortificationOwner(it) }
+
+        // If there's a fortification at this cell, handle it
+        if (clickedFortification != null) {
+            // If fortification belongs to player
+            if (fortificationOwner == 0) {
+                handleFortificationSelection(row, col, clickedFortification, fortificationOwner)
+            }
+            // If player has a unit selected and clicks on enemy fortification to attack
+            else if (_selectedCell.value != null && Pair(row, col) in _validAttackTargets.value) {
+                val (selectedRow, selectedCol) = _selectedCell.value!!
+                executeAttack(selectedRow, selectedCol, row, col)
+            }
+            return
+        }
+
+        // If a fortification is selected and player clicks on a valid attack target
+        if (_selectedCell.value != null) {
+            val (selectedRow, selectedCol) = _selectedCell.value!!
+            val selectedFortification = _gameManager.gameBoard.getFortificationAt(selectedRow, selectedCol)
+
+            if (selectedFortification != null &&
+                selectedFortification.fortType == FortificationType.TOWER &&
+                Pair(row, col) in _validAttackTargets.value) {
+                executeFortificationAttack(selectedRow, selectedCol, row, col)
+                return
+            }
+        }
+
+        // Original unit selection and movement logic
         if (_selectedCell.value == null && clickedUnit != null && unitOwner == 0) {
             // Select the unit and immediately show movement and attack options
             _selectedCell.value = Pair(row, col)
@@ -663,9 +699,16 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
      * Execute an attack between units with animations
      */
     private fun executeAttack(attackerRow: Int, attackerCol: Int, targetRow: Int, targetCol: Int) {
+        // Get units for the attack
+        val attackerUnit = _gameManager.gameBoard.getUnitAt(attackerRow, attackerCol) ?: return
+        val targetUnit = _gameManager.gameBoard.getUnitAt(targetRow, targetCol) ?: return
+
+        // Check if this attack has a counter bonus
+        val hasCounterBonus = _gameManager.hasCounterBonus(attackerUnit, targetUnit)
+        _isCounterBonus.value = hasCounterBonus
+
         // Get target position for animation
         val targetPos = cellPositions[Pair(targetRow, targetCol)]
-        val attackerUnit = _gameManager.gameBoard.getUnitAt(attackerRow, attackerCol) ?: return
 
         if (targetPos != null) {
             // Start attack animation
@@ -679,8 +722,16 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
                 delay(800)
                 _isSimpleAttackVisible.value = false
 
+                // Calculate the actual damage that will be dealt
+                val damage = if (hasCounterBonus) {
+                    // Apply damage multiplier for counter bonus
+                    attackerUnit.attack * 2 // Simplified version - should match GameManager's calculation
+                } else {
+                    attackerUnit.attack
+                }
+
                 // Show damage number
-                _damageToShow.intValue = attackerUnit.attack
+                _damageToShow.intValue = damage
                 _damagePosition.value = targetPos
                 _isHealingEffect.value = false
                 _isDamageNumberVisible.value = true
@@ -699,19 +750,26 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
                 )
 
                 if (attackResult) {
-                    _statusMessage.value = "Attack successful!"
+
+                    // Reset selection state
                     _selectedCell.value = null
                     _validAttackTargets.value = emptyList()
                     _validMoveDestinations.value = emptyList()
                     _interactionMode.value = InteractionMode.DEFAULT
+
+                    // Reset counter state
+                    _isCounterBonus.value = false
+
                     updateAllGameStates()
                 } else {
                     _statusMessage.value = "Cannot attack with this unit"
                     _interactionMode.value = InteractionMode.DEFAULT
+                    _isCounterBonus.value = false
                 }
             }
         } else {
             // Fallback if position tracking failed
+            // (Similar logic as above but without animations)
             val attackResult = _gameManager.executeAttackWithContext(
                 playerContext,
                 attackerRow,
@@ -721,15 +779,19 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
             )
 
             if (attackResult) {
-                _statusMessage.value = "Attack successful!"
+
+                // Reset states...
                 _selectedCell.value = null
                 _validAttackTargets.value = emptyList()
                 _validMoveDestinations.value = emptyList()
                 _interactionMode.value = InteractionMode.DEFAULT
+                _isCounterBonus.value = false
+
                 updateAllGameStates()
             } else {
                 _statusMessage.value = "Cannot attack with this unit"
                 _interactionMode.value = InteractionMode.DEFAULT
+                _isCounterBonus.value = false
             }
         }
     }
@@ -983,6 +1045,141 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
             delay(500)
             _gameManager.turnManager.endTurn()
             updateAllGameStates()
+        }
+    }
+    private fun handleFortificationSelection(row: Int, col: Int, fortification: FortificationCard, fortificationOwner: Int) {
+        // Only handle player's fortifications
+        if (fortificationOwner != 0) return
+
+        // Select the fortification
+        _selectedCell.value = Pair(row, col)
+
+        // Reset move destinations (fortifications can't move)
+        _validMoveDestinations.value = emptyList()
+
+        // Show attack targets for towers
+        if (fortification.fortType == FortificationType.TOWER && fortification.canAttackThisTurn) {
+            val attackTargets = getValidAttackTargetsForFortification(fortification, row, col)
+            _validAttackTargets.value = attackTargets
+
+            if (attackTargets.isNotEmpty()) {
+                _statusMessage.value = "Select a target to attack with your tower"
+            } else {
+                _statusMessage.value = "No valid targets in range"
+            }
+        } else {
+            _validAttackTargets.value = emptyList()
+
+            if (fortification.fortType == FortificationType.TOWER) {
+                _statusMessage.value = "This tower has already attacked this turn"
+            } else {
+                _statusMessage.value = "Walls cannot attack"
+            }
+        }
+    }
+
+    /**
+     * Get valid attack targets for a fortification
+     */
+    private fun getValidAttackTargetsForFortification(fortification: FortificationCard, row: Int, col: Int): List<Pair<Int, Int>> {
+        // Only towers can attack
+        if (fortification.fortType != FortificationType.TOWER) return emptyList()
+
+        // If tower can't attack this turn, return empty list
+        if (!fortification.canAttackThisTurn) return emptyList()
+
+        val attackTargets = mutableListOf<Pair<Int, Int>>()
+
+        // Tower attack range is 2
+        val range = 2
+
+        // Check all cells within range
+        for (targetRow in 0 until _gameManager.gameBoard.rows) {
+            for (targetCol in 0 until _gameManager.gameBoard.columns) {
+                // Calculate Manhattan distance
+                val distance = Math.abs(row - targetRow) + Math.abs(col - targetCol)
+
+                // Check if within range and not the same cell
+                if (distance > 0 && distance <= range) {
+                    // Check if there's an enemy unit at this position
+                    val targetUnit = _gameManager.gameBoard.getUnitAt(targetRow, targetCol)
+                    if (targetUnit != null) {
+                        val targetUnitOwner = _gameManager.gameBoard.getUnitOwner(targetUnit)
+
+                        // Only include enemy units
+                        if (targetUnitOwner != null && targetUnitOwner != 0) {
+                            attackTargets.add(Pair(targetRow, targetCol))
+                        }
+                    }
+                }
+            }
+        }
+
+        return attackTargets
+    }
+
+    /**
+     * Execute an attack from a fortification
+     */
+    private fun executeFortificationAttack(fortificationRow: Int, fortificationCol: Int, targetRow: Int, targetCol: Int) {
+        val fortification = _gameManager.gameBoard.getFortificationAt(fortificationRow, fortificationCol) ?: return
+
+        // Only towers can attack
+        if (fortification.fortType != FortificationType.TOWER) return
+
+        // Get target position for animation
+        val targetPos = cellPositions[Pair(targetRow, targetCol)]
+
+        if (targetPos != null) {
+            // Start attack animation (use a distinct attack type for towers)
+            _attackingUnitType.value = UnitType.ARTILLERY // Use artillery animation for towers
+            _attackTargetPosition.value = targetPos
+            _isSimpleAttackVisible.value = true
+
+            // Attack logic after animation
+            viewModelScope.launch {
+                // Wait for attack animation
+                delay(800)
+                _isSimpleAttackVisible.value = false
+
+                // Show damage number
+                _damageToShow.intValue = fortification.attack
+                _damagePosition.value = targetPos
+                _isHealingEffect.value = false
+                _isDamageNumberVisible.value = true
+
+                // Wait for damage number
+                delay(800)
+                _isDamageNumberVisible.value = false
+
+                // Execute the attack
+                val attackResult = _gameManager.executeFortificationAttack(fortification, targetRow, targetCol)
+
+                if (attackResult) {
+                    _statusMessage.value = "Tower attack successful!"
+                    _selectedCell.value = null
+                    _validAttackTargets.value = emptyList()
+                    _interactionMode.value = InteractionMode.DEFAULT
+                    updateAllGameStates()
+                } else {
+                    _statusMessage.value = "Attack failed"
+                    _interactionMode.value = InteractionMode.DEFAULT
+                }
+            }
+        } else {
+            // Fallback if position tracking failed
+            val attackResult = _gameManager.executeFortificationAttack(fortification, targetRow, targetCol)
+
+            if (attackResult) {
+                _statusMessage.value = "Tower attack successful!"
+                _selectedCell.value = null
+                _validAttackTargets.value = emptyList()
+                _interactionMode.value = InteractionMode.DEFAULT
+                updateAllGameStates()
+            } else {
+                _statusMessage.value = "Attack failed"
+                _interactionMode.value = InteractionMode.DEFAULT
+            }
         }
     }
 
