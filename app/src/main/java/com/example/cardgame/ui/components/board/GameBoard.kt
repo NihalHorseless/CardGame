@@ -113,7 +113,7 @@ fun GameBoard(
                     val isNeutralZone = row == gameBoard.rows / 2 // Middle row (row 2) is neutral
 
                     // Check for highlighting types
-                    val isDeploymentPosition = validDeploymentPositions.contains(Pair(row, col))
+                    val isDeploymentPosition = validDeploymentPositions.contains(Pair(row, col)) && unit == null && fortification == null
                     val isMoveDestination = validMoveDestinations.contains(Pair(row, col))
                     val isAttackTarget = validAttackTargets.contains(Pair(row, col))
 

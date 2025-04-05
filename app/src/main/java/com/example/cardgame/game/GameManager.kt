@@ -170,6 +170,7 @@ class GameManager {
         // Check if the target is within attack range
         return manhattanDistance >= minRange && manhattanDistance <= maxRange
     }
+
     /**
      * Gets the damage multiplier for an attack based on unit type matchups
      * - Cavalry deals double damage to Missile and Artillery units
