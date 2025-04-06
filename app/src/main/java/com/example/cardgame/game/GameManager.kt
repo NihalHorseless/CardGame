@@ -7,6 +7,7 @@ import com.example.cardgame.data.model.abilities.TauntManager
 import com.example.cardgame.data.model.card.FortificationCard
 import com.example.cardgame.data.model.card.UnitCard
 import com.example.cardgame.data.model.formation.FormationManager
+import kotlin.math.abs
 
 class GameManager {
     val players = listOf(Player(0, "Player 1"), Player(1, "Player 2"))
@@ -161,14 +162,45 @@ class GameManager {
 
         // Calculate Manhattan distance
         val (attackerRow, attackerCol) = attackerPos
-        val manhattanDistance = Math.abs(attackerRow - targetRow) + Math.abs(attackerCol - targetCol)
+        val manhattanDistance = abs(attackerRow - targetRow) + abs(attackerCol - targetCol)
 
         // Get the attack range limits based on unit type
         val minRange = movementManager.getMinAttackRange(attacker)
         val maxRange = movementManager.getAttackRange(attacker)
 
         // Check if the target is within attack range
-        return manhattanDistance >= minRange && manhattanDistance <= maxRange
+        return manhattanDistance in minRange..maxRange
+    }
+
+    fun canUnitAttackFortification(attacker: UnitCard, targetRow: Int, targetCol: Int): Boolean {
+        // Get the attacker's position
+        val attackerPos = gameBoard.getUnitPosition(attacker) ?: return false
+
+        // Get the attacker's owner
+        val attackerOwnerId = gameBoard.getUnitOwner(attacker) ?: return false
+
+        // Get the target fortification
+        val targetFort = gameBoard.getFortificationAt(targetRow, targetCol) ?: return false
+
+        // Get the target's owner
+        val targetOwnerId = gameBoard.getFortificationOwner(targetFort) ?: return false
+
+        // Cannot attack own fortifications
+        if (attackerOwnerId == targetOwnerId) return false
+
+        // Check if the attacker can attack this turn
+        if (!attacker.canAttackThisTurn) return false
+
+        // Calculate Manhattan distance
+        val (attackerRow, attackerCol) = attackerPos
+        val manhattanDistance = abs(attackerRow - targetRow) + abs(attackerCol - targetCol)
+
+        // Get the attack range limits based on unit type
+        val minRange = movementManager.getMinAttackRange(attacker)
+        val maxRange = movementManager.getAttackRange(attacker)
+
+        // Check if the target is within attack range
+        return manhattanDistance in minRange..maxRange
     }
 
     /**
@@ -190,6 +222,19 @@ class GameManager {
         }
     }
     /**
+     * Gets the damage multiplier for an attack against a fortification
+     * - Artillery deals double damage to fortifications
+     */
+    private fun getFortificationDamageMultiplier(attacker: UnitCard): Float {
+        return when {
+            // Artillery deals double damage to fortifications
+            attacker.unitType == UnitType.ARTILLERY -> 2.0f
+
+            // Normal damage for other unit types
+            else -> 1.0f
+        }
+    }
+    /**
      * Calculate the actual damage to be dealt based on unit type matchups
      */
     private fun calculateDamage(attacker: UnitCard, defender: UnitCard): Int {
@@ -200,10 +245,26 @@ class GameManager {
         return (baseAttack * multiplier).toInt()
     }
     /**
+     * Calculate the actual damage to be dealt to a fortification
+     */
+    private fun calculateFortificationDamage(attacker: UnitCard): Int {
+        val baseAttack = attacker.attack
+        val multiplier = getFortificationDamageMultiplier(attacker)
+
+        // Apply multiplier and round to nearest integer
+        return (baseAttack * multiplier).toInt()
+    }
+    /**
      * Check if the attack will have a counter bonus (dealing extra damage)
      */
     fun hasCounterBonus(attacker: UnitCard, defender: UnitCard): Boolean {
         return getDamageMultiplier(attacker, defender) > 1.0f
+    }
+    /**
+     * Check if the attack on a fortification will have a counter bonus (dealing extra damage)
+     */
+    fun hasFortificationCounterBonus(attacker: UnitCard): Boolean {
+        return getFortificationDamageMultiplier(attacker) > 1.0f
     }
     /**
      * Get a description of why the counter bonus applies
@@ -241,7 +302,7 @@ class GameManager {
         // Check if this is a ranged attack (based on Manhattan distance)
         val attackerPos = gameBoard.getUnitPosition(attacker) ?: return false
         val (attackerRow, attackerCol) = attackerPos
-        val manhattanDistance = Math.abs(attackerRow - targetRow) + Math.abs(attackerCol - targetCol)
+        val manhattanDistance = abs(attackerRow - targetRow) + abs(attackerCol - targetCol)
 
         // Only take counterattack damage if the attack is melee range (distance = 1)
         if (manhattanDistance == 1) {
@@ -273,15 +334,14 @@ class GameManager {
         val fortOwner = gameBoard.getFortificationOwner(fortification) ?: return false
 
         // Get the target unit
-        val targetUnit = gameBoard.getUnitAt(targetRow, targetCol)
+        val targetUnit = gameBoard.getUnitAt(targetRow, targetCol) ?: return false
 
         // Can only attack enemy units
-        if (targetUnit == null) return false
         val targetUnitOwner = gameBoard.getUnitOwner(targetUnit) ?: return false
         if (targetUnitOwner == fortOwner) return false
 
         // Check if target is in range (towers have range 2)
-        val distance = Math.abs(fortRow - targetRow) + Math.abs(fortCol - targetCol)
+        val distance = abs(fortRow - targetRow) + abs(fortCol - targetCol)
         if (distance > 2) return false // Tower range is 2
 
         // Deal damage to target (no counter-attack since fortifications are static)
@@ -292,6 +352,28 @@ class GameManager {
 
         // Check for destroyed units
         checkForDestroyedUnits()
+
+        return true
+    }
+    /**
+     * Executes an attack by a unit against a fortification.
+     */
+    fun executeUnitAttackFortification(attacker: UnitCard, targetRow: Int, targetCol: Int): Boolean {
+        if (!canUnitAttackFortification(attacker, targetRow, targetCol)) return false
+
+        val targetFort = gameBoard.getFortificationAt(targetRow, targetCol) ?: return false
+
+        // Calculate damage with fortification counter system
+        val damage = calculateFortificationDamage(attacker)
+
+        // Deal damage to fortification
+        targetFort.takeDamage(damage)
+
+        // Unit has attacked this turn
+        attacker.canAttackThisTurn = false
+
+        // Check for destroyed fortifications
+        checkForDestroyedFortifications()
 
         return true
     }
@@ -430,8 +512,8 @@ class GameManager {
         // Check all positions within Manhattan distance between min and max range
         for (targetRow in 0 until gameBoard.rows) {
             for (targetCol in 0 until gameBoard.columns) {
-                val distance = Math.abs(row - targetRow) + Math.abs(col - targetCol)
-                if (distance >= minRange && distance <= maxRange) {
+                val distance = abs(row - targetRow) + abs(col - targetCol)
+                if (distance in minRange..maxRange) {
                     potentialTargets.add(Pair(targetRow, targetCol))
                 }
             }

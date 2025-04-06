@@ -1,9 +1,9 @@
 package com.example.cardgame.game
 
 import com.example.cardgame.data.enum.FortificationType
-import com.example.cardgame.data.model.card.Card
 import com.example.cardgame.data.model.card.FortificationCard
 import com.example.cardgame.data.model.card.UnitCard
+import kotlin.math.abs
 
 /**
  * Context object that bundles a player with the game board.
@@ -229,8 +229,48 @@ class PlayerContext(val player: Player, val gameBoard: Board) {
         if (gameBoard.getUnitOwner(unit) != player.id) return emptyList()
         if (!unit.canAttackThisTurn) return emptyList()
 
-        // Use the new taunt-aware method in the GameManager
-        return gameManager.getValidAttackTargetsForUnit(unit)
+        // Get unit targets
+        val unitTargets = gameManager.getValidAttackTargetsForUnit(unit)
+
+        // Get fortification targets
+        val fortTargets = getValidFortificationTargets(unit, gameManager)
+
+        // Combine both lists
+        return unitTargets + fortTargets
+    }
+
+    private fun getValidFortificationTargets(unit: UnitCard, gameManager: GameManager): List<Pair<Int, Int>> {
+        val unitPos = gameBoard.getUnitPosition(unit) ?: return emptyList()
+        val (row, col) = unitPos
+        val unitOwnerId = gameBoard.getUnitOwner(unit) ?: return emptyList()
+
+        // If unit can't attack, return empty list
+        if (!unit.canAttackThisTurn) return emptyList()
+
+        // Get the opponent's player ID
+        val opponentId = if (unitOwnerId == 0) 1 else 0
+
+        // Get the attack range
+        val minRange = gameManager.movementManager.getMinAttackRange(unit)
+        val maxRange = gameManager.movementManager.getAttackRange(unit)
+
+        val targets = mutableListOf<Pair<Int, Int>>()
+
+        // Check all positions within range for enemy fortifications
+        for (targetRow in 0 until gameBoard.rows) {
+            for (targetCol in 0 until gameBoard.columns) {
+                val distance = abs(row - targetRow) + abs(col - targetCol)
+                if (distance in minRange..maxRange) {
+                    // Check if position has an enemy fortification
+                    val fort = gameBoard.getFortificationAt(targetRow, targetCol)
+                    if (fort != null && gameBoard.getFortificationOwner(fort) == opponentId) {
+                        targets.add(Pair(targetRow, targetCol))
+                    }
+                }
+            }
+        }
+
+        return targets
     }
     /**
      * Gets valid deployment positions for the current player.

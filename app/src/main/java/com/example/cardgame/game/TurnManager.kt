@@ -4,7 +4,7 @@ import com.example.cardgame.data.enum.FortificationType
 
 class TurnManager(private val gameManager: GameManager) {
     var currentPlayer: Player? = null
-    var turnNumber: Int = 0
+    private var turnNumber: Int = 0
 
     // Keep track of the current player context
     private val currentPlayerContext: PlayerContext?
@@ -16,7 +16,7 @@ class TurnManager(private val gameManager: GameManager) {
         startTurn()
     }
 
-    fun startTurn() {
+    private fun startTurn() {
         currentPlayer?.let { player ->
             // Reset mana based on turn number (capped at max)
             player.currentMana = player.maxMana.coerceAtMost(turnNumber)

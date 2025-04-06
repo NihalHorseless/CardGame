@@ -18,6 +18,7 @@ import com.example.cardgame.game.GameManager
 import com.example.cardgame.game.PlayerContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
     private val _gameManager = GameManager()
@@ -414,7 +415,18 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
             // If player has a unit selected and clicks on enemy fortification to attack
             else if (_selectedCell.value != null && Pair(row, col) in _validAttackTargets.value) {
                 val (selectedRow, selectedCol) = _selectedCell.value!!
-                executeAttack(selectedRow, selectedCol, row, col)
+                val selectedUnit = _gameManager.gameBoard.getUnitAt(selectedRow, selectedCol)
+
+                if (selectedUnit != null) {
+                    // First check if this is a fortification target
+                    val targetFort = _gameManager.gameBoard.getFortificationAt(row, col)
+                    if (targetFort != null) {
+                        executeAttackAgainstFortification(selectedRow, selectedCol, row, col)
+                    } else {
+                        // This is a regular unit attack
+                        executeAttack(selectedRow, selectedCol, row, col)
+                    }
+                }
             }
             return
         }
@@ -795,6 +807,99 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
             }
         }
     }
+    /**
+     * Execute an attack against a fortification
+     */
+    private fun executeAttackAgainstFortification(attackerRow: Int, attackerCol: Int, targetRow: Int, targetCol: Int) {
+        // Get the attacking unit
+        val attackerUnit = _gameManager.gameBoard.getUnitAt(attackerRow, attackerCol) ?: return
+        val targetFort = _gameManager.gameBoard.getFortificationAt(targetRow, targetCol) ?: return
+
+        // Check if this attack has a counter bonus
+        val hasCounterBonus = _gameManager.hasFortificationCounterBonus(attackerUnit)
+        _isCounterBonus.value = hasCounterBonus
+
+        // Get target position for animation
+        val targetPos = cellPositions[Pair(targetRow, targetCol)]
+
+        if (targetPos != null) {
+            // Start attack animation
+            _attackingUnitType.value = attackerUnit.unitType
+            _attackTargetPosition.value = targetPos
+            _isSimpleAttackVisible.value = true
+
+            // Attack logic after animation
+            viewModelScope.launch {
+                // Wait for attack animation
+                delay(800)
+                _isSimpleAttackVisible.value = false
+
+                // Calculate the actual damage that will be dealt
+                val damage = if (hasCounterBonus) {
+                    // Apply damage multiplier for counter bonus
+                    attackerUnit.attack * 2 // Should match GameManager's calculation
+                } else {
+                    attackerUnit.attack
+                }
+
+                // Show damage number
+                _damageToShow.intValue = damage
+                _damagePosition.value = targetPos
+                _isHealingEffect.value = false
+                _isDamageNumberVisible.value = true
+
+                // Wait for damage number
+                delay(800)
+                _isDamageNumberVisible.value = false
+
+                // Perform the actual attack
+                val attackResult = _gameManager.executeUnitAttackFortification(
+                    attackerUnit,
+                    targetRow,
+                    targetCol
+                )
+
+                if (attackResult) {
+                    // Reset selection state
+                    _selectedCell.value = null
+                    _validAttackTargets.value = emptyList()
+                    _validMoveDestinations.value = emptyList()
+                    _interactionMode.value = InteractionMode.DEFAULT
+
+                    // Reset counter state
+                    _isCounterBonus.value = false
+
+                    updateAllGameStates()
+                } else {
+                    _statusMessage.value = "Cannot attack this fortification"
+                    _interactionMode.value = InteractionMode.DEFAULT
+                    _isCounterBonus.value = false
+                }
+            }
+        } else {
+            // Fallback if position tracking failed
+            val attackResult = _gameManager.executeUnitAttackFortification(
+                attackerUnit,
+                targetRow,
+                targetCol
+            )
+
+            if (attackResult) {
+                // Reset states...
+                _selectedCell.value = null
+                _validAttackTargets.value = emptyList()
+                _validMoveDestinations.value = emptyList()
+                _interactionMode.value = InteractionMode.DEFAULT
+                _isCounterBonus.value = false
+
+                updateAllGameStates()
+            } else {
+                _statusMessage.value = "Cannot attack this fortification"
+                _interactionMode.value = InteractionMode.DEFAULT
+                _isCounterBonus.value = false
+            }
+        }
+    }
 
     /**
      * Attack the opponent directly
@@ -1097,10 +1202,10 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
         for (targetRow in 0 until _gameManager.gameBoard.rows) {
             for (targetCol in 0 until _gameManager.gameBoard.columns) {
                 // Calculate Manhattan distance
-                val distance = Math.abs(row - targetRow) + Math.abs(col - targetCol)
+                val distance = abs(row - targetRow) + abs(col - targetCol)
 
                 // Check if within range and not the same cell
-                if (distance > 0 && distance <= range) {
+                if (distance in 1..range) {
                     // Check if there's an enemy unit at this position
                     val targetUnit = _gameManager.gameBoard.getUnitAt(targetRow, targetCol)
                     if (targetUnit != null) {

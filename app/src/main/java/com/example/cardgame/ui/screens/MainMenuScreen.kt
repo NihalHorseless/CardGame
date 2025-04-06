@@ -217,9 +217,9 @@ fun MenuButton(
                 awaitPointerEventScope {
                     while (true) {
                         val event = awaitPointerEvent()
-                        when {
-                            event.type == PointerEventType.Enter -> isHovered = true
-                            event.type == PointerEventType.Exit -> isHovered = false
+                        when (event.type) {
+                            PointerEventType.Enter -> isHovered = true
+                            PointerEventType.Exit -> isHovered = false
                         }
                     }
                 }

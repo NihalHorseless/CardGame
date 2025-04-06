@@ -199,9 +199,11 @@ class Board(val rows: Int = 5, val columns: Int = 5) {
         for (row in 0 until rows) {
             for (col in 0 until columns) {
                 grid[row][col] = null
+                fortificationGrid[row][col] = null
             }
         }
         unitOwners.clear()
+        fortificationOwners.clear()
     }
 
     /**

@@ -17,14 +17,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.example.cardgame.R
 import com.example.cardgame.data.enum.FortificationType
 import com.example.cardgame.data.model.card.FortificationCard
+import com.example.cardgame.ui.theme.kiteShieldShape
+import com.example.cardgame.ui.theme.thickSwordShape
 
 @Composable
 fun FortificationSlot(
@@ -59,52 +63,67 @@ fun FortificationSlot(
         lineTo(center - radius, height * 0.25f)
         close()
     }
-
     Box(
         modifier = modifier
-            .shadow(
-                elevation = if (isSelected) 8.dp else 2.dp,
-                shape = hexagonalShape
-            )
-            .clip(hexagonalShape)
-            .background(backgroundColor)
-            .border(
-                width = if (isSelected) 2.dp else 1.dp,
-                color = if (isSelected) Color.Yellow else borderColor,
-                shape = hexagonalShape
-            )
-            .clickable(onClick = onClick),
+            .size(65.dp,80.dp) // Adjust size to fit the shield shape
+            .padding(2.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Fortification icon
-        FortificationTypeIcon(
-            fortType = fortification.fortType,
-            modifier = Modifier.size(40.dp)
-        )
+        // Main fortification with shield shape
+        Box(
+            modifier = Modifier
+                .size(65.dp,80.dp)
+                .shadow(
+                    elevation = if (isSelected) 8.dp else 2.dp,
+                    shape = RectangleShape
+                )
+                .clip(RectangleShape)
+                .background(backgroundColor)
+                .border(
+                    width = if (isSelected) 2.dp else 1.dp,
+                    color = if (isSelected) Color.Yellow else borderColor,
+                    shape = RectangleShape
+                )
+                .clickable(onClick = onClick),
+            contentAlignment = Alignment.Center
+        ) {
+            // Fortification icon
+            FortificationTypeIcon(
+                fortType = fortification.fortType,
+                modifier = Modifier.size(40.dp)
+            )
 
-        // Attack value for towers (only show if it has attack)
+            // Attack indicator for towers that can attack
+            if (fortification.fortType == FortificationType.TOWER && canAttack) {
+
+            }
+        }
+
+        // Attack value for towers (outside the shield)
         if (fortification.fortType == FortificationType.TOWER) {
             Box(
                 modifier = Modifier
-                    .size(24.dp)
+                    .size(20.dp)
                     .align(Alignment.BottomStart)
-                    .offset((-6).dp, (6).dp)
+                    .offset((-8).dp, (-6).dp)
                     .zIndex(1f)
                     .shadow(4.dp, CircleShape)
-                    .background(Color(0xFFFF9800), CircleShape)
-                    .border(1.dp, Color.White, CircleShape),
-                contentAlignment = Alignment.Center
+                    .background(Color(0xFFFF9800), thickSwordShape)
+                    .border(1.dp, Color.White, thickSwordShape),
+                contentAlignment = Alignment.TopCenter
             ) {
                 Text(
                     text = fortification.attack.toString(),
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.offset(y = ((-3).dp))
                 )
             }
         }
 
-        // Health value
+        // Health value (outside the shield)
         val healthColor = when {
             fortification.health <= fortification.maxHealth / 3 -> Color.Red
             fortification.health <= fortification.maxHealth * 2 / 3 -> Color(0xFFFFA500) // Orange
@@ -113,32 +132,22 @@ fun FortificationSlot(
 
         Box(
             modifier = Modifier
-                .size(24.dp)
+                .size(20.dp)
                 .align(Alignment.BottomEnd)
-                .offset((6).dp, (6).dp)
+                .offset((8).dp, (-6).dp)
                 .zIndex(1f)
-                .shadow(4.dp, CircleShape)
-                .background(healthColor, CircleShape)
-                .border(1.dp, Color.White, CircleShape),
+                .shadow(4.dp, kiteShieldShape)
+                .background(healthColor, kiteShieldShape)
+                .border(1.dp, Color.White, kiteShieldShape),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = fortification.health.toString(),
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
-                fontSize = 12.sp
-            )
-        }
-
-        // Attack indicator for towers that can attack
-        if (fortification.fortType == FortificationType.TOWER && canAttack) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = 4.dp)
-                    .size(12.dp)
-                    .background(Color.Red, CircleShape)
-                    .border(0.5.dp, Color.White, CircleShape)
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.offset(y = (-2).dp)
             )
         }
     }

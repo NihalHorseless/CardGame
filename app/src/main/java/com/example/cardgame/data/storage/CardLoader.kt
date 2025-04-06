@@ -89,7 +89,7 @@ class CardLoader(private val context: Context) {
             val jsonString = reader.readText()
 
             // Parse the deck JSON
-            val deckData = gson.fromJson<DeckDefinition>(jsonString, DeckDefinition::class.java)
+            val deckData = gson.fromJson(jsonString, DeckDefinition::class.java)
             Log.d(TAG, "Loaded deck definition: ${deckData.name} with ${deckData.cardIds.size} cards")
 
             // Make sure all cards are loaded

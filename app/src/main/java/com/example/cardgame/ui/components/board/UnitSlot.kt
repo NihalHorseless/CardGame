@@ -1,6 +1,5 @@
 package com.example.cardgame.ui.components.board
 
-import android.graphics.RectF
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -18,12 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.GenericShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -35,9 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -47,6 +38,8 @@ import com.example.cardgame.R
 import com.example.cardgame.data.enum.UnitEra
 import com.example.cardgame.data.enum.UnitType
 import com.example.cardgame.data.model.card.UnitCard
+import com.example.cardgame.ui.theme.kiteShieldShape
+import com.example.cardgame.ui.theme.thickSwordShape
 
 @Composable
 fun UnitSlot(
@@ -131,35 +124,13 @@ fun UnitSlot(
                     UnitTypeIcon(
                         unitType = unit.unitType,
                         modifier = Modifier
-                            .size(50.dp)
+                            .size(40.dp)
                             .align(Alignment.Center)
                     )
 
                     // Show action indicators for player units
                     if (isPlayerUnit) {
-                        // Attack indicator
-                        if (canAttack) {
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.TopCenter)
-                                    .padding(top = 4.dp)
-                                    .size(14.dp)
-                                    .background(Color.Red, CircleShape)
-                                    .border(0.5.dp, Color.White, CircleShape)
-                            )
-                        }
 
-                        // Movement indicator
-                        if (canMove) {
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.BottomCenter)
-                                    .padding(bottom = 4.dp)
-                                    .size(14.dp)
-                                    .background(Color.Blue, CircleShape)
-                                    .border(0.5.dp, Color.White, CircleShape)
-                            )
-                        }
                     }
                 }
             } else {
@@ -180,20 +151,21 @@ fun UnitSlot(
             // Attack Value - positioned outside the oval at bottom left
             Box(
                 modifier = Modifier
-                    .size(22.dp)
-                    .align(Alignment.BottomStart)
-                    .offset((-6).dp, (6).dp)
+                    .size(20.dp)
+                    .align(Alignment.CenterStart)
+                    .offset((-3).dp, (12).dp)
                     .zIndex(1f)
                     .shadow(4.dp, CircleShape)
-                    .background(Color(0xFFFF9800), CircleShape)
-                    .border(1.dp, Color.White, CircleShape),
+                    .background(Color(0xFFFF9800), thickSwordShape)
+                    .border(1.dp, Color.White, thickSwordShape),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = unit.attack.toString(),
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp
+                    fontSize = 12.sp,
+                    modifier = Modifier.offset(y = (-3).dp)
                 )
             }
 
@@ -206,20 +178,21 @@ fun UnitSlot(
 
             Box(
                 modifier = Modifier
-                    .size(22.dp)
-                    .align(Alignment.BottomEnd)
-                    .offset((6).dp, (6).dp)
+                    .size(20.dp)
+                    .align(Alignment.CenterEnd)
+                    .offset((3).dp, (12).dp)
                     .zIndex(1f)
                     .shadow(4.dp, CircleShape)
-                    .background(healthColor, CircleShape)
-                    .border(1.dp, Color.White, CircleShape),
+                    .background(healthColor, kiteShieldShape)
+                    .border(1.dp, Color.White, kiteShieldShape),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = unit.health.toString(),
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp
+                    fontSize = 12.sp,
+                    modifier = Modifier.offset(y = (-2).dp)
                 )
             }
 
@@ -229,7 +202,7 @@ fun UnitSlot(
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .padding(4.dp)
-                        .size(18.dp)
+                        .size(16.dp)
                         .background(Color(0xFF795548), CircleShape)
                         .border(1.dp, Color.White, CircleShape),
                     contentAlignment = Alignment.Center

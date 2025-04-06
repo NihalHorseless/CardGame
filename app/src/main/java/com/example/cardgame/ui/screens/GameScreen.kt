@@ -30,11 +30,9 @@ import com.example.cardgame.data.enum.InteractionMode
 import com.example.cardgame.ui.components.board.GameBoard
 import com.example.cardgame.ui.components.board.GameStatusBar
 import com.example.cardgame.ui.components.board.PlayerPortrait
-import com.example.cardgame.ui.components.effects.BoardHighlights
 import com.example.cardgame.ui.components.effects.CardSlotAnimation
 import com.example.cardgame.ui.components.effects.DamageNumberEffect
 import com.example.cardgame.ui.components.effects.SimpleAttackAnimation
-import com.example.cardgame.ui.components.effects.UnitMovementAnimation
 import com.example.cardgame.ui.components.player.PlayerHand
 import com.example.cardgame.ui.viewmodel.GameViewModel
 

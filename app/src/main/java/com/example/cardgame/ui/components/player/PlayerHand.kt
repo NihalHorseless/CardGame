@@ -9,12 +9,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -22,11 +20,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -57,7 +51,8 @@ import com.example.cardgame.data.model.card.TacticCard
 import com.example.cardgame.data.model.card.UnitCard
 import com.example.cardgame.ui.components.board.FortificationTypeIcon
 import com.example.cardgame.ui.components.board.UnitTypeIcon
-import com.example.cardgame.ui.components.effects.CardWithHoverEffect
+import com.example.cardgame.ui.theme.kiteShieldShape
+import com.example.cardgame.ui.theme.thickSwordShape
 
 @Composable
 fun PlayerHand(
@@ -98,9 +93,9 @@ fun PlayerHand(
                         awaitPointerEventScope {
                             while (true) {
                                 val event = awaitPointerEvent()
-                                when {
-                                    event.type == PointerEventType.Enter -> isHovered = true
-                                    event.type == PointerEventType.Exit -> isHovered = false
+                                when (event.type) {
+                                    PointerEventType.Enter -> isHovered = true
+                                    PointerEventType.Exit -> isHovered = false
                                 }
                             }
                         }
@@ -182,7 +177,7 @@ fun HandCard(
             Box(
                 modifier = Modifier
                     .size(30.dp)
-                    .align(Alignment.TopStart)
+                    .align(Alignment.BottomCenter)
                     .padding(4.dp)
                     .background(Color(0xFF2196F3), CircleShape)
                     .border(1.dp, Color.White, CircleShape),
@@ -207,7 +202,7 @@ fun HandCard(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .padding(top = 4.dp, start = 32.dp, end = 4.dp)
+                    .padding(top = 4.dp, start = 8.dp, end = 4.dp)
             )
 
             // Card Content
@@ -241,22 +236,33 @@ fun HandCard(
             }
 
             // Stats for Unit Cards
-            if (card is UnitCard) {
+            if (card is UnitCard || card is FortificationCard) {
+                val attack: String = when (card) {
+                    is UnitCard -> card.attack.toString()
+                    is FortificationCard -> card.attack.toString()
+                    else -> "Null"
+                }
+                val health: String = when (card) {
+                    is UnitCard -> card.health.toString()
+                    is FortificationCard -> card.health.toString()
+                    else -> "Null"
+                }
                 // Attack Value (bottom left)
                 Box(
                     modifier = Modifier
                         .size(30.dp)
                         .align(Alignment.BottomStart)
                         .padding(4.dp)
-                        .background(Color(0xFFFF9800), CircleShape)
-                        .border(1.dp, Color.White, CircleShape),
+                        .background(Color(0xFFFF9800), thickSwordShape)
+                        .border(1.dp, Color.White, thickSwordShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = card.attack.toString(),
+                        text = attack,
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
+                        fontSize = 16.sp,
+                        modifier = Modifier.offset(y = (-2).dp)
                     )
                 }
 
@@ -266,15 +272,16 @@ fun HandCard(
                         .size(30.dp)
                         .align(Alignment.BottomEnd)
                         .padding(4.dp)
-                        .background(Color.Green, CircleShape)
-                        .border(1.dp, Color.White, CircleShape),
+                        .background(Color.Green, kiteShieldShape)
+                        .border(1.dp, Color.White, kiteShieldShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = card.health.toString(),
+                        text = health,
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
+                        fontSize = 16.sp,
+                        modifier = Modifier.offset(y = (-1).dp)
                     )
                 }
             }

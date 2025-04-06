@@ -10,10 +10,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInParent
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.IntSize
 import com.example.cardgame.data.model.card.UnitCard
 import com.example.cardgame.data.model.formation.Formation
 

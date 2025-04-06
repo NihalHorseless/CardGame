@@ -29,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -91,7 +92,7 @@ fun CardSlotAnimation(
             // A simple glowing effect
             androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
                 drawCircle(
-                    color = androidx.compose.ui.graphics.Color(0xFF5271FF),
+                    color = Color(0xFF5271FF),
                     radius = 60f,
                     alpha = 0.5f * alpha
                 )
@@ -228,9 +229,9 @@ fun CardWithHoverEffect(
                 awaitPointerEventScope {
                     while (true) {
                         val event = awaitPointerEvent()
-                        when {
-                            event.type == PointerEventType.Enter -> isHovered = true
-                            event.type == PointerEventType.Exit -> isHovered = false
+                        when (event.type) {
+                            PointerEventType.Enter -> isHovered = true
+                            PointerEventType.Exit -> isHovered = false
                         }
                     }
                 }
@@ -328,8 +329,8 @@ fun SimpleAttackAnimation(
     }
 
     // Generate small random offsets for shaking effect
-    var shakeOffsetX by remember { mutableStateOf(0f) }
-    var shakeOffsetY by remember { mutableStateOf(0f) }
+    var shakeOffsetX by remember { mutableFloatStateOf(0f) }
+    var shakeOffsetY by remember { mutableFloatStateOf(0f) }
 
     // Update shake effect
     LaunchedEffect(isVisible) {
@@ -378,7 +379,7 @@ fun DamageNumberEffect(
     onAnimationComplete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var yOffset by remember { mutableStateOf(0f) }
+    var yOffset by remember { mutableFloatStateOf(0f) }
     val animatedYOffset by animateFloatAsState(
         targetValue = if (isVisible) -50f else 0f,
         animationSpec = tween(800),
