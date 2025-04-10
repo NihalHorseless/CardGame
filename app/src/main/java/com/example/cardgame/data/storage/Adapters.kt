@@ -1,6 +1,8 @@
 package com.example.cardgame.data.storage
 
 import com.example.cardgame.data.enum.FortificationType
+import com.example.cardgame.data.enum.TacticCardType
+import com.example.cardgame.data.enum.TargetType
 import com.example.cardgame.data.enum.UnitEra
 import com.example.cardgame.data.enum.UnitType
 import com.example.cardgame.data.model.abilities.Ability
@@ -52,10 +54,17 @@ class CardTypeAdapter : JsonSerializer<Card>, JsonDeserializer<Card> {
                 jsonObject.addProperty("canAttackThisTurn", src.canAttackThisTurn)
             }
             is TacticCard -> {
+                // Serialize TacticCard-specific properties
                 jsonObject.addProperty("type", "tactic")
-                // We can't directly serialize a function, so store effect information differently
-                jsonObject.addProperty("effectType", "direct_damage") // Example effect type
-                jsonObject.addProperty("effectValue", 3) // Example effect value
+                jsonObject.addProperty("cardType", src.cardType.name)
+                jsonObject.addProperty("targetType", src.targetType.name)
+
+                // We can't directly serialize the effect function, but we can add a placeholder
+                // The actual effects will be recreated during deserialization
+                val effectsArray = context.serialize(
+                    arrayOf(mapOf("effectType" to "placeholder", "effectValue" to 0))
+                )
+                jsonObject.add("effects", effectsArray)
             }
         }
 
@@ -127,109 +136,9 @@ class CardTypeAdapter : JsonSerializer<Card>, JsonDeserializer<Card> {
                 )
             }
             "tactic" -> {
-                // Parse effect information
-                val effectType = jsonObject.get("effectType")?.asString ?: "none"
-                val effectValue = jsonObject.get("effectValue")?.asInt ?: 0
-
-                // Create a function based on the effect type
-                val effect: (Player, GameManager, Int?) -> Boolean = when (effectType) {
-                    "direct_damage" -> { player, gameManager, targetPosition ->
-                        if (targetPosition != null) {
-                            // Use the PlayerContext approach to handle board targeting
-                            val context = gameManager.getPlayerContext(player)
-                            val opponent = gameManager.getOpponentOf(player) ?: samplePlayer
-
-                            // Convert the linear target position to 2D coordinates for the 5x5 board
-                            val row = targetPosition / gameManager.gameBoard.columns
-                            val col = targetPosition % gameManager.gameBoard.columns
-
-                            val targetUnit = gameManager.gameBoard.getUnitAt(row, col)
-                            if (targetUnit != null && gameManager.gameBoard.getUnitOwner(targetUnit) == opponent.id) {
-                                targetUnit.takeDamage(effectValue)
-                                gameManager.checkForDestroyedUnits()
-                                true
-                            } else false
-                        } else false
-                    }
-                    "heal" -> { player, gameManager, targetPosition ->
-                        if (targetPosition != null) {
-                            // Use the PlayerContext approach to handle board targeting
-                            val context = gameManager.getPlayerContext(player)
-
-                            // Convert the linear target position to 2D coordinates for the 5x5 board
-                            val row = targetPosition / gameManager.gameBoard.columns
-                            val col = targetPosition % gameManager.gameBoard.columns
-
-                            val targetUnit = gameManager.gameBoard.getUnitAt(row, col)
-                            if (targetUnit != null && gameManager.gameBoard.getUnitOwner(targetUnit) == player.id) {
-                                targetUnit.heal(effectValue)
-                                true
-                            } else false
-                        } else false
-                    }
-                    "area_effect" -> { player, gameManager, targetPosition ->
-                        // Affects a 3x3 area centered on the target position
-                        if (targetPosition != null) {
-                            // Convert the linear target position to 2D coordinates for the 5x5 board
-                            val centerRow = targetPosition / gameManager.gameBoard.columns
-                            val centerCol = targetPosition % gameManager.gameBoard.columns
-
-                            var effectApplied = false
-
-                            // Apply effect to all units in a 3x3 grid around the target
-                            for (rowOffset in -1..1) {
-                                for (colOffset in -1..1) {
-                                    val row = centerRow + rowOffset
-                                    val col = centerCol + colOffset
-
-                                    // Check if the coordinates are valid
-                                    if (row in 0 until gameManager.gameBoard.rows &&
-                                        col in 0 until gameManager.gameBoard.columns) {
-
-                                        val unit = gameManager.gameBoard.getUnitAt(row, col)
-                                        if (unit != null) {
-                                            // Apply damage to opponent units
-                                            val unitOwner = gameManager.gameBoard.getUnitOwner(unit)
-                                            if (unitOwner != player.id) {
-                                                unit.takeDamage(effectValue)
-                                                effectApplied = true
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            if (effectApplied) {
-                                gameManager.checkForDestroyedUnits()
-                                true
-                            } else false
-                        } else false
-                    }
-                    "buff_attack" -> { player, gameManager, targetPosition ->
-                        if (targetPosition != null) {
-                            // Convert the linear target position to 2D coordinates for the 5x5 board
-                            val row = targetPosition / gameManager.gameBoard.columns
-                            val col = targetPosition % gameManager.gameBoard.columns
-
-                            val targetUnit = gameManager.gameBoard.getUnitAt(row, col)
-                            if (targetUnit != null && gameManager.gameBoard.getUnitOwner(targetUnit) == player.id) {
-                                // Increase the unit's attack by the effect value
-                                targetUnit.attack += effectValue
-                                true
-                            } else false
-                        } else false
-                    }
-                    else -> { _, _, _ -> true }
-                }
-
-                TacticCard(
-                    id = id,
-                    name = name,
-                    description = description,
-                    manaCost = manaCost,
-                    imagePath = imagePath,
-                    effect = effect
-                )
+                // For tactic cards, use the dedicated TacticCardDeserializer
+                // This handles the separation of concerns correctly
+                context.deserialize<TacticCard>(json, TacticCard::class.java)
             }
             else -> throw IllegalArgumentException("Unknown card type")
         }

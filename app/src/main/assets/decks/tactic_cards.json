@@ -1,0 +1,100 @@
+[
+  {
+    "id": 100,
+    "name": "Fireball",
+    "description": "Deal 4 damage to a target unit or fortification",
+    "manaCost": 3,
+    "imagePath": "tactic_fireball",
+    "type": "tactic",
+    "cardType": "DIRECT_DAMAGE",
+    "targetType": "ENEMY",
+    "effects": [
+      {
+        "effectType": "direct_damage",
+        "effectValue": 4
+      }
+    ]
+  },
+  {
+    "id": 101,
+    "name": "Healing Potion",
+    "description": "Restore 5 health to a friendly unit or fortification",
+    "manaCost": 2,
+    "imagePath": "tactic_healing",
+    "type": "tactic",
+    "cardType": "BUFF",
+    "targetType": "FRIENDLY",
+    "effects": [
+      {
+        "effectType": "healing",
+        "effectValue": 5
+      }
+    ]
+  },
+  {
+    "id": 102,
+    "name": "Explosion",
+    "description": "Deal 3 damage to all units in a 3x3 area",
+    "manaCost": 6,
+    "imagePath": "tactic_explosion",
+    "type": "tactic",
+    "cardType": "AREA_EFFECT",
+    "targetType": "BOARD",
+    "effects": [
+      {
+        "effectType": "area_damage",
+        "effectValue": 3,
+        "radius": 1
+      }
+    ]
+  },
+  {
+    "id": 103,
+    "name": "Battle Rage",
+    "description": "Increase a unit's attack by 3 for 2 turns",
+    "manaCost": 4,
+    "imagePath": "tactic_rage",
+    "type": "tactic",
+    "cardType": "BUFF",
+    "targetType": "FRIENDLY",
+    "effects": [
+      {
+        "effectType": "buff_attack",
+        "effectValue": 3,
+        "duration": 2
+      }
+    ]
+  },
+  {
+    "id": 104,
+    "name": "Arcane Intellect",
+    "description": "Draw 2 cards from your deck",
+    "manaCost": 3,
+    "imagePath": "tactic_intellect",
+    "type": "tactic",
+    "cardType": "SPECIAL",
+    "targetType": "NONE",
+    "effects": [
+      {
+        "effectType": "draw_cards",
+        "effectValue": 2
+      }
+    ]
+  },
+  {
+    "id": 105,
+    "name": "Charge",
+    "description": "Allow a unit to attack immediately",
+    "manaCost": 2,
+    "imagePath": "tactic_charge",
+    "type": "tactic",
+    "cardType": "BUFF",
+    "targetType": "FRIENDLY",
+    "effects": [
+      {
+        "effectType": "charge",
+        "effectValue": 0
+      }
+    ]
+  }
+  ]

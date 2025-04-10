@@ -585,4 +585,16 @@ class GameManager {
 
         return moveUnit(unit, toRow, toCol)
     }
+    fun registerTemporaryEffect(target: Any, duration: Int, removalAction: () -> Unit) {
+        // In a real implementation, this would store the effect in a data structure
+        // and remove it after the specified number of turns
+        // For this example, we'll just print a message
+        println("Registered temporary effect on $target for $duration turns")
+    }
+    fun registerMovementBuff(unit: UnitCard, moveBoost: Int, duration: Int) {
+        // In a real implementation, this would modify the unit's movement range
+        // and reset it after the specified number of turns
+        // For this example, we'll just print a message
+        println("Boosted movement range of ${unit.name} by $moveBoost for $duration turns")
+    }
 }

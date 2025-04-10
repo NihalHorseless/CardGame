@@ -22,6 +22,10 @@ class MovementManager(private val gameBoard: Board) {
             else -> 1
         }
     }
+    fun resetMovementForUnit(unit: UnitCard) {
+        // Remove this unit from the moved units set so it can move again
+        movedUnits.remove(unit)
+    }
 
     fun getAttackRange(unit: UnitCard): Int {
         return when (unit.unitType) {

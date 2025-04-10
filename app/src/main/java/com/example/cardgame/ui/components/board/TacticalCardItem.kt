@@ -1,0 +1,172 @@
+package com.example.cardgame.ui.components.board
+
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.cardgame.R
+import com.example.cardgame.data.enum.TacticCardType
+import com.example.cardgame.data.enum.TargetType
+import com.example.cardgame.data.model.card.TacticCard
+
+/**
+ * UI component for displaying a Tactic Card in the player's hand or collection
+ */
+@Composable
+fun TacticCardItem(
+    card: TacticCard,
+    isSelected: Boolean = false,
+    isPlayable: Boolean = true,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // Determine card background color based on card type
+    val cardColor = when (card.cardType) {
+        TacticCardType.DIRECT_DAMAGE -> Color(0xFFB71C1C)  // Dark red
+        TacticCardType.AREA_EFFECT -> Color(0xFFFF5722)    // Deep orange
+        TacticCardType.BUFF -> Color(0xFF4CAF50)           // Green
+        TacticCardType.DEBUFF -> Color(0xFF7B1FA2)         // Purple
+        TacticCardType.SPECIAL -> Color(0xFF1976D2)        // Blue
+    }
+
+    // Adjust opacity if card is not playable
+    val finalCardColor = if (isPlayable) cardColor else cardColor.copy(alpha = 0.5f)
+
+    // Target type indicator color
+    val targetColor = when (card.targetType) {
+        TargetType.FRIENDLY -> Color(0xFF4CAF50)  // Green
+        TargetType.ENEMY -> Color(0xFFE53935)     // Red
+        TargetType.ANY -> Color(0xFFFFC107)       // Amber
+        TargetType.BOARD -> Color(0xFF673AB7)     // Deep Purple
+        TargetType.NONE -> Color(0xFF607D8B)      // Blue Grey
+    }
+
+    // Get icon resource based on card type
+    val cardIconRes = when (card.cardType) {
+        TacticCardType.DIRECT_DAMAGE -> R.drawable.attack_missile
+        TacticCardType.AREA_EFFECT -> R.drawable.aoe_damage_effect_icon
+        TacticCardType.BUFF -> R.drawable.magic_effect_icon
+        TacticCardType.DEBUFF -> R.drawable.magic_effect_icon
+        TacticCardType.SPECIAL -> R.drawable.magic_effect_icon
+    }
+
+    Card(
+        modifier = modifier
+            .width(100.dp)
+            .height(140.dp)
+            .shadow(
+                elevation = if (isSelected) 8.dp else 4.dp,
+                shape = RoundedCornerShape(8.dp)
+            )
+            .border(
+                width = if (isSelected) 2.dp else 0.dp,
+                color = if (isSelected) Color(0xFF4CAF50) else Color.Transparent,
+                shape = RoundedCornerShape(8.dp)
+            )
+            .clickable(enabled = isPlayable) { onClick() },
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            finalCardColor,
+                            finalCardColor.copy(alpha = 0.7f)
+                        )
+                    )
+                )
+        ) {
+            // Card contents
+
+            // Mana Cost (top left)
+            Box(
+                modifier = Modifier
+                    .size(30.dp)
+                    .align(Alignment.TopStart)
+                    .padding(4.dp)
+                    .background(Color(0xFF2196F3), CircleShape)
+                    .border(1.dp, Color.White, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = card.manaCost.toString(),
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+            }
+
+            // Card name
+            Text(
+                text = card.name,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 4.dp, start = 32.dp, end = 20.dp)
+            )
+
+            // Card icon/image
+            Box(
+                modifier = Modifier
+                    .size(50.dp)
+                    .align(Alignment.Center)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.3f))
+                    .padding(8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = cardIconRes),
+                    contentDescription = "Card type: ${card.cardType}",
+                    modifier = Modifier.size(34.dp)
+                )
+            }
+
+            // Card description
+            Text(
+                text = card.description,
+                color = Color.White,
+                fontSize = 9.sp,
+                textAlign = TextAlign.Center,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(4.dp)
+                    .padding(horizontal = 8.dp)
+            )
+        }
+    }
+}

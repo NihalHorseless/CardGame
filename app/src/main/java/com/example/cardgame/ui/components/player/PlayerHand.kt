@@ -50,6 +50,7 @@ import com.example.cardgame.data.model.card.FortificationCard
 import com.example.cardgame.data.model.card.TacticCard
 import com.example.cardgame.data.model.card.UnitCard
 import com.example.cardgame.ui.components.board.FortificationTypeIcon
+import com.example.cardgame.ui.components.board.TacticCardItem
 import com.example.cardgame.ui.components.board.UnitTypeIcon
 import com.example.cardgame.ui.theme.kiteShieldShape
 import com.example.cardgame.ui.theme.thickSwordShape
@@ -58,7 +59,7 @@ import com.example.cardgame.ui.theme.thickSwordShape
 fun PlayerHand(
     cards: List<Card>,
     playerMana: Int,
-    selectedCardIndex: Int? = null,  // Added parameter for selected card
+    selectedCardIndex: Int? = null,
     onCardClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -93,27 +94,62 @@ fun PlayerHand(
                         awaitPointerEventScope {
                             while (true) {
                                 val event = awaitPointerEvent()
-                                when (event.type) {
-                                    PointerEventType.Enter -> isHovered = true
-                                    PointerEventType.Exit -> isHovered = false
+                                when {
+                                    event.type == PointerEventType.Enter -> isHovered = true
+                                    event.type == PointerEventType.Exit -> isHovered = false
                                 }
                             }
                         }
                     },
                 contentAlignment = Alignment.Center
             ) {
-                // The card
-                HandCard(
-                    card = card,
-                    isPlayable = isPlayable,
-                    isSelected = isSelected,  // Pass selection state
-                    elevation = elevationDp.dp,
-                    onClick = { onCardClick(index) }
-                )
+                // Render different card types differently
+                when (card) {
+                    is UnitCard -> {
+                        // Use existing UnitCard rendering
+                        HandCard(
+                            card = card,
+                            isPlayable = isPlayable,
+                            isSelected = isSelected,
+                            elevation = elevationDp.dp,
+                            onClick = { onCardClick(index) }
+                        )
+                    }
+                    is TacticCard -> {
+                        // Use our new TacticCard rendering
+                        TacticCardItem(
+                            card = card,
+                            isPlayable = isPlayable,
+                            isSelected = isSelected,
+                            onClick = { onCardClick(index) },
+                            modifier = Modifier.width(100.dp)
+                        )
+                    }
+                    is FortificationCard -> {
+                        // Use existing FortificationCard rendering
+                        HandCard(
+                            card = card,
+                            isPlayable = isPlayable,
+                            isSelected = isSelected,
+                            elevation = elevationDp.dp,
+                            onClick = { onCardClick(index) }
+                        )
+                    }
+                    else -> {
+                        // Fallback for any other card types
+                        GenericCardItem(
+                            card = card,
+                            isPlayable = isPlayable,
+                            isSelected = isSelected,
+                            onClick = { onCardClick(index) }
+                        )
+                    }
+                }
             }
         }
     }
 }
+
 
 /**
  * Individual card in the player's hand
@@ -300,4 +336,22 @@ fun HandCard(
             }
         }
     }
+}
+/**
+ * Fallback card rendering for unknown card types
+ */
+@Composable
+private fun GenericCardItem(
+    card: Card,
+    isPlayable: Boolean,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    // Use a basic card display for any type we don't specifically handle
+    HandCard(
+        card = card,
+        isPlayable = isPlayable,
+        isSelected = isSelected,
+        onClick = onClick
+    )
 }

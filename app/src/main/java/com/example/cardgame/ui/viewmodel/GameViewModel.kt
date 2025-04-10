@@ -8,10 +8,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.cardgame.data.enum.FortificationType
 import com.example.cardgame.data.enum.GameState
 import com.example.cardgame.data.enum.InteractionMode
+import com.example.cardgame.data.enum.TacticCardType
+import com.example.cardgame.data.enum.TargetType
 import com.example.cardgame.data.enum.UnitType
 import com.example.cardgame.data.model.card.Card
 import com.example.cardgame.data.model.card.Deck
 import com.example.cardgame.data.model.card.FortificationCard
+import com.example.cardgame.data.model.card.TacticCard
 import com.example.cardgame.data.model.card.UnitCard
 import com.example.cardgame.data.repository.CardRepository
 import com.example.cardgame.game.GameManager
@@ -160,6 +163,15 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
     private val _currentPlayerId = mutableIntStateOf(0)
     val currentPlayerId: State<Int> = _currentPlayerId
 
+    private val _isTacticEffectVisible = mutableStateOf(false)
+    val isTacticEffectVisible: State<Boolean> = _isTacticEffectVisible
+
+    private val _tacticEffectType = mutableStateOf(TacticCardType.SPECIAL)
+    val tacticEffectType: State<TacticCardType> = _tacticEffectType
+
+    private val _tacticEffectPosition = mutableStateOf(Pair(0f, 0f))
+    val tacticEffectPosition: State<Pair<Float, Float>> = _tacticEffectPosition
+
     init {
         // Load available decks when ViewModel is created
         loadAvailableDecks()
@@ -288,7 +300,7 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
         // Handle both unit and fortification cards the same way
         if (card is UnitCard || card is FortificationCard) {
             // Check if player has enough mana
-            if (_playerMana.value < card.manaCost) {
+            if (_playerMana.intValue < card.manaCost) {
                 _statusMessage.value = "Not enough mana!"
                 return
             }
@@ -301,10 +313,156 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
             _validDeploymentPositions.value = getValidDeploymentPositions(0) // 0 is player ID
 
             _statusMessage.value = "Select a position to deploy"
-        } else {
+        } else if(card is TacticCard) {
+            handleTacticCardSelection(card, cardIndex)
+        }
+        else {
             // For non-unit cards, just play them directly
             playCard(cardIndex)
         }
+    }
+    /**
+     * Handle TacticCard selection from hand
+     */
+    private fun handleTacticCardSelection(card: TacticCard, cardIndex: Int) {
+        // Check if player has enough mana
+        if (_playerMana.intValue < card.manaCost) {
+            _statusMessage.value = "Not enough mana!"
+            return
+        }
+
+        // Different handling based on card's target type
+        when (card.targetType) {
+            TargetType.NONE -> {
+                // Cards that don't need targets (like card draw) can be played immediately
+                val success = card.play(_gameManager.players[0], _gameManager, null)
+                if (success) {
+                    _statusMessage.value = "${card.name} played successfully"
+                    updateAllGameStates()
+                } else {
+                    _statusMessage.value = "Failed to play ${card.name}"
+                }
+            }
+            else -> {
+                // Cards that need targets - switch to targeting mode
+                _selectedCardIndex.value = cardIndex
+                _interactionMode.value = InteractionMode.CARD_TARGETING
+
+                // Highlight valid targets based on card target type
+                _validDeploymentPositions.value = when (card.targetType) {
+                    TargetType.FRIENDLY -> getFriendlyTargets()
+                    TargetType.ENEMY -> getEnemyTargets()
+                    TargetType.BOARD -> getBoardTargets()
+                    TargetType.ANY -> getFriendlyTargets() + getEnemyTargets()
+                    else -> emptyList()
+                }
+
+                _statusMessage.value = "Select a target for ${card.name}"
+            }
+        }
+    }
+    /**
+     * Handle a click on a cell when in targeting mode
+     */
+    private fun handleTacticCardTargeting(row: Int, col: Int) {
+        val cardIndex = _selectedCardIndex.value ?: return
+        val card = _playerHandState.value[cardIndex] as? TacticCard ?: return
+
+        // Check if this is a valid target position
+        if (Pair(row, col) !in _validDeploymentPositions.value) {
+            _statusMessage.value = "Invalid target"
+            return
+        }
+
+        // Convert 2D board position to linear position for the effect function
+        val linearPosition = row * _gameManager.gameBoard.columns + col
+
+        // Play the card with the target
+        val success = card.play(_gameManager.players[0], _gameManager, linearPosition)
+
+        if (success) {
+            // Show animation effect
+            val targetPos = cellPositions[Pair(row, col)]
+            if (targetPos != null) {
+                _tacticEffectPosition.value = targetPos
+                _tacticEffectType.value = card.cardType
+                _isTacticEffectVisible.value = true
+            }
+
+            // Reset selection state
+            _selectedCardIndex.value = null
+            _validDeploymentPositions.value = emptyList()
+            _interactionMode.value = InteractionMode.DEFAULT
+
+            // Update game state
+            updateAllGameStates()
+        } else {
+            _statusMessage.value = "Failed to play ${card.name}"
+        }
+    }
+    /**
+    * Helper methods to find valid targets
+    */
+    private fun getFriendlyTargets(): List<Pair<Int, Int>> {
+        val targets = mutableListOf<Pair<Int, Int>>()
+
+        // Get all positions with friendly units
+        for (row in 0 until _gameManager.gameBoard.rows) {
+            for (col in 0 until _gameManager.gameBoard.columns) {
+                // Check for units
+                val unit = _gameManager.gameBoard.getUnitAt(row, col)
+                if (unit != null && _gameManager.gameBoard.getUnitOwner(unit) == 0) {
+                    targets.add(Pair(row, col))
+                    continue
+                }
+
+                // Check for fortifications
+                val fort = _gameManager.gameBoard.getFortificationAt(row, col)
+                if (fort != null && _gameManager.gameBoard.getFortificationOwner(fort) == 0) {
+                    targets.add(Pair(row, col))
+                }
+            }
+        }
+
+        return targets
+    }
+
+    private fun getEnemyTargets(): List<Pair<Int, Int>> {
+        // Similar to getFriendlyTargets but for enemy units (owner == 1)
+        // Implementation similar to above
+        val targets = mutableListOf<Pair<Int, Int>>()
+
+        for (row in 0 until _gameManager.gameBoard.rows) {
+            for (col in 0 until _gameManager.gameBoard.columns) {
+                // Check for enemy units
+                val unit = _gameManager.gameBoard.getUnitAt(row, col)
+                if (unit != null && _gameManager.gameBoard.getUnitOwner(unit) == 1) {
+                    targets.add(Pair(row, col))
+                    continue
+                }
+
+                // Check for enemy fortifications
+                val fort = _gameManager.gameBoard.getFortificationAt(row, col)
+                if (fort != null && _gameManager.gameBoard.getFortificationOwner(fort) == 1) {
+                    targets.add(Pair(row, col))
+                }
+            }
+        }
+
+        return targets
+    }
+
+    private fun getBoardTargets(): List<Pair<Int, Int>> {
+        // Return all board positions
+        val targets = mutableListOf<Pair<Int, Int>>()
+
+        for (row in 0 until _gameManager.gameBoard.rows) {
+            for (col in 0 until _gameManager.gameBoard.columns) {
+                targets.add(Pair(row, col))
+            }
+        }
+
+        return targets
     }
     private fun deployCardAtPosition(row: Int, col: Int) {
         val cardIndex = _selectedCardIndex.value ?: return
@@ -325,6 +483,11 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
         _validDeploymentPositions.value = emptyList()
         _interactionMode.value = InteractionMode.DEFAULT
     }
+
+    fun onTacticEffectComplete() {
+        _isTacticEffectVisible.value = false
+    }
+
     fun cancelDeployment() {
         _selectedCardIndex.value = null
         _validDeploymentPositions.value = emptyList()
@@ -392,6 +555,7 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
         // If in deployment mode, try to place the unit or fortification
         if (_interactionMode.value == InteractionMode.CARD_TARGETING) {
             if (_validDeploymentPositions.value.contains(Pair(row, col))) {
+                handleTacticCardTargeting(row, col)
                 deployCardAtPosition(row, col)
             } else {
                 _statusMessage.value = "Cannot deploy at this position"

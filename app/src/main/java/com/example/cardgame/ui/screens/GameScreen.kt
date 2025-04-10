@@ -33,6 +33,7 @@ import com.example.cardgame.ui.components.board.PlayerPortrait
 import com.example.cardgame.ui.components.effects.CardSlotAnimation
 import com.example.cardgame.ui.components.effects.DamageNumberEffect
 import com.example.cardgame.ui.components.effects.SimpleAttackAnimation
+import com.example.cardgame.ui.components.effects.TacticCardEffectAnimation
 import com.example.cardgame.ui.components.player.PlayerHand
 import com.example.cardgame.ui.viewmodel.GameViewModel
 
@@ -69,6 +70,9 @@ fun GameScreen(
     val isHealingEffect by viewModel.isHealingEffect
     val isCardAnimationVisible by viewModel.isCardAnimationVisible
     val cardAnimationPosition by viewModel.cardAnimationPosition
+    val isTacticEffectVisible by viewModel.isTacticEffectVisible
+    val tacticEffectType by viewModel.tacticEffectType
+    val tacticEffectPosition by viewModel.tacticEffectPosition
 
     // Movement animation
     val isUnitMovingAnimation by viewModel.isUnitMovingAnimation
@@ -237,6 +241,15 @@ fun GameScreen(
                 targetX = attackTargetPosition.first,
                 targetY = attackTargetPosition.second,
                 onAnimationComplete = { /* Animation will be handled by ViewModel */ },
+                modifier = Modifier.fillMaxSize().zIndex(10f)
+            )
+        }
+        if (isTacticEffectVisible) {
+            TacticCardEffectAnimation(
+                isVisible = isTacticEffectVisible,
+                cardType = tacticEffectType,
+                targetPosition = tacticEffectPosition,
+                onAnimationComplete = { viewModel.onTacticEffectComplete() },
                 modifier = Modifier.fillMaxSize().zIndex(10f)
             )
         }

@@ -1,0 +1,12 @@
+{
+  "id": "player_deck",
+  "name": "Player Custom Deck",
+  "description": "A balanced deck featuring different kinds of cards",
+  "cardIds": [
+    2, 2, 2, 2, 100, 101, 102, 103, 104,
+    1, 1, 1, 1, 1,
+    7,
+    15,
+    13, 13
+  ]
+}
