@@ -1,5 +1,6 @@
 package com.example.cardgame.data.storage
 
+import android.util.Log
 import com.example.cardgame.data.enum.TacticCardType
 import com.example.cardgame.data.enum.TargetType
 import com.example.cardgame.data.model.card.TacticCard
@@ -34,7 +35,13 @@ class TacticCardDeserializer : JsonDeserializer<TacticCard> {
         val imagePath = jsonObject.get("imagePath").asString
 
         // Parse card type and target type enums
-        val cardType = TacticCardType.valueOf(jsonObject.get("cardType").asString)
+        val cardType = try {
+            TacticCardType.valueOf(jsonObject.get("cardType").asString)
+        } catch (e: Exception) {
+            // Log the issue
+            Log.w("TacticCardDeserializer", "Failed to parse cardType, using SPECIAL as default")
+            TacticCardType.SPECIAL  // Default type
+        }
         val targetType = TargetType.valueOf(jsonObject.get("targetType").asString)
 
         // Parse effects

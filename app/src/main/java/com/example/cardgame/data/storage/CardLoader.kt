@@ -5,6 +5,9 @@ import android.util.Log
 import com.example.cardgame.data.model.abilities.Ability
 import com.example.cardgame.data.model.card.Card
 import com.example.cardgame.data.model.card.Deck
+import com.example.cardgame.data.model.card.FortificationCard
+import com.example.cardgame.data.model.card.TacticCard
+import com.example.cardgame.data.model.card.UnitCard
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import java.io.BufferedReader
@@ -15,10 +18,14 @@ class CardLoader(private val context: Context) {
     private val TAG = "CardLoader"
     private val appContext = context.applicationContext
 
-    // Create a custom Gson instance with type adapters for our card classes
-    private val gson = GsonBuilder()
+    // Create separate Gson instances for different card types
+    private val standardGson = GsonBuilder()
         .registerTypeAdapter(Card::class.java, CardTypeAdapter())
         .registerTypeAdapter(Ability::class.java, AbilityTypeAdapter())
+        .create()
+
+    private val tacticGson = GsonBuilder()
+        .registerTypeAdapter(TacticCard::class.java, TacticCardDeserializer())
         .create()
 
     // Cache for all loaded cards
@@ -28,31 +35,63 @@ class CardLoader(private val context: Context) {
     private val deckCache = mutableMapOf<String, Deck>()
 
     /**
-     * Load all cards from the main cards JSON file
+     * Load all cards from both standard and tactic card files
      */
     fun loadAllCards(): List<Card> {
-        return loadCardsFromAssets("decks/cards.json")
+        // Load regular units and fortifications
+        val standardCards = loadStandardCards("decks/cards.json")
+
+        // Load tactic cards from their own file
+        val tacticCards = loadTacticCards("decks/tactic_cards.json")
+
+        // Combine the lists and return
+        return standardCards + tacticCards
     }
 
     /**
-     * Load cards from a specific JSON file in assets
+     * Load standard cards (units and fortifications) from a file
      */
-    fun loadCardsFromAssets(fileName: String): List<Card> {
+    fun loadStandardCards(fileName: String): List<Card> {
         try {
             val inputStream = appContext.assets.open(fileName)
             val reader = BufferedReader(InputStreamReader(inputStream))
             val jsonString = reader.readText()
 
+            // Use the standard card type token
             val cardListType = object : TypeToken<List<Card>>() {}.type
-            val cards = gson.fromJson<List<Card>>(jsonString, cardListType)
+            val cards = standardGson.fromJson<List<Card>>(jsonString, cardListType)
 
             // Cache the cards for quick access
             cards.forEach { card -> cardCache[card.id] = card }
 
-            Log.d(TAG, "Loaded ${cards.size} cards from $fileName")
+            Log.d(TAG, "Loaded ${cards.size} standard cards from $fileName")
             return cards
         } catch (e: Exception) {
-            Log.e(TAG, "Error loading cards from $fileName", e)
+            Log.e(TAG, "Error loading standard cards from $fileName", e)
+            return emptyList()
+        }
+    }
+
+    /**
+     * Load tactic cards from a file
+     */
+    fun loadTacticCards(fileName: String): List<TacticCard> {
+        try {
+            val inputStream = appContext.assets.open(fileName)
+            val reader = BufferedReader(InputStreamReader(inputStream))
+            val jsonString = reader.readText()
+
+            // Use the tactic card type token
+            val tacticCardListType = object : TypeToken<List<TacticCard>>() {}.type
+            val tacticCards = tacticGson.fromJson<List<TacticCard>>(jsonString, tacticCardListType)
+
+            // Cache the tactic cards
+            tacticCards.forEach { card -> cardCache[card.id] = card }
+
+            Log.d(TAG, "Loaded ${tacticCards.size} tactic cards from $fileName")
+            return tacticCards
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading tactic cards from $fileName", e)
             return emptyList()
         }
     }
@@ -89,7 +128,7 @@ class CardLoader(private val context: Context) {
             val jsonString = reader.readText()
 
             // Parse the deck JSON
-            val deckData = gson.fromJson(jsonString, DeckDefinition::class.java)
+            val deckData = standardGson.fromJson(jsonString, DeckDefinition::class.java)
             Log.d(TAG, "Loaded deck definition: ${deckData.name} with ${deckData.cardIds.size} cards")
 
             // Make sure all cards are loaded
@@ -125,9 +164,7 @@ class CardLoader(private val context: Context) {
         }
     }
 
-    /**
-     * Get a list of all available predefined decks
-     */
+    // Rest of the methods remain unchanged...
     fun getAvailableDeckNames(): List<String> {
         try {
             val deckFolderPath = "decks"
@@ -145,9 +182,6 @@ class CardLoader(private val context: Context) {
         }
     }
 
-    /**
-     * Create default decks if none exist in assets
-     */
     fun createDefaultDecksIfNeeded(): List<String> {
         val availableDecks = getAvailableDeckNames()
         if (availableDecks.isNotEmpty()) {
@@ -155,7 +189,6 @@ class CardLoader(private val context: Context) {
         }
 
         // Create temporary decks in memory since we can't write to assets at runtime
-        // In a real app, you'd create these files in your assets folder
         Log.d(TAG, "No decks found, creating default decks in memory")
 
         // Load all cards first
@@ -166,21 +199,22 @@ class CardLoader(private val context: Context) {
         }
 
         // Create some simple decks
-        val unitCards = allCards.filter { it.toString().contains("UnitCard") }
-        val tacticCards = allCards.filter { it.toString().contains("TacticCard") || it.toString().contains("EnhancedTacticCard") }
+        val unitCards = allCards.filterIsInstance<UnitCard>()
+        val tacticCards = allCards.filterIsInstance<TacticCard>()
+        val fortificationCards = allCards.filterIsInstance<FortificationCard>()
 
         // Player deck
-        val playerDeckCards = (unitCards.take(12) + tacticCards.take(8)).toMutableList()
+        val playerDeckCards = (unitCards.take(8) + tacticCards.take(6) + fortificationCards.take(2)).toMutableList()
         val playerDeck = Deck(
             id = "player_deck",
             name = "Player's Balanced Deck",
-            description = "A balanced deck with units and tactics",
+            description = "A balanced deck with units, tactics, and fortifications",
             cards = playerDeckCards
         )
         deckCache["player_deck"] = playerDeck
 
         // Opponent deck
-        val opponentDeckCards = (unitCards.takeLast(12) + tacticCards.takeLast(8)).toMutableList()
+        val opponentDeckCards = (unitCards.takeLast(8) + tacticCards.takeLast(6) + fortificationCards.takeLast(2)).toMutableList()
         val opponentDeck = Deck(
             id = "opponent_deck",
             name = "Opponent's Deck",
@@ -189,20 +223,8 @@ class CardLoader(private val context: Context) {
         )
         deckCache["opponent_deck"] = opponentDeck
 
-        // Medieval themed deck
-        val medievalCards = allCards.filter {
-            it.toString().contains("MEDIEVAL") || it.toString().contains("TacticCard")
-        }.take(20).toMutableList()
-        val medievalDeck = Deck(
-            id = "medieval_deck",
-            name = "Medieval Forces",
-            description = "A themed deck with medieval units",
-            cards = medievalCards
-        )
-        deckCache["medieval_deck"] = medievalDeck
-
         Log.d(TAG, "Created default decks in memory")
-        return listOf("player_deck", "opponent_deck", "medieval_deck")
+        return listOf("player_deck", "opponent_deck")
     }
 
     /**

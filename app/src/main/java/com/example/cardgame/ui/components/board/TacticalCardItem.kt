@@ -1,12 +1,15 @@
 package com.example.cardgame.ui.components.board
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -32,6 +35,7 @@ import com.example.cardgame.R
 import com.example.cardgame.data.enum.TacticCardType
 import com.example.cardgame.data.enum.TargetType
 import com.example.cardgame.data.model.card.TacticCard
+import com.example.cardgame.ui.theme.bloodDropShape
 
 /**
  * UI component for displaying a Tactic Card in the player's hand or collection
@@ -53,9 +57,6 @@ fun TacticCardItem(
         TacticCardType.SPECIAL -> Color(0xFF1976D2)        // Blue
     }
 
-    // Adjust opacity if card is not playable
-    val finalCardColor = if (isPlayable) cardColor else cardColor.copy(alpha = 0.5f)
-
     // Target type indicator color
     val targetColor = when (card.targetType) {
         TargetType.FRIENDLY -> Color(0xFF4CAF50)  // Green
@@ -67,7 +68,7 @@ fun TacticCardItem(
 
     // Get icon resource based on card type
     val cardIconRes = when (card.cardType) {
-        TacticCardType.DIRECT_DAMAGE -> R.drawable.attack_missile
+        TacticCardType.DIRECT_DAMAGE -> R.drawable.aoe_damage_effect_icon
         TacticCardType.AREA_EFFECT -> R.drawable.aoe_damage_effect_icon
         TacticCardType.BUFF -> R.drawable.magic_effect_icon
         TacticCardType.DEBUFF -> R.drawable.magic_effect_icon
@@ -97,8 +98,8 @@ fun TacticCardItem(
                 .background(
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            finalCardColor,
-                            finalCardColor.copy(alpha = 0.7f)
+                            cardColor,
+                            cardColor.copy(alpha = 0.7f)
                         )
                     )
                 )
@@ -109,10 +110,10 @@ fun TacticCardItem(
             Box(
                 modifier = Modifier
                     .size(30.dp)
-                    .align(Alignment.TopStart)
+                    .align(Alignment.BottomCenter)
                     .padding(4.dp)
-                    .background(Color(0xFF2196F3), CircleShape)
-                    .border(1.dp, Color.White, CircleShape),
+                    .background(Color(0xFFC41E3A), bloodDropShape)
+                    .border(1.dp, Color.White, bloodDropShape),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -129,12 +130,13 @@ fun TacticCardItem(
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 fontSize = 12.sp,
-                textAlign = TextAlign.Center,
                 maxLines = 2,
+                textAlign = TextAlign.Center,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .padding(top = 4.dp, start = 32.dp, end = 20.dp)
+                    .padding(top = 4.dp)
+                    .fillMaxWidth()
             )
 
             // Card icon/image
@@ -143,14 +145,13 @@ fun TacticCardItem(
                     .size(50.dp)
                     .align(Alignment.Center)
                     .clip(CircleShape)
-                    .background(Color.Black.copy(alpha = 0.3f))
-                    .padding(8.dp),
+                    .offset(y = (-6).dp)
+                    .padding(4.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
                     painter = painterResource(id = cardIconRes),
-                    contentDescription = "Card type: ${card.cardType}",
-                    modifier = Modifier.size(34.dp)
+                    contentDescription = "Card type: ${card.cardType}"
                 )
             }
 
@@ -160,12 +161,13 @@ fun TacticCardItem(
                 color = Color.White,
                 fontSize = 9.sp,
                 textAlign = TextAlign.Center,
-                maxLines = 3,
+                maxLines = 2,
+                lineHeight = 12.sp,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(4.dp)
-                    .padding(horizontal = 8.dp)
+                    .offset(y = (-24).dp)
             )
         }
     }

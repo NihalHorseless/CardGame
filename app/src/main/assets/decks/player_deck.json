@@ -4,7 +4,7 @@
   "description": "A balanced deck featuring different kinds of cards",
   "cardIds": [
     2, 2, 2, 2, 100, 101, 102, 103, 104,
-    1, 1, 1, 1, 1,
+    100, 101, 102, 103, 104,
     7,
     15,
     13, 13

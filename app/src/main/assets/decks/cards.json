@@ -84,46 +84,6 @@
     "hasTaunt": true
   },
   {
-    "id": 6,
-    "name": "Firebolt",
-    "description": "Deal 3 damage to a target unit",
-    "manaCost": 2,
-    "imagePath": "tactic_firebolt",
-    "type": "tactic",
-    "effectType": "direct_damage",
-    "effectValue": 3
-  },
-  {
-    "id": 7,
-    "name": "Healing Potion",
-    "description": "Restore 4 health to a friendly unit",
-    "manaCost": 2,
-    "imagePath": "tactic_healing_potion",
-    "type": "tactic",
-    "effectType": "heal",
-    "effectValue": 4
-  },
-  {
-    "id": 8,
-    "name": "Meteor Strike",
-    "description": "Deal 2 damage to all units in a 3x3 area",
-    "manaCost": 6,
-    "imagePath": "tactic_meteor_strike",
-    "type": "tactic",
-    "effectType": "area_effect",
-    "effectValue": 2
-  },
-  {
-    "id": 9,
-    "name": "Battle Cry",
-    "description": "Increase a unit's attack by 2",
-    "manaCost": 3,
-    "imagePath": "tactic_battle_cry",
-    "type": "tactic",
-    "effectType": "buff_attack",
-    "effectValue": 2
-  },
-  {
     "id": 10,
     "name": "Great War Soldier",
     "description": "Trench warfare specialist",

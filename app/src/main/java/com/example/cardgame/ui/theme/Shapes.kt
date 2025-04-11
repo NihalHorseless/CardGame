@@ -92,3 +92,33 @@ val thickSwordShape = GenericShape { size, _ ->
     // Close path back to tip
     close()
 }
+val bloodDropShape = GenericShape { size, _ ->
+    // Blood drop base shape parameters
+    val width = size.width
+    val height = size.height
+
+    // Start at the top middle (the point of the drop)
+    moveTo(width / 2, 0f)
+
+    // Create right curve of drop
+    cubicTo(
+        width * 0.8f, height * 0.3f,  // control point 1
+        width, height * 0.5f,         // control point 2
+        width * 0.8f, height * 0.8f   // end point
+    )
+
+    // Create bottom curve
+    quadraticTo(
+        width / 2, height,     // control point
+        width * 0.2f, height * 0.8f  // end point
+    )
+
+    // Create left curve, back to top
+    cubicTo(
+        0f, height * 0.5f,     // control point 1
+        width * 0.2f, height * 0.3f,  // control point 2
+        width / 2, 0f          // back to start point
+    )
+
+    close()
+}

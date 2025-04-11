@@ -52,6 +52,7 @@ import com.example.cardgame.data.model.card.UnitCard
 import com.example.cardgame.ui.components.board.FortificationTypeIcon
 import com.example.cardgame.ui.components.board.TacticCardItem
 import com.example.cardgame.ui.components.board.UnitTypeIcon
+import com.example.cardgame.ui.theme.bloodDropShape
 import com.example.cardgame.ui.theme.kiteShieldShape
 import com.example.cardgame.ui.theme.thickSwordShape
 
@@ -215,15 +216,15 @@ fun HandCard(
                     .size(30.dp)
                     .align(Alignment.BottomCenter)
                     .padding(4.dp)
-                    .background(Color(0xFF2196F3), CircleShape)
-                    .border(1.dp, Color.White, CircleShape),
+                    .background(Color(0xFFC41E3A), bloodDropShape)
+                    .border(1.dp, Color.White, bloodDropShape),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = card.manaCost.toString(),
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    fontSize = 15.sp
                 )
             }
 

@@ -2,7 +2,7 @@
   {
     "id": 100,
     "name": "Fireball",
-    "description": "Deal 4 damage to a target unit or fortification",
+    "description": "Deal 4 damage",
     "manaCost": 3,
     "imagePath": "tactic_fireball",
     "type": "tactic",
@@ -18,7 +18,7 @@
   {
     "id": 101,
     "name": "Healing Potion",
-    "description": "Restore 5 health to a friendly unit or fortification",
+    "description": "Restore 5 health",
     "manaCost": 2,
     "imagePath": "tactic_healing",
     "type": "tactic",
@@ -34,7 +34,7 @@
   {
     "id": 102,
     "name": "Explosion",
-    "description": "Deal 3 damage to all units in a 3x3 area",
+    "description": "Deal 3 damage to all units in 1 radius",
     "manaCost": 6,
     "imagePath": "tactic_explosion",
     "type": "tactic",
