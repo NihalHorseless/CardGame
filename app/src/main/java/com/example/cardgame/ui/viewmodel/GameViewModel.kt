@@ -84,6 +84,9 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
     private val _opponentHealth = mutableIntStateOf(30)
     val opponentHealth: State<Int> = _opponentHealth
 
+    private val _opponentHandSize = mutableIntStateOf(0)
+    val opponentHandSize: State<Int> = _opponentHandSize
+
     private val _isPlayerTurn = mutableStateOf(true)
     val isPlayerTurn: State<Boolean> = _isPlayerTurn
 
@@ -297,6 +300,10 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
 
         val card = hand[cardIndex]
 
+        if(_interactionMode.value == InteractionMode.CARD_TARGETING){
+            cancelDeployment()
+            return
+        }
         // Handle both unit and fortification cards the same way
         if (card is UnitCard || card is FortificationCard) {
             // Check if player has enough mana
@@ -529,6 +536,9 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
         _playerHealth.intValue = _gameManager.players[0].health
         _opponentHealth.intValue = _gameManager.players[1].health
 
+        // Update opponent stats
+        _opponentHandSize.intValue = _gameManager.players[1].hand.size
+
         // Update turn state
         _isPlayerTurn.value = currentPlayer.id == 0
         _gameState.value = _gameManager.gameState
@@ -543,9 +553,6 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
         checkGameOver()
     }
 
-    /**
-     * Handles clicking on a cell in the unified board
-     */
     /**
      * Handles clicking on a cell in the unified board with direct interaction style
      */

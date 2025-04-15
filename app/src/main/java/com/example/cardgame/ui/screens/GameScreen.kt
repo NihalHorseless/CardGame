@@ -10,24 +10,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import com.example.cardgame.data.enum.InteractionMode
 import com.example.cardgame.ui.components.board.GameBoard
 import com.example.cardgame.ui.components.board.GameStatusBar
 import com.example.cardgame.ui.components.board.PlayerPortrait
@@ -35,6 +27,7 @@ import com.example.cardgame.ui.components.effects.CardSlotAnimation
 import com.example.cardgame.ui.components.effects.DamageNumberEffect
 import com.example.cardgame.ui.components.effects.SimpleAttackAnimation
 import com.example.cardgame.ui.components.effects.TacticCardEffectAnimation
+import com.example.cardgame.ui.components.player.OpponentHand
 import com.example.cardgame.ui.components.player.PlayerHand
 import com.example.cardgame.ui.viewmodel.GameViewModel
 
@@ -52,6 +45,7 @@ fun GameScreen(
     val playerMaxMana by viewModel.playerMaxMana
     val playerHealth by viewModel.playerHealth
     val opponentHealth by viewModel.opponentHealth
+    val opponentHandSize by viewModel.opponentHandSize
     val isGameOver by viewModel.isGameOver
     val isPlayerWinner by viewModel.isPlayerWinner
     val isPlayerTurn by viewModel.isPlayerTurn
@@ -141,14 +135,12 @@ fun GameScreen(
                     )
 
                     Spacer(modifier = Modifier.weight(1f))
-
-                    // Game status (turn, mana)
-                    GameStatusBar(
-                        playerMana = playerMana,
-                        playerMaxMana = playerMaxMana,
-                        isPlayerTurn = isPlayerTurn,
-                        onEndTurn = { viewModel.endTurn() }
+                    // Opponent's Hand
+                    OpponentHand(
+                        cardCount = opponentHandSize,
+                        modifier = Modifier.fillMaxWidth()
                     )
+
                 }
 
                 // Unified game board
@@ -189,6 +181,13 @@ fun GameScreen(
                     }
 
                 }
+                // Game status (turn, mana)
+                GameStatusBar(
+                    playerMana = playerMana,
+                    playerMaxMana = playerMaxMana,
+                    isPlayerTurn = isPlayerTurn,
+                    onEndTurn = { viewModel.endTurn() }
+                )
 
                 // Bottom row with player's portrait and hand
                 Row(
@@ -288,25 +287,6 @@ fun GameScreen(
          */
         }
 
-        // Cancel button for deployment mode
-        if (interactionMode == InteractionMode.CARD_TARGETING) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp)
-                    .zIndex(15f)
-            ) {
-                FloatingActionButton(
-                    onClick = { viewModel.cancelDeployment() },
-                    containerColor = Color.Red
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Cancel",
-                        tint = Color.White
-                    )
-                }
-            }
-        }
+
     }
 }
