@@ -282,40 +282,64 @@ class GameManager {
         }
     }
 
+
     /**
-     * Executes an attack between two units.
-     */
-    /**
-     * Executes an attack between two units.
+     * Executes an attack between units and/or fortifications.
+     * This method handles all attack scenarios:
+     * - Unit attacking a unit
+     * - Unit attacking a fortification
      */
     fun executeAttack(attacker: UnitCard, targetRow: Int, targetCol: Int): Boolean {
-        if (!canUnitAttackTarget(attacker, targetRow, targetCol)) return false
+        // Get the target unit (if any)
+        val targetUnit = gameBoard.getUnitAt(targetRow, targetCol)
 
-        val targetUnit = gameBoard.getUnitAt(targetRow, targetCol) ?: return false
+        // Get the target fortification (if any)
+        val targetFort = gameBoard.getFortificationAt(targetRow, targetCol)
 
-        // Calculate damage with counter system
-        val damage = calculateDamage(attacker, targetUnit)
+        // If neither a unit nor a fortification is at the target position, the attack fails
+        if (targetUnit == null && targetFort == null) return false
 
-        // Deal damage to target
-        targetUnit.takeDamage(damage)
+        // If there's a unit at the target position, execute a unit attack
+        if (targetUnit != null) {
+            // Check if the attack is valid
+            if (!canUnitAttackTarget(attacker, targetRow, targetCol)) return false
 
-        // Check if this is a ranged attack (based on Manhattan distance)
-        val attackerPos = gameBoard.getUnitPosition(attacker) ?: return false
-        val (attackerRow, attackerCol) = attackerPos
-        val manhattanDistance = abs(attackerRow - targetRow) + abs(attackerCol - targetCol)
+            // Calculate damage with counter system
+            val damage = calculateDamage(attacker, targetUnit)
 
-        // Only take counterattack damage if the attack is melee range (distance = 1)
-        if (manhattanDistance == 1) {
-            // Take damage from target's counterattack - also apply counter system
-            val counterAttackDamage = calculateDamage(targetUnit, attacker)
-            attacker.takeDamage(counterAttackDamage)
+            // Deal damage to target
+            targetUnit.takeDamage(damage)
+
+            // Check if this is a ranged attack (based on Manhattan distance)
+            val attackerPos = gameBoard.getUnitPosition(attacker) ?: return false
+            val (attackerRow, attackerCol) = attackerPos
+            val manhattanDistance = abs(attackerRow - targetRow) + abs(attackerCol - targetCol)
+
+            // Only take counterattack damage if the attack is melee range (distance = 1)
+            if (manhattanDistance == 1) {
+                // Take damage from target's counterattack - also apply counter system
+                val counterAttackDamage = calculateDamage(targetUnit, attacker)
+                attacker.takeDamage(counterAttackDamage)
+            }
         }
+        // Otherwise, if there's a fortification at the target position, execute a fortification attack
+        else if (targetFort != null) {
+            // Check if the attack is valid
+            if (!canUnitAttackFortification(attacker, targetRow, targetCol)) return false
+
+            // Calculate damage with fortification counter system
+            val damage = calculateFortificationDamage(attacker)
+
+            // Deal damage to fortification
+            targetFort.takeDamage(damage)
+        }
+
+        // Unit has attacked this turn (in either case)
+        attacker.canAttackThisTurn = false
 
         // Check for destructions
         checkForDestroyedUnits()
-
-        // Unit has attacked this turn
-        attacker.canAttackThisTurn = false
+        checkForDestroyedFortifications()
 
         return true
     }

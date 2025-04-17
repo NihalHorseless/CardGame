@@ -53,6 +53,10 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     // GSON for serialization
     implementation ("com.google.code.gson:gson:2.12.1")
+    // Coil
+    implementation(libs.coil.compose)
+    implementation(libs.coil3.coil.gif)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

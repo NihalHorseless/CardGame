@@ -25,6 +25,7 @@ import com.example.cardgame.ui.components.board.GameStatusBar
 import com.example.cardgame.ui.components.board.PlayerPortrait
 import com.example.cardgame.ui.components.effects.CardSlotAnimation
 import com.example.cardgame.ui.components.effects.DamageNumberEffect
+import com.example.cardgame.ui.components.effects.GifAttackAnimation
 import com.example.cardgame.ui.components.effects.SimpleAttackAnimation
 import com.example.cardgame.ui.components.effects.TacticCardEffectAnimation
 import com.example.cardgame.ui.components.player.OpponentHand
@@ -228,13 +229,15 @@ fun GameScreen(
         // Animation layers
         // Attack animation
         if (isSimpleAttackVisible) {
-            SimpleAttackAnimation(
-                isVisible = isSimpleAttackVisible,
+            GifAttackAnimation(
                 unitType = attackingUnitType,
+                isVisible = isSimpleAttackVisible,
                 targetX = attackTargetPosition.first,
                 targetY = attackTargetPosition.second,
-                onAnimationComplete = { /* Animation will be handled by ViewModel */ },
-                modifier = Modifier.fillMaxSize().zIndex(10f)
+                onAnimationComplete = {
+                    // Add later
+                },
+                modifier = Modifier.zIndex(10f)
             )
         }
         if (isTacticEffectVisible) {

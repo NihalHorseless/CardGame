@@ -1,7 +1,7 @@
 [
   {
     "id": 100,
-    "name": "Fireball",
+    "name": "Thunder Strike",
     "description": "Deal 4 damage",
     "manaCost": 3,
     "imagePath": "tactic_fireball",
@@ -33,7 +33,7 @@
   },
   {
     "id": 102,
-    "name": "Explosion",
+    "name": "Easy Pete",
     "description": "Deal 3 damage to all units in 1 radius",
     "manaCost": 6,
     "imagePath": "tactic_explosion",
@@ -50,7 +50,7 @@
   },
   {
     "id": 103,
-    "name": "Battle Rage",
+    "name": "Berserker Mode",
     "description": "Increase a unit's attack by 3 for 2 turns",
     "manaCost": 4,
     "imagePath": "tactic_rage",
@@ -67,7 +67,7 @@
   },
   {
     "id": 104,
-    "name": "Arcane Intellect",
+    "name": "Hit me Dealer",
     "description": "Draw 2 cards from your deck",
     "manaCost": 3,
     "imagePath": "tactic_intellect",
