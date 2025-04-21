@@ -169,7 +169,6 @@ fun HandCard(
             UnitEra.ANCIENT -> Color(0xFF8D6E63)    // Brown
             UnitEra.ROMAN -> Color(0xFFB71C1C)      // Dark Red
             UnitEra.MEDIEVAL -> Color(0xFF1A237E)   // Dark Blue
-            UnitEra.MODERN -> Color(0xFF212121)     // Dark Gray
             else -> Color(0xFFFFFFFF) // White for Default
         }
     } else {

@@ -84,8 +84,6 @@ fun UnitSlot(
         UnitEra.ROMAN -> Color(0xFFB71C1C)      // Dark Red
         UnitEra.MEDIEVAL -> Color(0xFF1A237E)   // Dark Blue
         UnitEra.NAPOLEONIC -> Color(0xFF4A148C) // Purple
-        UnitEra.GREAT_WAR -> Color(0xFF3E2723)  // Dark Brown
-        UnitEra.MODERN -> Color(0xFF212121)     // Dark Gray
         null -> Color(0xFF424242) // Gray for empty slot
     }
 

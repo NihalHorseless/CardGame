@@ -1348,9 +1348,10 @@ class GameViewModel(
 
         if (targetPos != null) {
             // Start attack animation (use a distinct attack type for towers)
-            _attackingUnitType.value = UnitType.ARTILLERY // Use artillery animation for towers
+            _attackingUnitType.value = UnitType.MISSILE // Use artillery animation for towers
             _attackTargetPosition.value = targetPos
             _isSimpleAttackVisible.value = true
+            soundManager.playSound(SoundType.MISSILE_ATTACK)
 
             // Attack logic after animation
             viewModelScope.launch {
@@ -1408,7 +1409,7 @@ class GameViewModel(
             UnitType.ARTILLERY -> SoundType.ARTILLERY_ATTACK
             UnitType.MISSILE -> SoundType.MISSILE_ATTACK
         }
-        soundManager.playSound(attackSound)
+        soundManager.playSound(attackSound, volume = if(unitType == UnitType.ARTILLERY) 0.5f else 1.0f)
     }
     private fun playUnitTapSound(unitType: UnitType){
         val tapSound = when (unitType) {

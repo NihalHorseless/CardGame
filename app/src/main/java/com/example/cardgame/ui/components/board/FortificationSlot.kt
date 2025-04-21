@@ -93,10 +93,6 @@ fun FortificationSlot(
                 modifier = Modifier.size(40.dp)
             )
 
-            // Attack indicator for towers that can attack
-            if (fortification.fortType == FortificationType.TOWER && canAttack) {
-
-            }
         }
 
         // Attack value for towers (outside the shield)

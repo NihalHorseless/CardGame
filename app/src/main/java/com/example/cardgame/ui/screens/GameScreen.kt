@@ -26,7 +26,6 @@ import com.example.cardgame.ui.components.board.PlayerPortrait
 import com.example.cardgame.ui.components.effects.CardSlotAnimation
 import com.example.cardgame.ui.components.effects.DamageNumberEffect
 import com.example.cardgame.ui.components.effects.GifAttackAnimation
-import com.example.cardgame.ui.components.effects.SimpleAttackAnimation
 import com.example.cardgame.ui.components.effects.TacticCardEffectAnimation
 import com.example.cardgame.ui.components.player.OpponentHand
 import com.example.cardgame.ui.components.player.PlayerHand
@@ -167,19 +166,6 @@ fun GameScreen(
                         },
                         modifier = Modifier.fillMaxSize()
                     )
-
-                    // Highlight valid moves and attack targets
-                    if (validMoveDestinations.isNotEmpty() || validAttackTargets.isNotEmpty()) {
-                        /*
-                        BoardHighlights(
-                            validMoveDestinations = validMoveDestinations,
-                            validAttackTargets = validAttackTargets,
-                            cellPositions = cellPositionsMap,
-                            modifier = Modifier.fillMaxSize().zIndex(5f)
-                        )
-
-                         */
-                    }
 
                 }
                 // Game status (turn, mana)

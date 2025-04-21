@@ -11,7 +11,6 @@ import androidx.compose.animation.expandIn
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkOut
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,7 +28,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
@@ -38,10 +36,8 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.ImageLoader
@@ -51,7 +47,6 @@ import coil3.request.ImageRequest
 import com.example.cardgame.R
 import com.example.cardgame.data.enum.UnitType
 import kotlinx.coroutines.delay
-import kotlin.math.roundToInt
 
 @Composable
 fun CardSlotAnimation(
@@ -288,87 +283,6 @@ fun FlippableCard(
 }
 
 @Composable
-fun SimpleAttackAnimation(
-    isVisible: Boolean,
-    unitType: UnitType,
-    targetX: Float,
-    targetY: Float,
-    onAnimationComplete: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    // Get appropriate weapon icon based on unit type
-    val weaponIconRes = when (unitType) {
-        UnitType.INFANTRY -> R.drawable.attack_infantry
-        UnitType.CAVALRY -> R.drawable.attack_cavalry
-        UnitType.ARTILLERY -> R.drawable.attack_artillery
-        UnitType.MISSILE -> R.drawable.attack_missile
-    }
-
-    // Animation states
-    val animatedScale by animateFloatAsState(
-        targetValue = if (isVisible) 1.5f else 0f,
-        animationSpec = tween(300, easing = EaseOutBack)
-    )
-
-    val animatedRotation by animateFloatAsState(
-        targetValue = if (isVisible) 360f else 0f,
-        animationSpec = tween(500)
-    )
-
-    val animatedAlpha by animateFloatAsState(
-        targetValue = if (isVisible) 1f else 0f,
-        animationSpec = tween(300)
-    )
-
-    // Trigger completion after animation plays
-    LaunchedEffect(isVisible) {
-        if (isVisible) {
-            delay(800) // Show the weapon for this duration
-            onAnimationComplete()
-        }
-    }
-
-    // Generate small random offsets for shaking effect
-    var shakeOffsetX by remember { mutableFloatStateOf(0f) }
-    var shakeOffsetY by remember { mutableFloatStateOf(0f) }
-
-    // Update shake effect
-    LaunchedEffect(isVisible) {
-        if (isVisible) {
-            while (true) {
-                shakeOffsetX = (-5..5).random().toFloat()
-                shakeOffsetY = (-5..5).random().toFloat()
-                delay(50) // Update shake every 50ms
-            }
-        }
-    }
-
-    if (isVisible) {
-        Box(modifier = modifier) {
-            // We use IntOffset for pixel-perfect positioning
-            val iconSize = 40.dp
-            val halfIconSizePx = with(LocalDensity.current) { iconSize.toPx() / 2 }
-
-            Image(
-                painter = painterResource(id = weaponIconRes),
-                contentDescription = "Attack Animation",
-                modifier = Modifier
-                    .size(iconSize)
-                    .offset {
-                        IntOffset(
-                            x = (targetX - halfIconSizePx + shakeOffsetX).roundToInt(),
-                            y = (targetY - halfIconSizePx + shakeOffsetY).roundToInt()
-                        )
-                    }
-                    .scale(animatedScale)
-                    .rotate(animatedRotation)
-                    .alpha(animatedAlpha)
-            )
-        }
-    }
-}
-
-@Composable
 fun GifAttackAnimation(
     unitType: UnitType,
     isVisible: Boolean,
@@ -391,7 +305,7 @@ fun GifAttackAnimation(
     val animationRes = when (unitType) {
         UnitType.CAVALRY -> R.drawable.blood_slash
         UnitType.INFANTRY -> R.drawable.blood_slash
-        UnitType.MISSILE -> R.drawable.arrow_rain_deneme
+        UnitType.MISSILE -> R.drawable.arrow_rain_two
         UnitType.ARTILLERY -> R.drawable.blood_explosion
     }
 

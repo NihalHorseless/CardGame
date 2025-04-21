@@ -1,13 +1,11 @@
 package com.example.cardgame.ui.components.effects
 
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
@@ -18,8 +16,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
@@ -54,7 +50,7 @@ fun TacticCardEffectAnimation(
     // Select the appropriate GIF resource based on card type
     val gifResourceId = when (cardType) {
         TacticCardType.DIRECT_DAMAGE -> R.drawable.light_spark // Fire/impact effect
-        TacticCardType.AREA_EFFECT -> R.drawable.dynamite_explosion // Explosion effect
+        TacticCardType.AREA_EFFECT -> R.drawable.blood_explosion_two // Explosion effect
         TacticCardType.BUFF -> R.drawable.buff_particles // Green magical glow
         TacticCardType.DEBUFF -> R.drawable.buff_particles // Purple energy swirl
         TacticCardType.SPECIAL -> R.drawable.buff_particles // Blue magical sparkles

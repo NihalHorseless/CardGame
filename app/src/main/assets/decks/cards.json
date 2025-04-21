@@ -68,38 +68,6 @@
     "hasTaunt": false
   },
   {
-    "id": 5,
-    "name": "Modern Tank",
-    "description": "Armored vehicle with devastating firepower",
-    "manaCost": 8,
-    "imagePath": "unit_modern_tank",
-    "type": "unit",
-    "attack": 7,
-    "health": 8,
-    "maxHealth": 8,
-    "unitType": "ARTILLERY",
-    "unitEra": "MODERN",
-    "abilities": [],
-    "hasCharge": false,
-    "hasTaunt": true
-  },
-  {
-    "id": 10,
-    "name": "Great War Soldier",
-    "description": "Trench warfare specialist",
-    "manaCost": 3,
-    "imagePath": "unit_ww1_soldier",
-    "type": "unit",
-    "attack": 3,
-    "health": 3,
-    "maxHealth": 3,
-    "unitType": "INFANTRY",
-    "unitEra": "GREAT_WAR",
-    "abilities": [],
-    "hasCharge": false,
-    "hasTaunt": false
-  },
-  {
     "id": 11,
     "name": "Egyptian Chariot",
     "description": "Fast desert raider with multiple attacks",
@@ -118,16 +86,6 @@
     ],
     "hasCharge": true,
     "hasTaunt": false
-  },
-  {
-    "id": 12,
-    "name": "Reinforcements",
-    "description": "Draw two cards from your deck",
-    "manaCost": 4,
-    "imagePath": "tactic_reinforcements",
-    "type": "tactic",
-    "effectType": "draw_cards",
-    "effectValue": 2
   },
   {
     "id": 13,

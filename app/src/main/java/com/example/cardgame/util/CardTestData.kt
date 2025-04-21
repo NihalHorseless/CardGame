@@ -11,7 +11,7 @@ object CardTestData {
         id = 0,
         name = "Sample",
         unitType = UnitType.INFANTRY,
-        unitEra = UnitEra.MODERN,
+        unitEra = UnitEra.MEDIEVAL,
         description = "",
         attack = 0,
         health = 0,
