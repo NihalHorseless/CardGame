@@ -1,10 +1,13 @@
 package com.example.cardgame.ui.viewmodel
 
+import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.cardgame.audio.SoundManager
+import com.example.cardgame.audio.SoundType
 import com.example.cardgame.data.enum.FortificationType
 import com.example.cardgame.data.enum.GameState
 import com.example.cardgame.data.enum.InteractionMode
@@ -23,7 +26,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
-class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
+class GameViewModel(
+    private val cardRepository: CardRepository,
+    private val soundManager: SoundManager
+) : ViewModel() {
+
     private val _gameManager = GameManager()
     val gameManager: GameManager get() = _gameManager
 
@@ -263,6 +270,7 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
 
         _statusMessage.value = "Game started with decks: $playerDeckName vs $opponentDeckName"
     }
+
     /**
      * Gets valid deployment positions for a player based on their ID.
      * Player 0 can deploy in the bottom two rows (3-4 in a 5x5 board)
@@ -289,6 +297,7 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
 
         return validPositions
     }
+
     /**
      * Handle card selection from hand
      */
@@ -299,8 +308,9 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
         if (cardIndex < 0 || cardIndex >= hand.size) return
 
         val card = hand[cardIndex]
+        soundManager.playSound(SoundType.CARD_PICK)
 
-        if(_interactionMode.value == InteractionMode.CARD_TARGETING){
+        if (_interactionMode.value == InteractionMode.CARD_TARGETING) {
             cancelDeployment()
             return
         }
@@ -320,14 +330,14 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
             _validDeploymentPositions.value = getValidDeploymentPositions(0) // 0 is player ID
 
             _statusMessage.value = "Select a position to deploy"
-        } else if(card is TacticCard) {
+        } else if (card is TacticCard) {
             handleTacticCardSelection(card, cardIndex)
-        }
-        else {
+        } else {
             // For non-unit cards, just play them directly
             playCard(cardIndex)
         }
     }
+
     /**
      * Handle TacticCard selection from hand
      */
@@ -350,6 +360,7 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
                     _statusMessage.value = "Failed to play ${card.name}"
                 }
             }
+
             else -> {
                 // Cards that need targets - switch to targeting mode
                 _selectedCardIndex.value = cardIndex
@@ -368,6 +379,7 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
             }
         }
     }
+
     /**
      * Handle a click on a cell when in targeting mode
      */
@@ -389,6 +401,7 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
 
         if (success) {
             // Show animation effect
+            playTacticCardSound(card.cardType)
             val targetPos = cellPositions[Pair(row, col)]
             if (targetPos != null) {
                 _tacticEffectPosition.value = targetPos
@@ -407,9 +420,10 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
             _statusMessage.value = "Failed to play ${card.name}"
         }
     }
+
     /**
-    * Helper methods to find valid targets
-    */
+     * Helper methods to find valid targets
+     */
     private fun getFriendlyTargets(): List<Pair<Int, Int>> {
         val targets = mutableListOf<Pair<Int, Int>>()
 
@@ -471,6 +485,7 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
 
         return targets
     }
+
     private fun deployCardAtPosition(row: Int, col: Int) {
         val cardIndex = _selectedCardIndex.value ?: return
 
@@ -575,7 +590,8 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
 
         // Check for fortifications
         val clickedFortification = _gameManager.gameBoard.getFortificationAt(row, col)
-        val fortificationOwner = clickedFortification?.let { _gameManager.gameBoard.getFortificationOwner(it) }
+        val fortificationOwner =
+            clickedFortification?.let { _gameManager.gameBoard.getFortificationOwner(it) }
 
         // If there's a fortification at this cell, handle it
         if (clickedFortification != null) {
@@ -605,11 +621,13 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
         // If a fortification is selected and player clicks on a valid attack target
         if (_selectedCell.value != null) {
             val (selectedRow, selectedCol) = _selectedCell.value!!
-            val selectedFortification = _gameManager.gameBoard.getFortificationAt(selectedRow, selectedCol)
+            val selectedFortification =
+                _gameManager.gameBoard.getFortificationAt(selectedRow, selectedCol)
 
             if (selectedFortification != null &&
                 selectedFortification.fortType == FortificationType.TOWER &&
-                Pair(row, col) in _validAttackTargets.value) {
+                Pair(row, col) in _validAttackTargets.value
+            ) {
                 executeFortificationAttack(selectedRow, selectedCol, row, col)
                 return
             }
@@ -619,17 +637,20 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
         if (_selectedCell.value == null && clickedUnit != null && unitOwner == 0) {
             // Select the unit and immediately show movement and attack options
             _selectedCell.value = Pair(row, col)
+            playUnitTapSound(clickedUnit.unitType)
 
             // Show valid attack targets if unit can attack
             if (clickedUnit.canAttackThisTurn) {
-                _validAttackTargets.value = playerContext.getValidAttackTargets(row, col, _gameManager)
+                _validAttackTargets.value =
+                    playerContext.getValidAttackTargets(row, col, _gameManager)
             } else {
                 _validAttackTargets.value = emptyList()
             }
 
             // Show valid movement destinations if unit can move
             if (playerContext.canUnitMove(row, col, _gameManager)) {
-                _validMoveDestinations.value = playerContext.getValidMoveDestinations(row, col, _gameManager)
+                _validMoveDestinations.value =
+                    playerContext.getValidMoveDestinations(row, col, _gameManager)
                 _statusMessage.value = "Select a destination to move to, or a target to attack."
             } else {
                 _validMoveDestinations.value = emptyList()
@@ -696,6 +717,7 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
 
             if (moveResult) {
                 _statusMessage.value = "Unit moved successfully."
+                playUnitMovementSound(unit.unitType)
 
                 // Update the selected cell to the new position
                 _selectedCell.value = Pair(toRow, toCol)
@@ -705,7 +727,8 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
 
                 // If the unit can still attack, show attack targets
                 if (unit.canAttackThisTurn) {
-                    _validAttackTargets.value = playerContext.getValidAttackTargets(toRow, toCol, _gameManager)
+                    _validAttackTargets.value =
+                        playerContext.getValidAttackTargets(toRow, toCol, _gameManager)
                     _statusMessage.value = "Select a target to attack or click elsewhere to cancel."
                 } else {
                     _validAttackTargets.value = emptyList()
@@ -734,7 +757,8 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
 
         // Show valid movement destinations if unit can move
         if (playerContext.canUnitMove(row, col, _gameManager)) {
-            _validMoveDestinations.value = playerContext.getValidMoveDestinations(row, col, _gameManager)
+            _validMoveDestinations.value =
+                playerContext.getValidMoveDestinations(row, col, _gameManager)
         } else {
             _validMoveDestinations.value = emptyList()
         }
@@ -746,137 +770,6 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
             _validAttackTargets.value = emptyList()
         }
     }
-
-    /**
-     * Handle cell click when in default interaction mode
-     */
-    private fun handleDefaultModeClick(row: Int, col: Int, clickedUnit: UnitCard?, unitOwner: Int?) {
-        when {
-            // Click on own unit - select it and show options
-            clickedUnit != null && unitOwner == 0 -> {
-                _selectedCell.value = Pair(row, col)
-
-                // Check if unit can attack
-                if (clickedUnit.canAttackThisTurn) {
-                    _validAttackTargets.value = playerContext.getValidAttackTargets(row, col, _gameManager)
-                } else {
-                    _validAttackTargets.value = emptyList()
-                }
-
-                // Check if unit can move
-                if (playerContext.canUnitMove(row, col, _gameManager)) {
-                    _validMoveDestinations.value = playerContext.getValidMoveDestinations(row, col, _gameManager)
-                    _statusMessage.value = "Unit selected. Click 'Move' or 'Attack' button."
-                } else {
-                    _validMoveDestinations.value = emptyList()
-                    _statusMessage.value = "Unit selected. This unit has already moved."
-                }
-            }
-
-            // Click on enemy unit - if we have a unit selected, try to attack
-            clickedUnit != null && unitOwner == 1 && _selectedCell.value != null -> {
-                val (selectedRow, selectedCol) = _selectedCell.value!!
-                val attackerUnit = _gameManager.gameBoard.getUnitAt(selectedRow, selectedCol)
-
-                if (attackerUnit != null && Pair(row, col) in _validAttackTargets.value) {
-                    executeAttack(selectedRow, selectedCol, row, col)
-                } else {
-                    _statusMessage.value = "Cannot attack that target."
-                }
-            }
-
-            // Click on empty cell - deselect
-            else -> {
-                _selectedCell.value = null
-                _validMoveDestinations.value = emptyList()
-                _validAttackTargets.value = emptyList()
-                _statusMessage.value = ""
-            }
-        }
-    }
-
-    /**
-     * Handle cell click when in unit attacking mode
-     */
-    private fun handleAttackModeClick(row: Int, col: Int) {
-        val selectedCell = _selectedCell.value ?: return
-
-        // Check if the clicked cell is a valid attack target
-        if (Pair(row, col) in _validAttackTargets.value) {
-            executeAttack(selectedCell.first, selectedCell.second, row, col)
-        } else {
-            // Cancel attack mode
-            _interactionMode.value = InteractionMode.DEFAULT
-            _statusMessage.value = "Attack canceled."
-        }
-    }
-
-    /**
-     * Handle cell click when in unit moving mode
-     */
-    private fun handleMoveModeClick(row: Int, col: Int) {
-        val selectedCell = _selectedCell.value ?: return
-
-        // Check if the clicked cell is a valid movement destination
-        if (Pair(row, col) in _validMoveDestinations.value) {
-            executeMove(selectedCell.first, selectedCell.second, row, col)
-        } else {
-            // Cancel move mode
-            _interactionMode.value = InteractionMode.DEFAULT
-            _statusMessage.value = "Move canceled."
-        }
-    }
-
-    /**
-     * Handle cell click when in card targeting mode
-     */
-    private fun handleCardTargetingModeClick(row: Int, col: Int) {
-        // This would be implemented when card targeting is added
-        _interactionMode.value = InteractionMode.DEFAULT
-    }
-
-    /**
-     * Switch to movement mode for the selected unit
-     */
-    fun enterMoveMode() {
-        if (!_isPlayerTurn.value) return
-        if (_selectedCell.value == null) return
-
-        val (row, col) = _selectedCell.value!!
-        val unit = _gameManager.gameBoard.getUnitAt(row, col) ?: return
-
-        if (playerContext.canUnitMove(row, col, _gameManager)) {
-            _interactionMode.value = InteractionMode.UNIT_MOVING
-            _validMoveDestinations.value = playerContext.getValidMoveDestinations(row, col, _gameManager)
-            _statusMessage.value = "Select a destination to move to."
-        } else {
-            _statusMessage.value = "This unit cannot move."
-        }
-    }
-
-    /**
-     * Switch to attack mode for the selected unit
-     */
-    fun enterAttackMode() {
-        if (!_isPlayerTurn.value) return
-        if (_selectedCell.value == null) return
-
-        val (row, col) = _selectedCell.value!!
-        val unit = _gameManager.gameBoard.getUnitAt(row, col) ?: return
-
-        if (unit.canAttackThisTurn) {
-            _interactionMode.value = InteractionMode.UNIT_ATTACKING
-            _validAttackTargets.value = playerContext.getValidAttackTargets(row, col, _gameManager)
-            _statusMessage.value = "Select a target to attack."
-        } else {
-            _statusMessage.value = "This unit cannot attack."
-        }
-    }
-
-    /**
-     * Execute a movement action
-     */
-
 
     /**
      * Execute an attack between units with animations
@@ -893,11 +786,15 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
         // Get target position for animation
         val targetPos = cellPositions[Pair(targetRow, targetCol)]
 
+
+
         if (targetPos != null) {
             // Start attack animation
             _attackingUnitType.value = attackerUnit.unitType
             _attackTargetPosition.value = targetPos
             _isSimpleAttackVisible.value = true
+            // Play Attack Sound
+            playUnitAttackSound(attackerUnit.unitType)
 
             // Attack logic after animation
             viewModelScope.launch {
@@ -978,13 +875,20 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
             }
         }
     }
+
     /**
      * Execute an attack against a fortification
      */
-    private fun executeAttackAgainstFortification(attackerRow: Int, attackerCol: Int, targetRow: Int, targetCol: Int) {
+    private fun executeAttackAgainstFortification(
+        attackerRow: Int,
+        attackerCol: Int,
+        targetRow: Int,
+        targetCol: Int
+    ) {
         // Get the attacking unit
         val attackerUnit = _gameManager.gameBoard.getUnitAt(attackerRow, attackerCol) ?: return
-        val targetFort = _gameManager.gameBoard.getFortificationAt(targetRow, targetCol) ?: return
+        val targetFortHealth = _gameManager.gameBoard.getFortificationAt(targetRow, targetCol)?.health
+            ?: return
 
         // Check if this attack has a counter bonus
         val hasCounterBonus = _gameManager.hasFortificationCounterBonus(attackerUnit)
@@ -998,6 +902,7 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
             _attackingUnitType.value = attackerUnit.unitType
             _attackTargetPosition.value = targetPos
             _isSimpleAttackVisible.value = true
+            playUnitAttackSound(attackerUnit.unitType)
 
             // Attack logic after animation
             viewModelScope.launch {
@@ -1039,6 +944,10 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
 
                     // Reset counter state
                     _isCounterBonus.value = false
+                    Log.d("FortHealthVDamage","Damage: $damage  Fort Health: ${targetFortHealth}")
+
+                    if(damage >= targetFortHealth)
+                        soundManager.playSound(SoundType.FORTIFICATION_DESTROY)
 
                     updateAllGameStates()
                 } else {
@@ -1085,6 +994,7 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
             val attackResult = _gameManager.executeDirectAttackWithContext(playerContext, row, col)
 
             if (attackResult) {
+                soundManager.playSound(SoundType.PLAYER_HIT)
                 _statusMessage.value = "Direct attack successful!"
                 _selectedCell.value = null
                 _validAttackTargets.value = emptyList()
@@ -1133,6 +1043,7 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
 
             // Actually play the card after animation
             viewModelScope.launch {
+                soundManager.playSound(SoundType.CARD_PLAY)
                 delay(300) // Wait for animation
                 _isCardAnimationVisible.value = false
 
@@ -1194,10 +1105,12 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
     }
 
     fun endTurn() {
+        soundManager.playSound(SoundType.TURN_END)
         _selectedCell.value = null
         _validMoveDestinations.value = emptyList()
         _validAttackTargets.value = emptyList()
         _interactionMode.value = InteractionMode.DEFAULT
+
 
         _gameManager.turnManager.endTurn()
         updateAllGameStates()
@@ -1241,7 +1154,8 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
 
                 if (validMoves.isNotEmpty()) {
                     // Simple AI strategy: move toward player's side
-                    val bestMove = validMoves.minByOrNull { it.first } // Move to lowest row (toward player)
+                    val bestMove =
+                        validMoves.minByOrNull { it.first } // Move to lowest row (toward player)
 
                     if (bestMove != null) {
                         // Animate the move
@@ -1288,7 +1202,9 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
                     // Execute the attack
                     val targetPos = cellPositions[target] ?: continue
 
-                    // Animation
+
+                    // Animation and sound effect
+                    playUnitAttackSound(aiUnit.unitType)
                     _attackingUnitType.value = aiUnit.unitType
                     _attackTargetPosition.value = targetPos
                     _isSimpleAttackVisible.value = true
@@ -1309,7 +1225,12 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
                     _gameManager.executeAttack(aiUnit, target.first, target.second)
                     updateAllGameStates()
                     delay(300)
-                } else if (opponentContext.canAttackOpponentDirectly(aiUnitPos.first, aiUnitPos.second, _gameManager)) {
+                } else if (opponentContext.canAttackOpponentDirectly(
+                        aiUnitPos.first,
+                        aiUnitPos.second,
+                        _gameManager
+                    )
+                ) {
                     // Direct attack on player
                     _gameManager.executeDirectAttack(aiUnit, 0)
                     updateAllGameStates()
@@ -1323,12 +1244,21 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
             updateAllGameStates()
         }
     }
-    private fun handleFortificationSelection(row: Int, col: Int, fortification: FortificationCard, fortificationOwner: Int) {
+
+    private fun handleFortificationSelection(
+        row: Int,
+        col: Int,
+        fortification: FortificationCard,
+        fortificationOwner: Int
+    ) {
         // Only handle player's fortifications
         if (fortificationOwner != 0) return
 
         // Select the fortification
         _selectedCell.value = Pair(row, col)
+
+        // Play fortification hit sound
+        soundManager.playSound(SoundType.FORTIFICATION_TAP)
 
         // Reset move destinations (fortifications can't move)
         _validMoveDestinations.value = emptyList()
@@ -1357,7 +1287,11 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
     /**
      * Get valid attack targets for a fortification
      */
-    private fun getValidAttackTargetsForFortification(fortification: FortificationCard, row: Int, col: Int): List<Pair<Int, Int>> {
+    private fun getValidAttackTargetsForFortification(
+        fortification: FortificationCard,
+        row: Int,
+        col: Int
+    ): List<Pair<Int, Int>> {
         // Only towers can attack
         if (fortification.fortType != FortificationType.TOWER) return emptyList()
 
@@ -1397,8 +1331,14 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
     /**
      * Execute an attack from a fortification
      */
-    private fun executeFortificationAttack(fortificationRow: Int, fortificationCol: Int, targetRow: Int, targetCol: Int) {
-        val fortification = _gameManager.gameBoard.getFortificationAt(fortificationRow, fortificationCol) ?: return
+    private fun executeFortificationAttack(
+        fortificationRow: Int,
+        fortificationCol: Int,
+        targetRow: Int,
+        targetCol: Int
+    ) {
+        val fortification =
+            _gameManager.gameBoard.getFortificationAt(fortificationRow, fortificationCol) ?: return
 
         // Only towers can attack
         if (fortification.fortType != FortificationType.TOWER) return
@@ -1429,7 +1369,8 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
                 _isDamageNumberVisible.value = false
 
                 // Execute the attack
-                val attackResult = _gameManager.executeFortificationAttack(fortification, targetRow, targetCol)
+                val attackResult =
+                    _gameManager.executeFortificationAttack(fortification, targetRow, targetCol)
 
                 if (attackResult) {
                     _statusMessage.value = "Tower attack successful!"
@@ -1444,7 +1385,8 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
             }
         } else {
             // Fallback if position tracking failed
-            val attackResult = _gameManager.executeFortificationAttack(fortification, targetRow, targetCol)
+            val attackResult =
+                _gameManager.executeFortificationAttack(fortification, targetRow, targetCol)
 
             if (attackResult) {
                 _statusMessage.value = "Tower attack successful!"
@@ -1457,6 +1399,48 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
                 _interactionMode.value = InteractionMode.DEFAULT
             }
         }
+    }
+
+    private fun playUnitAttackSound(unitType: UnitType){
+        val attackSound = when (unitType) {
+            UnitType.INFANTRY -> SoundType.INFANTRY_ATTACK
+            UnitType.CAVALRY -> SoundType.CAVALRY_ATTACK
+            UnitType.ARTILLERY -> SoundType.ARTILLERY_ATTACK
+            UnitType.MISSILE -> SoundType.MISSILE_ATTACK
+        }
+        soundManager.playSound(attackSound)
+    }
+    private fun playUnitTapSound(unitType: UnitType){
+        val tapSound = when (unitType) {
+            UnitType.CAVALRY -> SoundType.CAVALRY_UNIT_TAP
+            else -> SoundType.FOOT_UNIT_TAP
+        }
+        soundManager.playSound(tapSound)
+    }
+
+    private fun playUnitMovementSound(unitType: UnitType){
+        val movementSound = when (unitType) {
+            UnitType.CAVALRY -> SoundType.CAVALRY_UNIT_MOVE
+            else -> SoundType.FOOT_UNIT_MOVE
+        }
+        soundManager.playSound(movementSound)
+    }
+     fun playMenuSoundOne() {
+        soundManager.playSound(SoundType.MENU_TAP)
+    }
+     fun playMenuSoundTwo() {
+        soundManager.playSound(SoundType.MENU_TAP_TWO)
+    }
+
+    private fun playTacticCardSound(tacticCardType: TacticCardType){
+        val effectSound = when (tacticCardType) {
+            TacticCardType.BUFF -> SoundType.SPELL_BUFF
+            TacticCardType.SPECIAL -> SoundType.SPELL_SPECIAL
+            TacticCardType.DEBUFF -> SoundType.SPELL_DEBUFF
+            TacticCardType.DIRECT_DAMAGE -> SoundType.SPELL_DIRECT_DAMAGE
+            TacticCardType.AREA_EFFECT -> SoundType.SPELL_AREA_EFFECT
+        }
+        soundManager.playSound(effectSound)
     }
 
     /**
@@ -1473,9 +1457,16 @@ class GameViewModel(private val cardRepository: CardRepository) : ViewModel() {
 
             // Determine winner
             _isPlayerWinner.value = opponentIsDead && !playerIsDead
+            if (isPlayerWinner.value) {
+                soundManager.playSound(SoundType.VICTORY)
+            }
+            else {
+                soundManager.playSound(SoundType.DEFEAT)
+            }
 
             // Update game state in manager
             _gameManager.gameState = GameState.FINISHED
         }
     }
+
 }

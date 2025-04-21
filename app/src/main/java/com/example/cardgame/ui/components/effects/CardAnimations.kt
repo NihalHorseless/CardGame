@@ -1,30 +1,23 @@
 package com.example.cardgame.ui.components.effects
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.EaseOutBack
 import androidx.compose.animation.core.EaseOutQuad
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.expandIn
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -396,8 +389,8 @@ fun GifAttackAnimation(
             .build()
     }
     val animationRes = when (unitType) {
-        UnitType.CAVALRY -> R.drawable.slash_anim
-        UnitType.INFANTRY -> R.drawable.slash_anim
+        UnitType.CAVALRY -> R.drawable.blood_slash
+        UnitType.INFANTRY -> R.drawable.blood_slash
         UnitType.MISSILE -> R.drawable.arrow_rain_deneme
         UnitType.ARTILLERY -> R.drawable.blood_explosion
     }
@@ -410,15 +403,15 @@ fun GifAttackAnimation(
         // Calculate offset to center animation on target
         // (half the animation size)
         val animSize = when (unitType) {
-            UnitType.CAVALRY -> 120.dp
-            UnitType.INFANTRY -> 120.dp
+            UnitType.CAVALRY -> 50.dp
+            UnitType.INFANTRY -> 50.dp
             UnitType.MISSILE -> 50.dp
             UnitType.ARTILLERY -> 90.dp
         }
         val offsetX =
-            if (unitType == UnitType.INFANTRY || unitType == UnitType.CAVALRY) targetXDp - (animSize / 3 * 2) else targetXDp - (animSize / 2)
+            if (unitType == UnitType.INFANTRY || unitType == UnitType.CAVALRY) targetXDp - (animSize / 2 ) else targetXDp - (animSize / 2)
         val offsetY =
-            if (unitType == UnitType.INFANTRY || unitType == UnitType.CAVALRY) targetYDp - (animSize / 3) else targetYDp - (animSize / 2)
+            if (unitType == UnitType.INFANTRY || unitType == UnitType.CAVALRY) targetYDp - (25.dp) else targetYDp - (animSize / 2)
 
         AsyncImage(
             model = ImageRequest.Builder(context)
@@ -491,45 +484,6 @@ fun DamageNumberEffect(
                         blurRadius = 4f
                     )
                 )
-            )
-        }
-    }
-}
-
-// Mana Crystal Animation
-@Composable
-fun ManaAnimation(
-    currentMana: Int,
-    maxMana: Int
-) {
-    Row(
-        modifier = Modifier.padding(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        repeat(maxMana) { index ->
-            val isFilled = index < currentMana
-
-            val transition = updateTransition(targetState = isFilled, label = "ManaTransition")
-
-            val color by transition.animateColor(
-                transitionSpec = { tween(300) },
-                label = "ColorAnim"
-            ) { filled ->
-                if (filled) Color(0xFF00AAFF) else Color(0xFF333333)
-            }
-
-            val size by transition.animateDp(
-                transitionSpec = { tween(300) },
-                label = "SizeAnim"
-            ) { filled ->
-                if (filled) 24.dp else 20.dp
-            }
-
-            Box(
-                modifier = Modifier
-                    .size(size)
-                    .background(color, CircleShape)
-                    .border(1.dp, Color.White.copy(alpha = 0.5f), CircleShape)
             )
         }
     }

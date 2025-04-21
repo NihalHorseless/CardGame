@@ -21,16 +21,26 @@ fun CardGameNavigation() {
     NavHost(navController = navController, startDestination = "main_menu") {
         composable("main_menu") {
             MainMenuScreen(
-                onStartGame = { navController.navigate("deck_selection") },
-                onShowDeckBuilder = { navController.navigate("deck_builder") },
-                onShowOptions = { navController.navigate("options") }
+                onStartGame = {
+                    navController.navigate("deck_selection")
+                    gameViewModel.playMenuSoundOne()
+                },
+                onShowDeckBuilder = {
+                    navController.navigate("deck_builder")
+                    gameViewModel.playMenuSoundOne()
+                },
+                onShowOptions = {
+                    navController.navigate("options")
+                    gameViewModel.playMenuSoundOne()
+                }
             )
         }
 
         composable("deck_selection") {
             DeckSelectionScreen(
                 viewModel = gameViewModel,
-                onStartGame = { navController.navigate("game") }
+                onStartGame = { navController.navigate("game")
+                    gameViewModel.playMenuSoundTwo()}
             )
         }
 
@@ -42,6 +52,7 @@ fun CardGameNavigation() {
                         route = "main_menu",
                         inclusive = false
                     )
+                    gameViewModel.playMenuSoundTwo()
                 }
             )
         }
