@@ -14,12 +14,18 @@ import com.example.cardgame.data.enum.InteractionMode
 import com.example.cardgame.data.enum.TacticCardType
 import com.example.cardgame.data.enum.TargetType
 import com.example.cardgame.data.enum.UnitType
+import com.example.cardgame.data.model.campaign.Campaign
+import com.example.cardgame.data.model.campaign.CampaignLevel
+import com.example.cardgame.data.model.campaign.Difficulty
+import com.example.cardgame.data.model.campaign.SpecialRule
 import com.example.cardgame.data.model.card.Card
 import com.example.cardgame.data.model.card.Deck
 import com.example.cardgame.data.model.card.FortificationCard
 import com.example.cardgame.data.model.card.TacticCard
 import com.example.cardgame.data.model.card.UnitCard
+import com.example.cardgame.data.repository.CampaignRepository
 import com.example.cardgame.data.repository.CardRepository
+import com.example.cardgame.game.CampaignManager
 import com.example.cardgame.game.GameManager
 import com.example.cardgame.game.PlayerContext
 import kotlinx.coroutines.delay
@@ -28,6 +34,7 @@ import kotlin.math.abs
 
 class GameViewModel(
     private val cardRepository: CardRepository,
+    private val campaignRepository: CampaignRepository,
     private val soundManager: SoundManager
 ) : ViewModel() {
 
@@ -182,6 +189,22 @@ class GameViewModel(
     private val _tacticEffectPosition = mutableStateOf(Pair(0f, 0f))
     val tacticEffectPosition: State<Pair<Float, Float>> = _tacticEffectPosition
 
+    // Campaign-related states
+    private val _currentCampaign = mutableStateOf<Campaign?>(null)
+    val currentCampaign: State<Campaign?> = _currentCampaign
+
+    private val _currentLevel = mutableStateOf<CampaignLevel?>(null)
+    val currentLevel: State<CampaignLevel?> = _currentLevel
+
+    private val _isInCampaign = mutableStateOf(false)
+    val isInCampaign: State<Boolean> = _isInCampaign
+
+    private val _currentObjective = mutableStateOf<String?>(null)
+    val currentObjective: State<String?> = _currentObjective
+
+    private val _objectiveCompleted = mutableStateOf(false)
+    val objectiveCompleted: State<Boolean> = _objectiveCompleted
+
     init {
         // Load available decks when ViewModel is created
         loadAvailableDecks()
@@ -210,6 +233,12 @@ class GameViewModel(
     fun setPlayerDeck(deckName: String) {
         _selectedPlayerDeck.value = deckName
     }
+    /**
+     * Sets the selected campaign for the player
+     */
+    fun setCurrentCampaign(selectedCampaign: Campaign) {
+        _currentCampaign.value = selectedCampaign
+    }
 
     /**
      * Sets the selected deck for the opponent
@@ -228,6 +257,222 @@ class GameViewModel(
     fun registerCellPosition(row: Int, col: Int, x: Float, y: Float) {
         cellPositions[Pair(row, col)] = Pair(x, y)
     }
+    /**
+    * Load all available campaigns
+    */
+    fun loadAvailableCampaigns(): List<Campaign> {
+        return campaignRepository.getAllCampaigns()
+    }
+
+    /**
+     * Start a campaign level
+     */
+    fun startCampaignLevel(campaignId: String, levelId: String) {
+        _isInCampaign.value = true
+        // Load PLayer Deck
+        val playerDeckName = _selectedPlayerDeck.value
+        if (playerDeckName == null) {
+            _statusMessage.value = "Select a proper Deck name"
+            return
+        }
+        val playerDeck = cardRepository.loadDeck(playerDeckName)
+        if (playerDeck == null) {
+            _statusMessage.value = "Failed to load player deck: $playerDeckName"
+            return
+        }
+        playerDeck.shuffle()
+        _gameManager.players[0].setDeck(playerDeck)
+
+        // Load campaign
+        val campaign = campaignRepository.getCampaign(campaignId)
+        _currentCampaign.value = campaign
+
+        if (campaign != null) {
+            // Find the requested level
+            val level = campaign.levels.find { it.id == levelId }
+            _currentLevel.value = level
+
+            if (level != null) {
+                // Set current objective if any
+                val customObjective = level.specialRules.filterIsInstance<SpecialRule.CustomObjective>().firstOrNull()
+                _currentObjective.value = customObjective?.description
+
+                // Configure game for this level
+                configureGameForLevel(level)
+
+                // Start the game
+                _gameManager.startCampaignGame(level)
+                updateAllGameStates()
+            }
+        }
+    }
+
+    /**
+     * Configure the game with level-specific settings
+     */
+    private fun configureGameForLevel(level: CampaignLevel) {
+        // Load the opponent's deck
+        val opponentDeck = cardRepository.loadDeck(level.opponentDeckId)
+        if (opponentDeck != null) {
+            _gameManager.players[1].setDeck(opponentDeck)
+        } else {
+            // Fallback if deck not found
+            _statusMessage.value = "Opponent deck not found, using default"
+            Log.d("LevelConfig",opponentDeck.toString())
+        }
+
+        if (opponentDeck == null) {
+            _statusMessage.value = "Failed to load opponent deck: $opponentDeck"
+            return
+        }
+        opponentDeck.shuffle()
+
+        Log.d("LevelConfig",opponentDeck.toString())
+
+        // Set player and opponent health
+        _gameManager.players[0].health = level.startingHealth ?: 30
+        _gameManager.players[1].health = when(level.difficulty) {
+            Difficulty.EASY -> 25
+            Difficulty.MEDIUM -> 30
+            Difficulty.HARD -> 35
+            Difficulty.LEGENDARY -> 40
+        }
+        _opponentHealth.intValue = _gameManager.players[1].health
+        Log.d("LevelConfig","${_gameManager.players[1].health}  $opponentHealth")
+        // Set starting mana
+        _gameManager.players[0].currentMana = level.startingMana ?: 1
+        _gameManager.players[1].currentMana = level.startingMana ?: 1
+
+        // Apply special rules
+        applySpecialRules(level.specialRules)
+    }
+
+    /**
+     * Apply special rules to the game
+     */
+    private fun applySpecialRules(rules: List<SpecialRule>) {
+        rules.forEach { rule ->
+            when(rule) {
+                is SpecialRule.StartingBoard -> {
+                    rule.unitSetup.forEach { setup ->
+                        if (setup.isPlayerUnit) {
+                            // Player units
+                            val card = cardRepository.getCardById(setup.unitId)
+                            if (card is UnitCard) {
+                                _gameManager.gameBoard.placeUnit(card.clone(), setup.row, setup.col, 0)
+                            } else if (card is FortificationCard) {
+                                _gameManager.gameBoard.placeFortification(card.clone(), setup.row, setup.col, 0)
+                            }
+                        } else {
+                            // Enemy units
+                            val card = cardRepository.getCardById(setup.unitId)
+                            if (card is UnitCard) {
+                                _gameManager.gameBoard.placeUnit(card.clone(), setup.row, setup.col, 1)
+                            } else if (card is FortificationCard) {
+                                _gameManager.gameBoard.placeFortification(card.clone(), setup.row, setup.col, 1)
+                            }
+                        }
+                    }
+                }
+                is SpecialRule.AdditionalCards -> {
+                    rule.cards.forEach { cardId ->
+                        val card = cardRepository.getCardById(cardId)
+                        if (card != null) {
+                            _gameManager.players[0].hand.add(card)
+                        }
+                    }
+                }
+                is SpecialRule.ModifiedMana -> {
+                    _gameManager.players[0].maxMana += rule.amount
+                }
+                is SpecialRule.CustomObjective -> {
+                    // Custom objective will be checked during gameplay
+                }
+            }
+        }
+    }
+
+    /**
+     * Check for special victory conditions
+     */
+    private fun checkCampaignObjectives() {
+        val currentLevel = _currentLevel.value ?: return
+        val customObjective = currentLevel.specialRules.filterIsInstance<SpecialRule.CustomObjective>().firstOrNull()
+
+        if (customObjective != null) {
+            _objectiveCompleted.value = customObjective.checkCompletion(_gameManager)
+        } else {
+            // If no custom objective, just winning is enough
+            _objectiveCompleted.value = true
+        }
+    }
+
+    /**
+     * Mark current level as completed
+     */
+    private fun completeCampaignLevel() {
+        val campaign = _currentCampaign.value ?: return
+        val level = _currentLevel.value ?: return
+
+        if (_isPlayerWinner.value && _objectiveCompleted.value) {
+            // Create updated campaign with this level marked as completed
+            val updatedLevels = campaign.levels.map {
+                if (it.id == level.id) it.copy(isCompleted = true) else it
+            }
+
+            val updatedCampaign = campaign.copy(levels = updatedLevels)
+            _currentCampaign.value = updatedCampaign
+
+            // Save progress
+            campaignRepository.updateCampaign(updatedCampaign)
+
+            // Update message
+            _statusMessage.value = "Level completed!"
+        }
+    }
+    /**
+     * Exit the current campaign level and return to campaign screen
+     */
+    fun exitCampaignLevel() {
+        _isInCampaign.value = false
+        _currentLevel.value = null
+        _currentObjective.value = null
+        _objectiveCompleted.value = false
+
+        // Reset the game state
+        _gameManager.reset()
+    }
+
+    /**
+     * Check if the current campaign is completed
+     */
+    fun isCampaignCompleted(): Boolean {
+        val campaign = _currentCampaign.value ?: return false
+        return campaign.levels.all { it.isCompleted }
+    }
+
+    /**
+     * Get the next unlocked level in the current campaign
+     */
+    fun getNextUnlockedLevel(): CampaignLevel? {
+        val campaign = _currentCampaign.value ?: return null
+
+        // Find the first incomplete level, or the first level if none completed yet
+        val nextLevel = campaign.levels.find { !it.isCompleted }
+
+        // If all levels are completed, return the last one
+        return nextLevel ?: campaign.levels.lastOrNull()
+    }
+
+    /**
+     * Reset all campaign progress
+     */
+    fun resetCampaignProgress() {
+        campaignRepository.resetAllProgress()
+        _currentCampaign.value = null
+        _currentLevel.value = null
+    }
+
 
     fun startGame() {
         // Check if decks are selected
@@ -544,12 +789,13 @@ class GameViewModel(
 
         // Update board
         updateBoardState()
-
+        Log.d("LevelConfigD",_opponentHealth.value.toString())
         // Update player stats
         _playerMana.intValue = _gameManager.players[0].currentMana
         _playerMaxMana.intValue = _gameManager.players[0].maxMana
         _playerHealth.intValue = _gameManager.players[0].health
         _opponentHealth.intValue = _gameManager.players[1].health
+        Log.d("LevelConfigD",_opponentHealth.value.toString())
 
         // Update opponent stats
         _opponentHandSize.intValue = _gameManager.players[1].hand.size
@@ -1444,11 +1690,9 @@ class GameViewModel(
         soundManager.playSound(effectSound)
     }
 
-    /**
-     * Check for game over condition
-     */
-    private fun checkGameOver() {
-        // Game is over if any player's health is 0 or less
+
+    fun checkGameOver() {
+        // Original implementation to check if any player's health is 0
         val playerIsDead = _gameManager.players[0].health <= 0
         val opponentIsDead = _gameManager.players[1].health <= 0
 
@@ -1458,11 +1702,18 @@ class GameViewModel(
 
             // Determine winner
             _isPlayerWinner.value = opponentIsDead && !playerIsDead
-            if (isPlayerWinner.value) {
+
+            // Play appropriate sound
+            if (_isPlayerWinner.value) {
                 soundManager.playSound(SoundType.VICTORY)
-            }
-            else {
+            } else {
                 soundManager.playSound(SoundType.DEFEAT)
+            }
+
+            // If in campaign mode, check objectives and update progress
+            if (_isInCampaign.value) {
+                checkCampaignObjectives()
+                completeCampaignLevel()
             }
 
             // Update game state in manager

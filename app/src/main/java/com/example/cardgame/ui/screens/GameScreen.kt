@@ -84,6 +84,7 @@ fun GameScreen(
     val cellPositionsMap = mutableMapOf<Pair<Int, Int>, Pair<Float, Float>>()
 
     LaunchedEffect(key1 = Unit) {
+        if(!viewModel.isInCampaign.value)
         viewModel.startGame()
     }
 
@@ -112,12 +113,12 @@ fun GameScreen(
                         .fillMaxWidth()
                         .padding(8.dp),
                     verticalAlignment = Alignment.CenterVertically
-                ) {
+                ) {Log.d("Opponent", opponentHealth.toString())
                     // Opponent's portrait
                     PlayerPortrait(
                         playerName = "Opponent",
                         health = opponentHealth,
-                        maxHealth = 30,
+                        maxHealth = opponentHealth,
                         isCurrentPlayer = !isPlayerTurn,
                         isTargetable = selectedCell != null &&
                                 viewModel.playerContext.canAttackOpponentDirectly(

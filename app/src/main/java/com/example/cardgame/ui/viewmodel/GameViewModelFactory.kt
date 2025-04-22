@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.cardgame.audio.SoundManager
+import com.example.cardgame.data.repository.CampaignRepository
 import com.example.cardgame.data.repository.CardRepository
 import com.example.cardgame.data.storage.CardLoader
 
@@ -15,10 +16,11 @@ class GameViewModelFactory(private val context: Context) : ViewModelProvider.Fac
             // Create dependencies
             val cardLoader = CardLoader(context.applicationContext)
             val cardRepository = CardRepository(cardLoader)
+            val campaignRepository = CampaignRepository(context)
             val soundManager = SoundManager(context.applicationContext).apply { initialize() }
 
             // Create and return the ViewModel with injected dependencies
-            return GameViewModel(cardRepository, soundManager) as T
+            return GameViewModel(cardRepository,campaignRepository, soundManager) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
     }

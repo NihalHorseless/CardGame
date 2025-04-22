@@ -46,7 +46,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun MainMenuScreen(onStartGame: () -> Unit, onShowDeckBuilder: () -> Unit, onShowOptions: () -> Unit) {
+fun MainMenuScreen(
+    onStartGame: () -> Unit,
+    onShowDeckBuilder: () -> Unit,
+    onShowOptions: () -> Unit,
+    onShowCampaign: () -> Unit
+) {
     val infiniteTransition = rememberInfiniteTransition()
     val bgOffset by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -160,6 +165,13 @@ fun MainMenuScreen(onStartGame: () -> Unit, onShowDeckBuilder: () -> Unit, onSho
             MenuButton(
                 text = "Start Game",
                 onClick = onStartGame
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            MenuButton(
+                text = "Campaign Mode",
+                onClick = onShowCampaign
             )
 
             Spacer(modifier = Modifier.height(16.dp))

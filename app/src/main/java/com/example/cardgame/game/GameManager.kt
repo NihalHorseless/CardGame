@@ -1,19 +1,20 @@
 package com.example.cardgame.game
 
+import android.util.Log
 import com.example.cardgame.data.enum.FortificationType
 import com.example.cardgame.data.enum.GameState
 import com.example.cardgame.data.enum.UnitType
 import com.example.cardgame.data.model.abilities.TauntManager
+import com.example.cardgame.data.model.campaign.CampaignLevel
+import com.example.cardgame.data.model.campaign.Difficulty
 import com.example.cardgame.data.model.card.FortificationCard
 import com.example.cardgame.data.model.card.UnitCard
-import com.example.cardgame.data.model.formation.FormationManager
 import kotlin.math.abs
 
 class GameManager {
     val players = listOf(Player(0, "Player 1"), Player(1, "Player 2"))
     val turnManager = TurnManager(this)
-    val formationManager = FormationManager()
-    val gameBoard =  Board(5, 5) // Create a 5x5 unified board
+    val gameBoard = Board(5, 5) // Create a 5x5 unified board
     val movementManager = MovementManager(gameBoard) // Add movement manager
     val tauntManager = TauntManager(gameBoard)
 
@@ -27,7 +28,8 @@ class GameManager {
      * Gets the PlayerContext for a specific player.
      */
     fun getPlayerContext(player: Player): PlayerContext {
-        return playerContexts[player] ?: throw IllegalArgumentException("Player not found in context map")
+        return playerContexts[player]
+            ?: throw IllegalArgumentException("Player not found in context map")
     }
 
     /**
@@ -49,6 +51,34 @@ class GameManager {
             // Draw initial hand
             player.drawInitialHand(3)
         }
+
+        // Clear the board
+        gameBoard.clearAllUnits()
+
+        gameState = GameState.IN_PROGRESS
+        turnManager.startGame()
+    }
+
+    fun startCampaignGame(level: CampaignLevel) {
+        // Initialize players
+        players[0].let {
+            it.health = level.startingHealth
+            it.currentMana = level.startingMana
+            it.hand.clear()
+            it.drawInitialHand(3)
+        }
+        players[1].let {
+            it.health = when (level.difficulty) {
+                Difficulty.EASY -> 25
+                Difficulty.MEDIUM -> 30
+                Difficulty.HARD -> 35
+                Difficulty.LEGENDARY -> 40
+            }
+            it.currentMana = level.startingMana
+            it.hand.clear()
+            it.drawInitialHand(3)
+        }
+        Log.d("GameManager" ,players[1].health.toString())
 
         // Clear the board
         gameBoard.clearAllUnits()
@@ -221,6 +251,7 @@ class GameManager {
             else -> 1.0f
         }
     }
+
     /**
      * Gets the damage multiplier for an attack against a fortification
      * - Artillery deals double damage to fortifications
@@ -234,6 +265,7 @@ class GameManager {
             else -> 1.0f
         }
     }
+
     /**
      * Calculate the actual damage to be dealt based on unit type matchups
      */
@@ -244,6 +276,7 @@ class GameManager {
         // Apply multiplier and round to nearest integer
         return (baseAttack * multiplier).toInt()
     }
+
     /**
      * Calculate the actual damage to be dealt to a fortification
      */
@@ -254,18 +287,21 @@ class GameManager {
         // Apply multiplier and round to nearest integer
         return (baseAttack * multiplier).toInt()
     }
+
     /**
      * Check if the attack will have a counter bonus (dealing extra damage)
      */
     fun hasCounterBonus(attacker: UnitCard, defender: UnitCard): Boolean {
         return getDamageMultiplier(attacker, defender) > 1.0f
     }
+
     /**
      * Check if the attack on a fortification will have a counter bonus (dealing extra damage)
      */
     fun hasFortificationCounterBonus(attacker: UnitCard): Boolean {
         return getFortificationDamageMultiplier(attacker) > 1.0f
     }
+
     /**
      * Get a description of why the counter bonus applies
      */
@@ -343,7 +379,12 @@ class GameManager {
 
         return true
     }
-    fun executeFortificationAttack(fortification: FortificationCard, targetRow: Int, targetCol: Int): Boolean {
+
+    fun executeFortificationAttack(
+        fortification: FortificationCard,
+        targetRow: Int,
+        targetCol: Int
+    ): Boolean {
         // Only towers can attack
         if (fortification.fortType != FortificationType.TOWER) return false
 
@@ -379,10 +420,15 @@ class GameManager {
 
         return true
     }
+
     /**
      * Executes an attack by a unit against a fortification.
      */
-    fun executeUnitAttackFortification(attacker: UnitCard, targetRow: Int, targetCol: Int): Boolean {
+    fun executeUnitAttackFortification(
+        attacker: UnitCard,
+        targetRow: Int,
+        targetCol: Int
+    ): Boolean {
         if (!canUnitAttackFortification(attacker, targetRow, targetCol)) return false
 
         val targetFort = gameBoard.getFortificationAt(targetRow, targetCol) ?: return false
@@ -401,6 +447,7 @@ class GameManager {
 
         return true
     }
+
     fun checkForDestroyedFortifications() {
         // Find destroyed fortifications
         val destroyedFortifications = mutableListOf<FortificationCard>()
@@ -422,6 +469,7 @@ class GameManager {
             }
         }
     }
+
     /**
      * Gets valid deployment positions for a player based on their ID.
      * Player 0 can deploy in the first two rows (0-1)
@@ -512,6 +560,7 @@ class GameManager {
     fun getValidMoveDestinations(unit: UnitCard): List<Pair<Int, Int>> {
         return movementManager.getValidMoveDestinations(unit)
     }
+
     /**
      * Get all valid attack targets considering taunt protection and range
      */
@@ -609,12 +658,14 @@ class GameManager {
 
         return moveUnit(unit, toRow, toCol)
     }
+
     fun registerTemporaryEffect(target: Any, duration: Int, removalAction: () -> Unit) {
         // In a real implementation, this would store the effect in a data structure
         // and remove it after the specified number of turns
         // For this example, we'll just print a message
         println("Registered temporary effect on $target for $duration turns")
     }
+
     fun registerMovementBuff(unit: UnitCard, moveBoost: Int, duration: Int) {
         // In a real implementation, this would modify the unit's movement range
         // and reset it after the specified number of turns

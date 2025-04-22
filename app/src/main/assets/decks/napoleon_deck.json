@@ -1,0 +1,15 @@
+{
+  "id": "napoleon_deck",
+  "name": "Emperor Napoleon Deck",
+  "description": "A mixed deck focused on cavalry",
+  "cardIds": [
+    4, 4, 4,
+    2, 2, 2, 15,
+    4, 4,
+    13, 13, 15, 15,
+    4, 4, 4,
+    2, 2,
+    13,
+    13, 13
+  ]
+}
