@@ -39,7 +39,6 @@ fun GameScreen(
 ) {
     // Game state
     val playerHand by viewModel.playerHandState
-    val gameBoardState by viewModel.gameBoardState
     val selectedCell by viewModel.selectedCell
     val playerMana by viewModel.playerMana
     val playerMaxMana by viewModel.playerMaxMana
@@ -50,6 +49,7 @@ fun GameScreen(
     val isPlayerWinner by viewModel.isPlayerWinner
     val isPlayerTurn by viewModel.isPlayerTurn
     val statusMessage by viewModel.statusMessage
+    val oppoonentName by viewModel.opponentName
 
     // Movement and attack highlighting
     val validMoveDestinations by viewModel.validMoveDestinations
@@ -71,9 +71,7 @@ fun GameScreen(
 
     // Movement animation
     val isUnitMovingAnimation by viewModel.isUnitMovingAnimation
-    val moveStartPosition by viewModel.moveStartPosition
-    val moveEndPosition by viewModel.moveEndPosition
-    val movingUnitType by viewModel.movingUnitType
+
 
     // Deployment system states
     val selectedCardIndex by viewModel.selectedCardIndex
@@ -116,7 +114,7 @@ fun GameScreen(
                 ) {Log.d("Opponent", opponentHealth.toString())
                     // Opponent's portrait
                     PlayerPortrait(
-                        playerName = "Opponent",
+                        playerName = oppoonentName,
                         health = opponentHealth,
                         maxHealth = opponentHealth,
                         isCurrentPlayer = !isPlayerTurn,

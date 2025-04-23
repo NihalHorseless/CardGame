@@ -68,7 +68,6 @@ class GameViewModel(
             arrayOfNulls(_gameManager.gameBoard.columns)
         }
     )
-    val gameBoardState: State<Array<Array<UnitCard?>>> = _gameBoardState
 
     // Selected cell on the unified board
     private val _selectedCell = mutableStateOf<Pair<Int, Int>?>(null)
@@ -97,6 +96,9 @@ class GameViewModel(
 
     private val _opponentHealth = mutableIntStateOf(30)
     val opponentHealth: State<Int> = _opponentHealth
+
+    private val _opponentName = mutableStateOf("Opponent")
+    val opponentName: State<String> = _opponentName
 
     private val _opponentHandSize = mutableIntStateOf(0)
     val opponentHandSize: State<Int> = _opponentHandSize
@@ -233,6 +235,7 @@ class GameViewModel(
     fun setPlayerDeck(deckName: String) {
         _selectedPlayerDeck.value = deckName
     }
+
     /**
      * Sets the selected campaign for the player
      */
@@ -257,9 +260,10 @@ class GameViewModel(
     fun registerCellPosition(row: Int, col: Int, x: Float, y: Float) {
         cellPositions[Pair(row, col)] = Pair(x, y)
     }
+
     /**
-    * Load all available campaigns
-    */
+     * Load all available campaigns
+     */
     fun loadAvailableCampaigns(): List<Campaign> {
         return campaignRepository.getAllCampaigns()
     }
@@ -294,7 +298,8 @@ class GameViewModel(
 
             if (level != null) {
                 // Set current objective if any
-                val customObjective = level.specialRules.filterIsInstance<SpecialRule.CustomObjective>().firstOrNull()
+                val customObjective =
+                    level.specialRules.filterIsInstance<SpecialRule.CustomObjective>().firstOrNull()
                 _currentObjective.value = customObjective?.description
 
                 // Configure game for this level
@@ -311,14 +316,15 @@ class GameViewModel(
      * Configure the game with level-specific settings
      */
     private fun configureGameForLevel(level: CampaignLevel) {
-        // Load the opponent's deck
+        // Load the opponent's deck and name
         val opponentDeck = cardRepository.loadDeck(level.opponentDeckId)
+        _opponentName.value = level.opponentName
         if (opponentDeck != null) {
             _gameManager.players[1].setDeck(opponentDeck)
         } else {
             // Fallback if deck not found
             _statusMessage.value = "Opponent deck not found, using default"
-            Log.d("LevelConfig",opponentDeck.toString())
+            Log.d("LevelConfig", opponentDeck.toString())
         }
 
         if (opponentDeck == null) {
@@ -327,18 +333,18 @@ class GameViewModel(
         }
         opponentDeck.shuffle()
 
-        Log.d("LevelConfig",opponentDeck.toString())
+        Log.d("LevelConfig", opponentDeck.toString())
 
         // Set player and opponent health
         _gameManager.players[0].health = level.startingHealth ?: 30
-        _gameManager.players[1].health = when(level.difficulty) {
+        _gameManager.players[1].health = when (level.difficulty) {
             Difficulty.EASY -> 25
             Difficulty.MEDIUM -> 30
             Difficulty.HARD -> 35
             Difficulty.LEGENDARY -> 40
         }
         _opponentHealth.intValue = _gameManager.players[1].health
-        Log.d("LevelConfig","${_gameManager.players[1].health}  $opponentHealth")
+        Log.d("LevelConfig", "${_gameManager.players[1].health}  $opponentHealth")
         // Set starting mana
         _gameManager.players[0].currentMana = level.startingMana ?: 1
         _gameManager.players[1].currentMana = level.startingMana ?: 1
@@ -352,28 +358,49 @@ class GameViewModel(
      */
     private fun applySpecialRules(rules: List<SpecialRule>) {
         rules.forEach { rule ->
-            when(rule) {
+            when (rule) {
                 is SpecialRule.StartingBoard -> {
                     rule.unitSetup.forEach { setup ->
                         if (setup.isPlayerUnit) {
                             // Player units
                             val card = cardRepository.getCardById(setup.unitId)
                             if (card is UnitCard) {
-                                _gameManager.gameBoard.placeUnit(card.clone(), setup.row, setup.col, 0)
+                                _gameManager.gameBoard.placeUnit(
+                                    card.clone(),
+                                    setup.row,
+                                    setup.col,
+                                    0
+                                )
                             } else if (card is FortificationCard) {
-                                _gameManager.gameBoard.placeFortification(card.clone(), setup.row, setup.col, 0)
+                                _gameManager.gameBoard.placeFortification(
+                                    card.clone(),
+                                    setup.row,
+                                    setup.col,
+                                    0
+                                )
                             }
                         } else {
                             // Enemy units
                             val card = cardRepository.getCardById(setup.unitId)
                             if (card is UnitCard) {
-                                _gameManager.gameBoard.placeUnit(card.clone(), setup.row, setup.col, 1)
+                                _gameManager.gameBoard.placeUnit(
+                                    card.clone(),
+                                    setup.row,
+                                    setup.col,
+                                    1
+                                )
                             } else if (card is FortificationCard) {
-                                _gameManager.gameBoard.placeFortification(card.clone(), setup.row, setup.col, 1)
+                                _gameManager.gameBoard.placeFortification(
+                                    card.clone(),
+                                    setup.row,
+                                    setup.col,
+                                    1
+                                )
                             }
                         }
                     }
                 }
+
                 is SpecialRule.AdditionalCards -> {
                     rule.cards.forEach { cardId ->
                         val card = cardRepository.getCardById(cardId)
@@ -382,9 +409,11 @@ class GameViewModel(
                         }
                     }
                 }
+
                 is SpecialRule.ModifiedMana -> {
                     _gameManager.players[0].maxMana += rule.amount
                 }
+
                 is SpecialRule.CustomObjective -> {
                     // Custom objective will be checked during gameplay
                 }
@@ -397,7 +426,8 @@ class GameViewModel(
      */
     private fun checkCampaignObjectives() {
         val currentLevel = _currentLevel.value ?: return
-        val customObjective = currentLevel.specialRules.filterIsInstance<SpecialRule.CustomObjective>().firstOrNull()
+        val customObjective =
+            currentLevel.specialRules.filterIsInstance<SpecialRule.CustomObjective>().firstOrNull()
 
         if (customObjective != null) {
             _objectiveCompleted.value = customObjective.checkCompletion(_gameManager)
@@ -430,6 +460,7 @@ class GameViewModel(
             _statusMessage.value = "Level completed!"
         }
     }
+
     /**
      * Exit the current campaign level and return to campaign screen
      */
@@ -789,13 +820,13 @@ class GameViewModel(
 
         // Update board
         updateBoardState()
-        Log.d("LevelConfigD",_opponentHealth.value.toString())
+        Log.d("LevelConfigD", _opponentHealth.value.toString())
         // Update player stats
         _playerMana.intValue = _gameManager.players[0].currentMana
         _playerMaxMana.intValue = _gameManager.players[0].maxMana
         _playerHealth.intValue = _gameManager.players[0].health
         _opponentHealth.intValue = _gameManager.players[1].health
-        Log.d("LevelConfigD",_opponentHealth.value.toString())
+        Log.d("LevelConfigD", _opponentHealth.value.toString())
 
         // Update opponent stats
         _opponentHandSize.intValue = _gameManager.players[1].hand.size
@@ -1133,8 +1164,9 @@ class GameViewModel(
     ) {
         // Get the attacking unit
         val attackerUnit = _gameManager.gameBoard.getUnitAt(attackerRow, attackerCol) ?: return
-        val targetFortHealth = _gameManager.gameBoard.getFortificationAt(targetRow, targetCol)?.health
-            ?: return
+        val targetFortHealth =
+            _gameManager.gameBoard.getFortificationAt(targetRow, targetCol)?.health
+                ?: return
 
         // Check if this attack has a counter bonus
         val hasCounterBonus = _gameManager.hasFortificationCounterBonus(attackerUnit)
@@ -1190,9 +1222,9 @@ class GameViewModel(
 
                     // Reset counter state
                     _isCounterBonus.value = false
-                    Log.d("FortHealthVDamage","Damage: $damage  Fort Health: ${targetFortHealth}")
+                    Log.d("FortHealthVDamage", "Damage: $damage  Fort Health: ${targetFortHealth}")
 
-                    if(damage >= targetFortHealth)
+                    if (damage >= targetFortHealth)
                         soundManager.playSound(SoundType.FORTIFICATION_DESTROY)
 
                     updateAllGameStates()
@@ -1648,16 +1680,21 @@ class GameViewModel(
         }
     }
 
-    private fun playUnitAttackSound(unitType: UnitType){
+    private fun playUnitAttackSound(unitType: UnitType) {
         val attackSound = when (unitType) {
             UnitType.INFANTRY -> SoundType.INFANTRY_ATTACK
             UnitType.CAVALRY -> SoundType.CAVALRY_ATTACK
             UnitType.ARTILLERY -> SoundType.ARTILLERY_ATTACK
             UnitType.MISSILE -> SoundType.MISSILE_ATTACK
+            UnitType.MUSKET -> SoundType.MUSKET_ATTACK
         }
-        soundManager.playSound(attackSound, volume = if(unitType == UnitType.ARTILLERY) 0.5f else 1.0f)
+        soundManager.playSound(
+            attackSound,
+            volume = if (unitType == UnitType.ARTILLERY) 0.5f else 1.0f
+        )
     }
-    private fun playUnitTapSound(unitType: UnitType){
+
+    private fun playUnitTapSound(unitType: UnitType) {
         val tapSound = when (unitType) {
             UnitType.CAVALRY -> SoundType.CAVALRY_UNIT_TAP
             else -> SoundType.FOOT_UNIT_TAP
@@ -1665,21 +1702,27 @@ class GameViewModel(
         soundManager.playSound(tapSound)
     }
 
-    private fun playUnitMovementSound(unitType: UnitType){
+    private fun playUnitMovementSound(unitType: UnitType) {
         val movementSound = when (unitType) {
             UnitType.CAVALRY -> SoundType.CAVALRY_UNIT_MOVE
             else -> SoundType.FOOT_UNIT_MOVE
         }
         soundManager.playSound(movementSound)
     }
-     fun playMenuSoundOne() {
+
+    fun playMenuSoundOne() {
         soundManager.playSound(SoundType.MENU_TAP)
     }
-     fun playMenuSoundTwo() {
+
+    fun playMenuSoundTwo() {
         soundManager.playSound(SoundType.MENU_TAP_TWO)
     }
 
-    private fun playTacticCardSound(tacticCardType: TacticCardType){
+    fun playMenuScrollSound() {
+        soundManager.playSound(SoundType.MENU_SCROLL)
+    }
+
+    private fun playTacticCardSound(tacticCardType: TacticCardType) {
         val effectSound = when (tacticCardType) {
             TacticCardType.BUFF -> SoundType.SPELL_BUFF
             TacticCardType.SPECIAL -> SoundType.SPELL_SPECIAL

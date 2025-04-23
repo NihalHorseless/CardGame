@@ -44,6 +44,7 @@ class SoundManager(private val context: Context) {
             soundMap[SoundType.CAVALRY_ATTACK] = soundPool.load(context, R.raw.sword_slash_sound, 1)
             soundMap[SoundType.ARTILLERY_ATTACK] = soundPool.load(context, R.raw.artillery_unit_attack, 1)
             soundMap[SoundType.MISSILE_ATTACK] = soundPool.load(context, R.raw.missile_sound_three, 1)
+            soundMap[SoundType.MUSKET_ATTACK] = soundPool.load(context, R.raw.muskeeter_sound, 1)
 
             // Card-related sounds
             soundMap[SoundType.CARD_PICK] = soundPool.load(context, R.raw.card_pick, 1)
@@ -72,6 +73,7 @@ class SoundManager(private val context: Context) {
             soundMap[SoundType.VICTORY] = soundPool.load(context, R.raw.victory_chant, 1)
             soundMap[SoundType.MENU_TAP] = soundPool.load(context, R.raw.menu_click_one, 1)
             soundMap[SoundType.MENU_TAP_TWO] = soundPool.load(context, R.raw.menu_click_two, 1)
+            soundMap[SoundType.MENU_SCROLL] = soundPool.load(context, R.raw.menu_page_turn, 1)
 
         } catch (e: Exception) {
             Log.e("SoundManager", "Error loading sounds: ${e.message}")

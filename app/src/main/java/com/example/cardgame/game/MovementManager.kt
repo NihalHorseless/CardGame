@@ -30,6 +30,7 @@ class MovementManager(private val gameBoard: Board) {
     fun getAttackRange(unit: UnitCard): Int {
         return when (unit.unitType) {
             UnitType.MISSILE -> 2
+            UnitType.MUSKET -> 2
             UnitType.ARTILLERY -> 3
             else -> 1 // Infantry and Cavalry have melee range
         }

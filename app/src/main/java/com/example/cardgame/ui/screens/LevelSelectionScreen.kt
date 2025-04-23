@@ -13,10 +13,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -24,19 +24,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -68,6 +61,7 @@ fun LevelSelectionScreen(
     playerDecks: List<String>,
     selectedDeck: String?,
     onDeckSelected: (String) -> Unit,
+    onLevelScroll: () -> Unit,
     onLevelSelected: (CampaignLevel) -> Unit,
     onBackPressed: () -> Unit,
     modifier: Modifier = Modifier
@@ -107,7 +101,7 @@ fun LevelSelectionScreen(
         ) {
             IconButton(onClick = onBackPressed) {
                 Icon(
-                    imageVector = Icons.Default.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
                     tint = Color.White
                 )
@@ -156,7 +150,8 @@ fun LevelSelectionScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .align(Alignment.Center),
+                    .align(Alignment.Center)
+                    .offset(y = -72.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 // Left arrow
@@ -164,6 +159,7 @@ fun LevelSelectionScreen(
                     onClick = {
                         if (currentLevelIndex > 0) {
                             currentLevelIndex--
+                            onLevelScroll()
                         }
                     },
                     enabled = currentLevelIndex > 0,
@@ -176,7 +172,7 @@ fun LevelSelectionScreen(
                         )
                 ) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Previous Level",
                         tint = Color.White,
                         modifier = Modifier.size(24.dp)
@@ -188,6 +184,7 @@ fun LevelSelectionScreen(
                     onClick = {
                         if (currentLevelIndex < levels.size - 1) {
                             currentLevelIndex++
+                            onLevelScroll()
                         }
                     },
                     enabled = currentLevelIndex < levels.size - 1,
@@ -274,14 +271,16 @@ fun OpponentPortrait(
     isLocked: Boolean,
     modifier: Modifier = Modifier
 ) {
+    // Container for the entire portrait including badge
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center
     ) {
-        // Portrait border and background
+        // Portrait circle
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(if (isCompleted) 6.dp else 0.dp) // Add padding for the badge
                 .background(
                     color = when {
                         isLocked -> Color(0xFF4E4E4E)
@@ -330,25 +329,25 @@ fun OpponentPortrait(
                         .clip(CircleShape),
                     contentScale = ContentScale.Crop
                 )
+            }
+        }
 
-                if (isCompleted) {
-                    // Show victory badge
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .align(Alignment.BottomEnd)
-                            .background(Color(0xFF4CAF50), CircleShape)
-                            .border(2.dp, Color.White, CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = "Completed",
-                            tint = Color.White,
-                            modifier = Modifier.size(32.dp)
-                        )
-                    }
-                }
+        // Victory badge - positioned as an overlay outside the main circle
+        if (isCompleted) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .align(Alignment.BottomEnd)
+                    .background(Color(0xFF4CAF50), CircleShape)
+                    .border(2.dp, Color.White, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = "Completed",
+                    tint = Color.White,
+                    modifier = Modifier.size(32.dp)
+                )
             }
         }
     }

@@ -72,6 +72,8 @@ fun CardGameNavigation() {
                         gameViewModel.startCampaignLevel(campaign.id, level.id)
                         navController.navigate("game")
                         gameViewModel.playMenuSoundTwo()
+                    }, onLevelScroll = {
+                        gameViewModel.playMenuScrollSound()
                     },
                     onBackPressed = {
                         navController.popBackStack()

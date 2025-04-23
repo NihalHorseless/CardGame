@@ -6,12 +6,14 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -26,10 +28,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.cardgame.ui.screens.getOpponentPortrait
 
 /**
  * Player portrait composable with health display and attack target functionality
@@ -95,14 +100,26 @@ fun PlayerPortrait(
                 .clickable(enabled = isTargetable) { onPortraitClick() },
             contentAlignment = Alignment.Center
         ) {
-            // You would use an actual image here for player avatars
-            // For now we'll use a placeholder with the player's initial
-            Text(
-                text = playerName.first().toString(),
-                color = Color.White,
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold
-            )
+            if(playerName == "Opponent" || playerName == "Player") {
+                // You would use an actual image here for player avatars
+                // For now we'll use a placeholder with the player's initial
+                Text(
+                    text = playerName.first().toString(),
+                    color = Color.White,
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            else {
+                Image(
+                    painter = painterResource(id = getOpponentPortrait(playerName)),
+                    contentDescription = playerName,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            }
 
             // Health display at bottom of portrait
             Box(

@@ -250,6 +250,7 @@ fun UnitTypeIcon(
         UnitType.CAVALRY -> R.drawable.unit_type_cavalry
         UnitType.ARTILLERY -> R.drawable.unit_type_cannon
         UnitType.MISSILE -> R.drawable.unit_type_missile
+        UnitType.MUSKET -> R.drawable.unit_type_musket
     }
 
     Image(

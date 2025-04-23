@@ -68,6 +68,22 @@
     "hasTaunt": false
   },
   {
+    "id": 4,
+    "name": "Napoleonic Musketeers",
+    "description": "Powerful musketeers with range damage",
+    "manaCost": 3,
+    "imagePath": "unit_napoleonic_cannon",
+    "type": "unit",
+    "attack": 3,
+    "health": 2,
+    "maxHealth": 4,
+    "unitType": "MUSKET",
+    "unitEra": "NAPOLEONIC",
+    "abilities": [],
+    "hasCharge": false,
+    "hasTaunt": false
+  },
+  {
     "id": 11,
     "name": "Egyptian Chariot",
     "description": "Fast desert raider with multiple attacks",

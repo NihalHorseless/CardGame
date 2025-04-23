@@ -5,6 +5,7 @@ enum class SoundType {
     CAVALRY_ATTACK,
     ARTILLERY_ATTACK,
     MISSILE_ATTACK,
+    MUSKET_ATTACK,
     CARD_PICK,
     CARD_PLAY,
     FOOT_UNIT_TAP,
@@ -23,6 +24,7 @@ enum class SoundType {
     TURN_END,
     MENU_TAP,
     MENU_TAP_TWO,
+    MENU_SCROLL,
     PLAYER_HIT,
     VICTORY,
     DEFEAT

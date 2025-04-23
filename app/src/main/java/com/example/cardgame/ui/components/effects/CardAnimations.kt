@@ -307,6 +307,7 @@ fun GifAttackAnimation(
         UnitType.INFANTRY -> R.drawable.blood_slash
         UnitType.MISSILE -> R.drawable.arrow_rain_two
         UnitType.ARTILLERY -> R.drawable.blood_explosion
+        UnitType.MUSKET -> R.drawable.artillery_hit_anim
     }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -321,6 +322,7 @@ fun GifAttackAnimation(
             UnitType.INFANTRY -> 50.dp
             UnitType.MISSILE -> 50.dp
             UnitType.ARTILLERY -> 90.dp
+            UnitType.MUSKET -> 80.dp
         }
         val offsetX =
             if (unitType == UnitType.INFANTRY || unitType == UnitType.CAVALRY) targetXDp - (animSize / 2 ) else targetXDp - (animSize / 2)

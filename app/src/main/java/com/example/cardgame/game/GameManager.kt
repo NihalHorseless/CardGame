@@ -242,7 +242,7 @@ class GameManager {
         return when {
             // Cavalry deals double damage to Missile and Artillery units
             attacker.unitType == UnitType.CAVALRY &&
-                    (defender.unitType == UnitType.MISSILE || defender.unitType == UnitType.ARTILLERY) -> 2.0f
+                    (defender.unitType == UnitType.MISSILE || defender.unitType == UnitType.ARTILLERY || defender.unitType == UnitType.MUSKET) -> 2.0f
 
             // Infantry deals double damage to Cavalry
             attacker.unitType == UnitType.INFANTRY && defender.unitType == UnitType.CAVALRY -> 2.0f
