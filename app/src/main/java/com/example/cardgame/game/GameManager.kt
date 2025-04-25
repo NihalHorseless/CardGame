@@ -69,10 +69,10 @@ class GameManager {
         }
         players[1].let {
             it.health = when (level.difficulty) {
-                Difficulty.EASY -> 25
-                Difficulty.MEDIUM -> 30
-                Difficulty.HARD -> 35
-                Difficulty.LEGENDARY -> 40
+                Difficulty.EASY -> 30
+                Difficulty.MEDIUM -> 40
+                Difficulty.HARD -> 50
+                Difficulty.LEGENDARY -> 60
             }
             it.currentMana = level.startingMana
             it.hand.clear()

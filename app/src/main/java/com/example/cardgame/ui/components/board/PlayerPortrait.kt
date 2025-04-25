@@ -100,7 +100,7 @@ fun PlayerPortrait(
                 .clickable(enabled = isTargetable) { onPortraitClick() },
             contentAlignment = Alignment.Center
         ) {
-            if(playerName == "Opponent" || playerName == "Player") {
+            if(playerName == "Opponent") {
                 // You would use an actual image here for player avatars
                 // For now we'll use a placeholder with the player's initial
                 Text(

@@ -117,6 +117,7 @@ fun PlayerHand(
                             onClick = { onCardClick(index) }
                         )
                     }
+
                     is TacticCard -> {
                         // Use our new TacticCard rendering
                         TacticCardItem(
@@ -127,6 +128,7 @@ fun PlayerHand(
                             modifier = Modifier.width(100.dp)
                         )
                     }
+
                     is FortificationCard -> {
                         // Use existing FortificationCard rendering
                         HandCard(
@@ -137,6 +139,7 @@ fun PlayerHand(
                             onClick = { onCardClick(index) }
                         )
                     }
+
                     else -> {
                         // Fallback for any other card types
                         GenericCardItem(
@@ -168,7 +171,7 @@ fun HandCard(
         when (card.unitEra) {
             UnitEra.ANCIENT -> Color(0xFF8D6E63)    // Brown
             UnitEra.ROMAN -> Color(0xFFB71C1C)      // Dark Red
-            UnitEra.MEDIEVAL -> Color(0xFF1A237E)   // Dark Blue
+            UnitEra.NAPOLEONIC -> Color(0xFF000091)   // Dark Blue
             else -> Color(0xFFFFFFFF) // White for Default
         }
     } else {
@@ -201,12 +204,7 @@ fun HandCard(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                finalCardColor,
-                                finalCardColor.copy(alpha = 0.7f)
-                            )
-                        )
+                        finalCardColor
                     )
             )
 
@@ -259,11 +257,13 @@ fun HandCard(
                         fortType = card.fortType,
                         modifier = Modifier.size(40.dp)
                     )
+
                     is TacticCard -> Image(
                         painter = painterResource(R.drawable.magic_effect_icon),
                         contentDescription = "Tactic Card",
                         modifier = Modifier.size(40.dp)
                     )
+
                     else -> Image(
                         painter = painterResource(R.drawable.magic_effect_icon),
                         contentDescription = "Tactic Card",
@@ -338,6 +338,7 @@ fun HandCard(
         }
     }
 }
+
 /**
  * Fallback card rendering for unknown card types
  */
@@ -396,9 +397,11 @@ fun OpponentHand(
             ) {
                 // Card back pattern
                 Image(
-                    painter = painterResource(id = R.drawable.card_back),
+                    painter = painterResource(id = R.drawable.eagle_standard),
                     contentDescription = "Opponent Card Background",
-                    modifier = Modifier.size(40.dp).align(Alignment.Center)
+                    modifier = Modifier
+                        .size(24.dp)
+                        .align(Alignment.Center)
                 )
 
             }

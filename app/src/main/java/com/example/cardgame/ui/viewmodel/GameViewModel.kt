@@ -217,7 +217,7 @@ class GameViewModel(
      */
     private fun loadAvailableDecks() {
         viewModelScope.launch {
-            val deckNames = cardRepository.getAvailableDeckNames()
+            val deckNames = cardRepository.getAvailablePlayerDeckNames()
             _availableDecks.value = deckNames
 
             // Set default selections if decks are available
@@ -254,13 +254,20 @@ class GameViewModel(
      * Gets detailed information about a specific deck
      */
     fun getDeckInfo(deckName: String): Deck? {
-        return cardRepository.loadDeck(deckName)
+        return cardRepository.loadPlayerDeck(deckName)
     }
 
     fun registerCellPosition(row: Int, col: Int, x: Float, y: Float) {
         cellPositions[Pair(row, col)] = Pair(x, y)
     }
+    // In GameViewModel
+    fun getPlayerDecks(): List<String> {
+        return cardRepository.cardLoader.getAvailableDeckNames()
+    }
 
+    fun getAIDeck(deckId: String): Deck? {
+        return cardRepository.cardLoader.loadDeck(deckId, isAIDeck = true)
+    }
     /**
      * Load all available campaigns
      */
@@ -279,7 +286,7 @@ class GameViewModel(
             _statusMessage.value = "Select a proper Deck name"
             return
         }
-        val playerDeck = cardRepository.loadDeck(playerDeckName)
+        val playerDeck = cardRepository.loadPlayerDeck(playerDeckName)
         if (playerDeck == null) {
             _statusMessage.value = "Failed to load player deck: $playerDeckName"
             return
@@ -317,7 +324,7 @@ class GameViewModel(
      */
     private fun configureGameForLevel(level: CampaignLevel) {
         // Load the opponent's deck and name
-        val opponentDeck = cardRepository.loadDeck(level.opponentDeckId)
+        val opponentDeck = cardRepository.loadAIDeck(level.opponentDeckId)
         _opponentName.value = level.opponentName
         if (opponentDeck != null) {
             _gameManager.players[1].setDeck(opponentDeck)
@@ -338,10 +345,10 @@ class GameViewModel(
         // Set player and opponent health
         _gameManager.players[0].health = level.startingHealth ?: 30
         _gameManager.players[1].health = when (level.difficulty) {
-            Difficulty.EASY -> 25
-            Difficulty.MEDIUM -> 30
-            Difficulty.HARD -> 35
-            Difficulty.LEGENDARY -> 40
+            Difficulty.EASY -> 30
+            Difficulty.MEDIUM -> 40
+            Difficulty.HARD -> 50
+            Difficulty.LEGENDARY -> 60
         }
         _opponentHealth.intValue = _gameManager.players[1].health
         Log.d("LevelConfig", "${_gameManager.players[1].health}  $opponentHealth")
@@ -519,8 +526,8 @@ class GameViewModel(
         _isGameOver.value = false
 
         // Load decks
-        val playerDeck = cardRepository.loadDeck(playerDeckName)
-        val opponentDeck = cardRepository.loadDeck(opponentDeckName)
+        val playerDeck = cardRepository.loadPlayerDeck(playerDeckName)
+        val opponentDeck = cardRepository.loadAIDeck(opponentDeckName)
 
         if (playerDeck == null) {
             _statusMessage.value = "Failed to load player deck: $playerDeckName"
@@ -539,6 +546,9 @@ class GameViewModel(
         // Set player decks
         _gameManager.players[0].setDeck(playerDeck)
         _gameManager.players[1].setDeck(opponentDeck)
+
+        _opponentName.value = "Opponent"
+        _isInCampaign.value = false
 
         // Start the game
         _gameManager.startGame()
@@ -1206,6 +1216,8 @@ class GameViewModel(
                 delay(800)
                 _isDamageNumberVisible.value = false
 
+                if(targetFortHealth <= damage )
+                    soundManager.playSound(SoundType.FORTIFICATION_DESTROY)
                 // Perform the actual attack
                 val attackResult = _gameManager.executeUnitAttackFortification(
                     attackerUnit,

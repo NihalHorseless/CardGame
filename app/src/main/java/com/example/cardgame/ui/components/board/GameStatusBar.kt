@@ -97,8 +97,8 @@ fun GameStatusBar(
                 enabled = isPlayerTurn,
                 shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFC41E3A),
-                    disabledContainerColor = Color(0xFF6D2027)
+                    containerColor = Color(0xFF315A74),
+                    disabledContainerColor = Color(0xFF09324B)
                 ),
                 modifier = Modifier
                     .size(80.dp)

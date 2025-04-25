@@ -114,13 +114,14 @@ class CardLoader(private val context: Context) {
     /**
      * Load a predefined deck from assets
      */
-    fun loadDeck(deckName: String): Deck? {
+    fun loadDeck(deckName: String, isAIDeck: Boolean = false): Deck? {
         // Return from cache if available
         deckCache[deckName]?.let { return it }
 
         try {
-            // Try to load the deck definition from decks subdirectory
-            val fileName = "decks/$deckName.json"
+            // Try to load the deck definition from appropriate subdirectory
+            val deckPath = if (isAIDeck) "decks/ai" else "decks/player"
+            val fileName = "$deckPath/$deckName.json"
             Log.d(TAG, "Trying to load deck: $fileName")
 
             val inputStream = appContext.assets.open(fileName)
@@ -151,6 +152,7 @@ class CardLoader(private val context: Context) {
                 id = deckData.id,
                 name = deckData.name,
                 description = deckData.description,
+                isPlayerOwned = !isAIDeck,
                 cards = cardList.toMutableList()
             )
 
@@ -159,25 +161,45 @@ class CardLoader(private val context: Context) {
 
             return deck
         } catch (e: Exception) {
-            Log.e(TAG, "Error loading deck: $deckName", e)
-            return null
+            if (isAIDeck) {
+                Log.e(TAG, "Error loading AI deck: $deckName, trying player deck", e)
+                return loadDeck(deckName, false)
+            } else {
+                Log.e(TAG, "Error loading player deck: $deckName, trying AI deck", e)
+                return loadDeck(deckName, true)
+            }
         }
     }
 
-    // Rest of the methods remain unchanged...
     fun getAvailableDeckNames(): List<String> {
         try {
-            val deckFolderPath = "decks"
-            val fileList = appContext.assets.list(deckFolderPath) ?: return emptyList()
+            val playerDeckFolderPath = "decks/player"
+            val fileList = appContext.assets.list(playerDeckFolderPath) ?: return emptyList()
 
             val deckNames = fileList
                 .filter { it.endsWith("deck.json") }
                 .map { it.removeSuffix(".json") }
 
-            Log.d(TAG, "Found ${deckNames.size} decks: ${deckNames.joinToString()}")
+            Log.d(TAG, "Found ${deckNames.size} player decks: ${deckNames.joinToString()}")
             return deckNames
         } catch (e: Exception) {
-            Log.e(TAG, "Error listing available decks", e)
+            Log.e(TAG, "Error listing available player decks", e)
+            return emptyList()
+        }
+    }
+    fun getAvailableAIDeckNames(): List<String> {
+        try {
+            val aiDeckFolderPath = "decks/ai"
+            val fileList = appContext.assets.list(aiDeckFolderPath) ?: return emptyList()
+
+            val deckNames = fileList
+                .filter { it.endsWith("deck.json") }
+                .map { it.removeSuffix(".json") }
+
+            Log.d(TAG, "Found ${deckNames.size} AI decks: ${deckNames.joinToString()}")
+            return deckNames
+        } catch (e: Exception) {
+            Log.e(TAG, "Error listing available AI decks", e)
             return emptyList()
         }
     }

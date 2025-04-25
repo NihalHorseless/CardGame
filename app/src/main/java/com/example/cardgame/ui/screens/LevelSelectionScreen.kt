@@ -501,11 +501,10 @@ fun DeckSelectionItem(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Deck icon
-            Icon(
-                imageVector = Icons.Default.KeyboardArrowUp,
+            Image(
+                painter = painterResource(R.drawable.marshal_baton),
                 contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(36.dp)
             )
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -539,10 +538,11 @@ fun DeckSelectionItem(
 fun getOpponentPortrait(opponentName: String): Int {
     return when (opponentName) {
         "Marshal Ponitowski" -> R.drawable.ponitowski_avatar
-        "Marshal Davout" -> R.drawable.davout_avatar
+        "Marshal Davout" -> R.drawable.davout_avatar_two
         "Marshal Ney" -> R.drawable.ney_portrait
         "Marshal Marmont" -> R.drawable.marmont_avatar
         "Napoleon Bonaparte" -> R.drawable.napoleon_avatar
-        else -> R.drawable.ney_portrait // Fallback
+        "Player " -> R.drawable.player_avatar
+        else -> R.drawable.player_avatar // Fallback
     }
 }

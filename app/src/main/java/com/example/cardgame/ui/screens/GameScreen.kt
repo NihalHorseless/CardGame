@@ -1,5 +1,6 @@
 package com.example.cardgame.ui.screens
 
+import android.app.Activity
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -12,14 +13,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import com.example.cardgame.ui.components.board.BattlefieldBackground
 import com.example.cardgame.ui.components.board.GameBoard
 import com.example.cardgame.ui.components.board.GameStatusBar
 import com.example.cardgame.ui.components.board.PlayerPortrait
@@ -27,6 +34,7 @@ import com.example.cardgame.ui.components.effects.CardSlotAnimation
 import com.example.cardgame.ui.components.effects.DamageNumberEffect
 import com.example.cardgame.ui.components.effects.GifAttackAnimation
 import com.example.cardgame.ui.components.effects.TacticCardEffectAnimation
+import com.example.cardgame.ui.components.effects.UnitDeathAnimation
 import com.example.cardgame.ui.components.player.OpponentHand
 import com.example.cardgame.ui.components.player.PlayerHand
 import com.example.cardgame.ui.viewmodel.GameViewModel
@@ -68,9 +76,6 @@ fun GameScreen(
     val isTacticEffectVisible by viewModel.isTacticEffectVisible
     val tacticEffectType by viewModel.tacticEffectType
     val tacticEffectPosition by viewModel.tacticEffectPosition
-
-    // Movement animation
-    val isUnitMovingAnimation by viewModel.isUnitMovingAnimation
 
 
     // Deployment system states
@@ -258,23 +263,6 @@ fun GameScreen(
                 modifier = Modifier.fillMaxSize().zIndex(10f)
             )
         }
-
-        // Unit movement animation
-        if (isUnitMovingAnimation) {
-        /*    UnitMovementAnimation(
-                isVisible = isUnitMovingAnimation,
-                unitType = movingUnitType,
-                startX = moveStartPosition.first,
-                startY = moveStartPosition.second,
-                endX = moveEndPosition.first,
-                endY = moveEndPosition.second,
-                onAnimationComplete = { /* Handled by ViewModel */ },
-                modifier = Modifier.fillMaxSize().zIndex(10f)
-            )
-
-         */
-        }
-
 
     }
 }

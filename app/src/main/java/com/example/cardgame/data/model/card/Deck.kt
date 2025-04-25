@@ -4,6 +4,7 @@ data class Deck(
     val id: String,
     val name: String,
     val description: String,
+    val isPlayerOwned: Boolean = true,
     val cards: MutableList<Card> = mutableListOf()
 ) {
     /**

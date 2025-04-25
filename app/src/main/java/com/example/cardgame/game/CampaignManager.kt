@@ -43,16 +43,16 @@ class CampaignManager(
     // Configure the game with level-specific settings
     private fun configureGameForLevel(level: CampaignLevel) {
         // Load the opponent's deck
-        val opponentDeck = cardRepository.loadDeck(level.opponentDeckId)
+        val opponentDeck = cardRepository.loadAIDeck(level.opponentDeckId)
         gameManager.players[1].setDeck(opponentDeck ?: return)
 
         // Set player and opponent health
         gameManager.players[0].health = level.startingHealth
         gameManager.players[1].health = when(level.difficulty) {
-            Difficulty.EASY -> 25
-            Difficulty.MEDIUM -> 30
-            Difficulty.HARD -> 35
-            Difficulty.LEGENDARY -> 40
+            Difficulty.EASY -> 30
+            Difficulty.MEDIUM -> 40
+            Difficulty.HARD -> 50
+            Difficulty.LEGENDARY -> 60
         }
 
         // Set starting mana

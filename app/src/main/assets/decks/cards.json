@@ -17,7 +17,7 @@
   },
   {
     "id": 2,
-    "name": "Medieval Knight",
+    "name": "French Hussar",
     "description": "Heavily armored cavalry unit with powerful charge",
     "manaCost": 5,
     "imagePath": "unit_medieval_knight",
@@ -26,7 +26,7 @@
     "health": 5,
     "maxHealth": 5,
     "unitType": "CAVALRY",
-    "unitEra": "MEDIEVAL",
+    "unitEra": "NAPOLEONIC",
     "abilities": [
       {
         "abilityType": "charge"
@@ -59,8 +59,8 @@
     "imagePath": "unit_napoleonic_cannon",
     "type": "unit",
     "attack": 4,
-    "health": 4,
-    "maxHealth": 4,
+    "health": 2,
+    "maxHealth": 2,
     "unitType": "ARTILLERY",
     "unitEra": "NAPOLEONIC",
     "abilities": [],
@@ -68,15 +68,15 @@
     "hasTaunt": false
   },
   {
-    "id": 4,
-    "name": "Napoleonic Musketeers",
+    "id": 5,
+    "name": "French Line Infantry",
     "description": "Powerful musketeers with range damage",
     "manaCost": 3,
     "imagePath": "unit_napoleonic_cannon",
     "type": "unit",
     "attack": 3,
     "health": 2,
-    "maxHealth": 4,
+    "maxHealth": 2,
     "unitType": "MUSKET",
     "unitEra": "NAPOLEONIC",
     "abilities": [],
@@ -84,23 +84,55 @@
     "hasTaunt": false
   },
   {
-    "id": 11,
-    "name": "Egyptian Chariot",
-    "description": "Fast desert raider with multiple attacks",
-    "manaCost": 4,
-    "imagePath": "unit_egyptian_chariot",
+    "id": 6,
+    "name": "Napoleon's Old Guard",
+    "description": "The most prestigious veterans of French army",
+    "manaCost": 6,
+    "imagePath": "unit_napoleonic_cannon",
     "type": "unit",
-    "attack": 3,
-    "health": 3,
-    "maxHealth": 3,
+    "attack": 6,
+    "health": 5,
+    "maxHealth": 5,
+    "unitType": "MUSKET",
+    "unitEra": "NAPOLEONIC",
+    "abilities": [],
+    "hasCharge": false,
+    "hasTaunt": false
+  },
+  {
+    "id": 7,
+    "name": "Polish Hussars",
+    "description": "Heavily armored Polish cavalry with powerful charge",
+    "manaCost": 6,
+    "imagePath": "unit_medieval_knight",
+    "type": "unit",
+    "attack": 7,
+    "health": 6,
+    "maxHealth": 6,
     "unitType": "CAVALRY",
-    "unitEra": "ANCIENT",
+    "unitEra": "NAPOLEONIC",
     "abilities": [
       {
         "abilityType": "charge"
       }
     ],
     "hasCharge": true,
+    "hasTaunt": false
+  },
+  {
+    "id": 8,
+    "name": "French Grenadiers",
+    "description": "Powerful infantry with high damage",
+    "manaCost": 5,
+    "imagePath": "unit_napoleonic_cannon",
+    "type": "unit",
+    "attack": 4,
+    "health": 4,
+    "maxHealth": 4,
+    "unitType": "MUSKET",
+    "unitEra": "NAPOLEONIC",
+    "abilities": [],
+    "hasCharge": false,
     "hasTaunt": false
   },
   {
