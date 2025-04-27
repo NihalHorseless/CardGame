@@ -9,6 +9,10 @@ import com.example.cardgame.data.model.campaign.CampaignLevel
 import com.example.cardgame.data.model.campaign.Difficulty
 import com.example.cardgame.data.model.card.FortificationCard
 import com.example.cardgame.data.model.card.UnitCard
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 class GameManager {
@@ -110,7 +114,7 @@ class GameManager {
         repeat(3) { player.drawCard() }
     }
 
-    fun checkForDestroyedUnits() {
+     fun checkForDestroyedUnits() {
         val destroyedUnits = mutableListOf<UnitCard>()
 
         // Find dead units
@@ -122,14 +126,17 @@ class GameManager {
                 }
             }
         }
-
-        // Remove dead units
-        destroyedUnits.forEach { unit ->
-            val position = gameBoard.getUnitPosition(unit)
-            if (position != null) {
-                gameBoard.removeUnit(position.first, position.second)
+        CoroutineScope(Dispatchers.Main).launch {
+            delay(700)
+            // Remove dead units
+            destroyedUnits.forEach { unit ->
+                val position = gameBoard.getUnitPosition(unit)
+                if (position != null) {
+                    gameBoard.removeUnit(position.first, position.second)
+                }
             }
         }
+
 
         // Also check for destroyed fortifications
         checkForDestroyedFortifications()
@@ -325,7 +332,7 @@ class GameManager {
      * - Unit attacking a unit
      * - Unit attacking a fortification
      */
-    fun executeAttack(attacker: UnitCard, targetRow: Int, targetCol: Int): Boolean {
+     fun executeAttack(attacker: UnitCard, targetRow: Int, targetCol: Int): Boolean {
         // Get the target unit (if any)
         val targetUnit = gameBoard.getUnitAt(targetRow, targetCol)
 
@@ -351,8 +358,8 @@ class GameManager {
             val (attackerRow, attackerCol) = attackerPos
             val manhattanDistance = abs(attackerRow - targetRow) + abs(attackerCol - targetCol)
 
-            // Only take counterattack damage if the attack is melee range (distance = 1)
-            if (manhattanDistance == 1) {
+            // Only take counterattack damage if the attack is melee range (distance = 1) and not artillery
+            if (manhattanDistance == 1 && targetUnit.unitType != UnitType.ARTILLERY) {
                 // Take damage from target's counterattack - also apply counter system
                 val counterAttackDamage = calculateDamage(targetUnit, attacker)
                 attacker.takeDamage(counterAttackDamage)
@@ -380,7 +387,7 @@ class GameManager {
         return true
     }
 
-    fun executeFortificationAttack(
+     fun executeFortificationAttack(
         fortification: FortificationCard,
         targetRow: Int,
         targetCol: Int

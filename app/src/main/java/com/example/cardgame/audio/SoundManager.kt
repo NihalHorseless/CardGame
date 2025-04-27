@@ -65,6 +65,7 @@ class SoundManager(private val context: Context) {
             soundMap[SoundType.FORTIFICATION_TAP] = soundPool.load(context, R.raw.fortification_tap, 1)
             soundMap[SoundType.FORTIFICATION_DESTROY] = soundPool.load(context, R.raw.fortification_fall, 1)
             soundMap[SoundType.PLAYER_HIT] = soundPool.load(context, R.raw.attack_on_player, 1)
+            soundMap[SoundType.DAMAGE_TAP] = soundPool.load(context, R.raw.damage_tick, 1)
 
 
             // Game state sounds

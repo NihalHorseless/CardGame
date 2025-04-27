@@ -1,10 +1,7 @@
 package com.example.cardgame.ui.components.board
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -44,6 +41,7 @@ import com.example.cardgame.ui.theme.thickSwordShape
 @Composable
 fun UnitSlot(
     unit: UnitCard?,
+    visualHealth: Int? = null,
     isSelected: Boolean,
     isPlayerUnit: Boolean,
     canAttack: Boolean = false,
@@ -63,18 +61,10 @@ fun UnitSlot(
 
     val borderWidth = if (isSelected) 3.dp else 1.dp
 
-    // Pulsating animation for cards that can take actions
-    val pulseMagnitude by animateFloatAsState(
-        targetValue = if (isPlayerUnit && (canAttack || canMove) && !isSelected) 1.1f else 1.0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(500, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        )
-    )
 
     // Selection animation
     val scale by animateFloatAsState(
-        targetValue = if (isSelected) 1.1f else if (isPlayerUnit && (canAttack || canMove)) pulseMagnitude else 1.0f,
+        targetValue = if (isSelected) 1.1f else 1.0f,
         animationSpec = tween(200)
     )
 
@@ -126,10 +116,6 @@ fun UnitSlot(
                             .align(Alignment.Center)
                     )
 
-                    // Show action indicators for player units
-                    if (isPlayerUnit) {
-
-                    }
                 }
             } else {
                 // Empty slot
@@ -167,12 +153,15 @@ fun UnitSlot(
                 )
             }
 
+
             // Health Value - positioned outside the oval at bottom right
+            val displayHealth = visualHealth ?: unit.health
             val healthColor = when {
-                unit.health <= unit.maxHealth / 3 -> Color.Red
-                unit.health <= unit.maxHealth * 2 / 3 -> Color(0xFFFFA500) // Orange
+                displayHealth <= unit.maxHealth / 3 -> Color.Red
+                displayHealth <= unit.maxHealth * 2 / 3 -> Color(0xFFFFA500) // Orange
                 else -> Color.Green
             }
+
 
             Box(
                 modifier = Modifier
@@ -186,13 +175,15 @@ fun UnitSlot(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = unit.health.toString(),
+                    text = displayHealth.toString(),
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp,
-                    modifier = Modifier.offset(y = (-2).dp)
+                    modifier = Modifier
+                        .offset(y = (-2).dp)
                 )
             }
+
 
             // Taunt indicator
             if (unit.hasTaunt) {

@@ -97,13 +97,17 @@ fun GameStatusBar(
                 enabled = isPlayerTurn,
                 shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF315A74),
-                    disabledContainerColor = Color(0xFF09324B)
+                    containerColor = Color(0xFFF5BF11),
+                    disabledContainerColor = Color(0xFF315A74)
                 ),
                 modifier = Modifier
                     .size(80.dp)
                     .padding(4.dp)
                     .align(Alignment.CenterHorizontally)
+                    .border(width = 2.dp,
+                        color = Color(0xFF969696),
+                        shape = CircleShape
+                    )
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.hourglass_mountain),

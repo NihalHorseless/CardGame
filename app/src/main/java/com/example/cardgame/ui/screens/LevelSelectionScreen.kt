@@ -25,7 +25,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
@@ -502,9 +501,9 @@ fun DeckSelectionItem(
         ) {
             // Deck icon
             Image(
-                painter = painterResource(R.drawable.marshal_baton),
+                painter = painterResource(R.drawable.eagle_standard),
                 contentDescription = null,
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(24.dp)
             )
 
             Spacer(modifier = Modifier.height(4.dp))

@@ -25,7 +25,6 @@ import com.example.cardgame.data.model.card.TacticCard
 import com.example.cardgame.data.model.card.UnitCard
 import com.example.cardgame.data.repository.CampaignRepository
 import com.example.cardgame.data.repository.CardRepository
-import com.example.cardgame.game.CampaignManager
 import com.example.cardgame.game.GameManager
 import com.example.cardgame.game.PlayerContext
 import kotlinx.coroutines.delay
@@ -129,31 +128,8 @@ class GameViewModel(
     private val _attackTargetPosition = mutableStateOf(Pair(0f, 0f))
     val attackTargetPosition: State<Pair<Float, Float>> = _attackTargetPosition
 
-    // Movement animation state
-    private val _isUnitMovingAnimation = mutableStateOf(false)
-    val isUnitMovingAnimation: State<Boolean> = _isUnitMovingAnimation
 
-    private val _moveStartPosition = mutableStateOf(Pair(0f, 0f))
-    val moveStartPosition: State<Pair<Float, Float>> = _moveStartPosition
 
-    private val _moveEndPosition = mutableStateOf(Pair(0f, 0f))
-    val moveEndPosition: State<Pair<Float, Float>> = _moveEndPosition
-
-    private val _movingUnitType = mutableStateOf(UnitType.INFANTRY)
-    val movingUnitType: State<UnitType> = _movingUnitType
-
-    // Damage animation
-    private val _isDamageNumberVisible = mutableStateOf(false)
-    val isDamageNumberVisible: State<Boolean> = _isDamageNumberVisible
-
-    private val _damageToShow = mutableIntStateOf(0)
-    val damageToShow: State<Int> = _damageToShow
-
-    private val _damagePosition = mutableStateOf(Pair(0f, 0f))
-    val damagePosition: State<Pair<Float, Float>> = _damagePosition
-
-    private val _isHealingEffect = mutableStateOf(false)
-    val isHealingEffect: State<Boolean> = _isHealingEffect
 
     // Win conditions
     private val _isGameOver = mutableStateOf(false)
@@ -260,6 +236,7 @@ class GameViewModel(
     fun registerCellPosition(row: Int, col: Int, x: Float, y: Float) {
         cellPositions[Pair(row, col)] = Pair(x, y)
     }
+
     // In GameViewModel
     fun getPlayerDecks(): List<String> {
         return cardRepository.cardLoader.getAvailableDeckNames()
@@ -268,6 +245,7 @@ class GameViewModel(
     fun getAIDeck(deckId: String): Deck? {
         return cardRepository.cardLoader.loadDeck(deckId, isAIDeck = true)
     }
+
     /**
      * Load all available campaigns
      */
@@ -696,9 +674,7 @@ class GameViewModel(
             }
 
             // Reset selection state
-            _selectedCardIndex.value = null
-            _validDeploymentPositions.value = emptyList()
-            _interactionMode.value = InteractionMode.DEFAULT
+            resetSelectionStates()
 
             // Update game state
             updateAllGameStates()
@@ -846,10 +822,7 @@ class GameViewModel(
         _gameState.value = _gameManager.gameState
 
         // Reset selection state
-        _selectedCell.value = null
-        _validMoveDestinations.value = emptyList()
-        _validAttackTargets.value = emptyList()
-        _interactionMode.value = InteractionMode.DEFAULT
+        resetSelectionStates()
 
         // Check for game over
         checkGameOver()
@@ -898,7 +871,7 @@ class GameViewModel(
                         executeAttackAgainstFortification(selectedRow, selectedCol, row, col)
                     } else {
                         // This is a regular unit attack
-                        executeAttack(selectedRow, selectedCol, row, col)
+                        executeAttack(selectedRow, selectedCol, row, col,playerContext)
                     }
                 }
             }
@@ -952,12 +925,12 @@ class GameViewModel(
         // If a unit is selected and player clicks on a valid move destination
         else if (_selectedCell.value != null && Pair(row, col) in _validMoveDestinations.value) {
             val (selectedRow, selectedCol) = _selectedCell.value!!
-            executeMove(selectedRow, selectedCol, row, col)
+            executeMove(selectedRow, selectedCol, row, col, context = playerContext)
         }
         // If a unit is selected and player clicks on a valid attack target
         else if (_selectedCell.value != null && Pair(row, col) in _validAttackTargets.value) {
             val (selectedRow, selectedCol) = _selectedCell.value!!
-            executeAttack(selectedRow, selectedCol, row, col)
+            executeAttack(selectedRow, selectedCol, row, col,playerContext)
         }
         // If player clicks on another of their units, select that unit instead
         else if (clickedUnit != null && unitOwner == 0) {
@@ -982,25 +955,15 @@ class GameViewModel(
     /**
      * Execute a movement action
      */
-    private fun executeMove(fromRow: Int, fromCol: Int, toRow: Int, toCol: Int) {
+    private fun executeMove(fromRow: Int, fromCol: Int, toRow: Int, toCol: Int,context: PlayerContext) {
         val unit = _gameManager.gameBoard.getUnitAt(fromRow, fromCol) ?: return
 
-        // Get start and end positions for animation
-        val startPos = cellPositions[Pair(fromRow, fromCol)] ?: return
-        val endPos = cellPositions[Pair(toRow, toCol)] ?: return
-
-        // Set up movement animation
-        _moveStartPosition.value = startPos
-        _moveEndPosition.value = endPos
-        _movingUnitType.value = unit.unitType
-        _isUnitMovingAnimation.value = true
 
         // Execute the movement after animation
         viewModelScope.launch {
             delay(500) // Animation duration
-            _isUnitMovingAnimation.value = false
 
-            val moveResult = playerContext.moveUnit(fromRow, fromCol, toRow, toCol, _gameManager)
+            val moveResult = context.moveUnit(fromRow, fromCol, toRow, toCol, _gameManager)
 
             if (moveResult) {
                 _statusMessage.value = "Unit moved successfully."
@@ -1031,10 +994,10 @@ class GameViewModel(
                 _validMoveDestinations.value = emptyList()
                 _validAttackTargets.value = emptyList()
             }
+            Log.d("AIMove","Position : ${moveResult} Status: ${_statusMessage} ")
+
         }
     }
-
-    // Other methods remain the same...
 
     /**
      * Update UI state when unit is selected
@@ -1061,7 +1024,7 @@ class GameViewModel(
     /**
      * Execute an attack between units with animations
      */
-    private fun executeAttack(attackerRow: Int, attackerCol: Int, targetRow: Int, targetCol: Int) {
+    private fun executeAttack(attackerRow: Int, attackerCol: Int, targetRow: Int, targetCol: Int,context: PlayerContext) {
         // Get units for the attack
         val attackerUnit = _gameManager.gameBoard.getUnitAt(attackerRow, attackerCol) ?: return
         val targetUnit = _gameManager.gameBoard.getUnitAt(targetRow, targetCol) ?: return
@@ -1083,10 +1046,15 @@ class GameViewModel(
             // Play Attack Sound
             playUnitAttackSound(attackerUnit.unitType)
 
+
             // Attack logic after animation
             viewModelScope.launch {
+                delay(400)
+                // Reset selection state
+                resetSelectionStates()
+
                 // Wait for attack animation
-                delay(800)
+                delay(400)
                 _isSimpleAttackVisible.value = false
 
                 // Calculate the actual damage that will be dealt
@@ -1097,19 +1065,15 @@ class GameViewModel(
                     attackerUnit.attack
                 }
 
-                // Show damage number
-                _damageToShow.intValue = damage
-                _damagePosition.value = targetPos
-                _isHealingEffect.value = false
-                _isDamageNumberVisible.value = true
+                // Wait for damage
+                delay(600)
 
-                // Wait for damage number
-                delay(800)
-                _isDamageNumberVisible.value = false
+                // Store original health before attack for animation
+                val originalHealth = targetUnit.health
 
                 // Perform the actual attack using contexts
                 val attackResult = _gameManager.executeAttackWithContext(
-                    playerContext,
+                    context,
                     attackerRow,
                     attackerCol,
                     targetRow,
@@ -1118,16 +1082,24 @@ class GameViewModel(
 
                 if (attackResult) {
 
-                    // Reset selection state
-                    _selectedCell.value = null
-                    _validAttackTargets.value = emptyList()
-                    _validMoveDestinations.value = emptyList()
-                    _interactionMode.value = InteractionMode.DEFAULT
+                    // Animate health decrease
+                    val actualDamage = originalHealth - targetUnit.health
 
-                    // Reset counter state
-                    _isCounterBonus.value = false
+                    // Restore health temporarily for animation
+                    val tempHealth = targetUnit.health
+                    targetUnit.health = originalHealth
 
-                    updateAllGameStates()
+                    // Animate health decrease
+                    animateHealthDecrease(targetUnit, actualDamage) {
+                        // Restore the actual health once animation completes
+                        targetUnit.health = tempHealth
+
+                        Log.d("AnimateHealth", "ViewModel")
+                        // Reset counter state
+                        _isCounterBonus.value = false
+
+                        updateAllGameStates()
+                    }
                 } else {
                     _statusMessage.value = "Cannot attack with this unit"
                     _interactionMode.value = InteractionMode.DEFAULT
@@ -1148,10 +1120,7 @@ class GameViewModel(
             if (attackResult) {
 
                 // Reset states...
-                _selectedCell.value = null
-                _validAttackTargets.value = emptyList()
-                _validMoveDestinations.value = emptyList()
-                _interactionMode.value = InteractionMode.DEFAULT
+                resetSelectionStates()
                 _isCounterBonus.value = false
 
                 updateAllGameStates()
@@ -1206,17 +1175,10 @@ class GameViewModel(
                     attackerUnit.attack
                 }
 
-                // Show damage number
-                _damageToShow.intValue = damage
-                _damagePosition.value = targetPos
-                _isHealingEffect.value = false
-                _isDamageNumberVisible.value = true
+                // Wait for damage
+                delay(300)
 
-                // Wait for damage number
-                delay(800)
-                _isDamageNumberVisible.value = false
-
-                if(targetFortHealth <= damage )
+                if (targetFortHealth <= damage)
                     soundManager.playSound(SoundType.FORTIFICATION_DESTROY)
                 // Perform the actual attack
                 val attackResult = _gameManager.executeUnitAttackFortification(
@@ -1227,17 +1189,12 @@ class GameViewModel(
 
                 if (attackResult) {
                     // Reset selection state
-                    _selectedCell.value = null
-                    _validAttackTargets.value = emptyList()
-                    _validMoveDestinations.value = emptyList()
-                    _interactionMode.value = InteractionMode.DEFAULT
+                    resetSelectionStates()
 
                     // Reset counter state
                     _isCounterBonus.value = false
                     Log.d("FortHealthVDamage", "Damage: $damage  Fort Health: ${targetFortHealth}")
 
-                    if (damage >= targetFortHealth)
-                        soundManager.playSound(SoundType.FORTIFICATION_DESTROY)
 
                     updateAllGameStates()
                 } else {
@@ -1256,10 +1213,7 @@ class GameViewModel(
 
             if (attackResult) {
                 // Reset states...
-                _selectedCell.value = null
-                _validAttackTargets.value = emptyList()
-                _validMoveDestinations.value = emptyList()
-                _interactionMode.value = InteractionMode.DEFAULT
+                resetSelectionStates()
                 _isCounterBonus.value = false
 
                 updateAllGameStates()
@@ -1448,20 +1402,18 @@ class GameViewModel(
                         validMoves.minByOrNull { it.first } // Move to lowest row (toward player)
 
                     if (bestMove != null) {
-                        // Animate the move
-                        val startPos = cellPositions[position] ?: continue
-                        val endPos = cellPositions[bestMove] ?: continue
-
-                        _moveStartPosition.value = startPos
-                        _moveEndPosition.value = endPos
-                        _movingUnitType.value = unit.unitType
-                        _isUnitMovingAnimation.value = true
 
                         delay(500) // Animation duration
-                        _isUnitMovingAnimation.value = false
 
                         // Execute the move
-                        _gameManager.moveUnit(unit, bestMove.first, bestMove.second)
+                        executeMove(
+                            position.first,
+                            position.second,
+                            bestMove.first,
+                            bestMove.second,
+                            context = opponentContext
+                        )
+                        Log.d("AIMove","Position : ${position} Best Move: ${bestMove} ")
                         updateAllGameStates()
                         delay(300)
                     }
@@ -1489,32 +1441,11 @@ class GameViewModel(
                 if (validTargets.isNotEmpty()) {
                     val target = validTargets.first()
 
-                    // Execute the attack
-                    val targetPos = cellPositions[target] ?: continue
-
-
-                    // Animation and sound effect
-                    playUnitAttackSound(aiUnit.unitType)
-                    _attackingUnitType.value = aiUnit.unitType
-                    _attackTargetPosition.value = targetPos
-                    _isSimpleAttackVisible.value = true
-
-                    delay(800)
-                    _isSimpleAttackVisible.value = false
-
-                    // Show damage number
-                    _damageToShow.intValue = aiUnit.attack
-                    _damagePosition.value = targetPos
-                    _isHealingEffect.value = false
-                    _isDamageNumberVisible.value = true
-
-                    delay(800)
-                    _isDamageNumberVisible.value = false
 
                     // Execute attack
-                    _gameManager.executeAttack(aiUnit, target.first, target.second)
+                    executeAttack(aiUnitPos.first,aiUnitPos.second,target.first, target.second,opponentContext)
                     updateAllGameStates()
-                    delay(300)
+                    delay(800)
                 } else if (opponentContext.canAttackOpponentDirectly(
                         aiUnitPos.first,
                         aiUnitPos.second,
@@ -1649,15 +1580,8 @@ class GameViewModel(
                 delay(800)
                 _isSimpleAttackVisible.value = false
 
-                // Show damage number
-                _damageToShow.intValue = fortification.attack
-                _damagePosition.value = targetPos
-                _isHealingEffect.value = false
-                _isDamageNumberVisible.value = true
-
-                // Wait for damage number
-                delay(800)
-                _isDamageNumberVisible.value = false
+                // Wait for damage
+                delay(300)
 
                 // Execute the attack
                 val attackResult =
@@ -1690,6 +1614,66 @@ class GameViewModel(
                 _interactionMode.value = InteractionMode.DEFAULT
             }
         }
+    }
+
+    // To this:
+    private val _visualHealthMap = mutableStateOf<Map<UnitCard, Int>>(emptyMap())
+    val visualHealthMap: State<Map<UnitCard, Int>> = _visualHealthMap
+
+    fun animateHealthDecrease(unit: UnitCard, damageAmount: Int, completion: () -> Unit) {
+        val startHealth = unit.health
+        var remainingDamage = damageAmount
+
+        // Initialize with current health
+        _visualHealthMap.value = _visualHealthMap.value.toMutableMap().apply {
+            put(unit, startHealth)
+        }
+
+        viewModelScope.launch {
+            // Play a sound at the start of damage
+            //   soundManager.playSound(SoundType.DAMAGE_TAP)
+
+            // Animate health decrements one by one
+            while (remainingDamage > 0) {
+                val currentHealth = _visualHealthMap.value[unit] ?: startHealth
+                // Update the visual health (but not the actual unit health yet)
+                _visualHealthMap.value = _visualHealthMap.value.toMutableMap().apply {
+                    put(unit, currentHealth - 1)
+                }
+
+                // Play tick sound for each health point lost
+                if (remainingDamage % 2 == 0) { // Play every other tick to avoid sound spam
+                    soundManager.playSound(SoundType.DAMAGE_TAP, volume = 0.3f)
+                }
+
+                // Small delay between ticks - faster for bigger damage amounts
+                val tickDelay = when {
+                    damageAmount > 5 -> 80L
+                    else -> 120L
+                }
+                delay(tickDelay)
+
+                remainingDamage--
+            }
+
+            // Wait a brief moment for visual clarity before completing
+            delay(400)
+
+            // Remove from visual map once animation is complete
+            _visualHealthMap.value = _visualHealthMap.value.toMutableMap().apply {
+                remove(unit)
+            }
+
+            // Call completion handler
+            completion()
+        }
+    }
+
+    private fun resetSelectionStates() {
+        _selectedCell.value = null
+        _validMoveDestinations.value = emptyList()
+        _validAttackTargets.value = emptyList()
+        _interactionMode.value = InteractionMode.DEFAULT
     }
 
     private fun playUnitAttackSound(unitType: UnitType) {

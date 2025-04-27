@@ -60,13 +60,6 @@ class UnitCard(
     }
 
     /**
-     * Attack an enemy unit at the specified position
-     */
-    fun attackUnit(targetRow: Int, targetCol: Int, gameManager: GameManager): Boolean {
-        return gameManager.executeAttack(this, targetRow, targetCol)
-    }
-
-    /**
      * Attack the enemy player directly
      */
     fun attackOpponent(gameManager: GameManager): Boolean {

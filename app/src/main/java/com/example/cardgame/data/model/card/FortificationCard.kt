@@ -26,21 +26,6 @@ class FortificationCard(
         // Actual deployment is handled by the PlayerContext
         return false
     }
-
-    /**
-     * Attack an enemy unit at the specified position
-     * Only towers can attack
-     */
-    fun attackUnit(targetRow: Int, targetCol: Int, gameManager: GameManager): Boolean {
-        // Only towers can attack
-        if (fortType != FortificationType.TOWER) return false
-
-        // Towers can't attack if they've already attacked this turn
-        if (!canAttackThisTurn) return false
-
-        return gameManager.executeFortificationAttack(this, targetRow, targetCol)
-    }
-
     /**
      * Take damage from an attack
      */

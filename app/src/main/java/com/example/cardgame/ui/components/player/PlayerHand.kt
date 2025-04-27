@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.Text
@@ -31,7 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -366,45 +364,51 @@ fun OpponentHand(
     LazyRow(
         modifier = modifier
             .fillMaxWidth()
-            .height(60.dp)
+            .height(70.dp)
             .padding(4.dp),
         horizontalArrangement = Arrangement.Center
     ) {
         items(cardCount) { index ->
             // Card back display
-            Box(
-                modifier = Modifier
-                    .size(40.dp, 55.dp)
-                    .offset(x = if (index > 0) (-15 * index).dp else 0.dp)
-                    .shadow(
-                        elevation = 2.dp,
-                        shape = RoundedCornerShape(4.dp)
-                    )
-                    .background(
-                        brush = Brush.linearGradient(
-                            colors = listOf(
-                                Color(0xFF322B4C),
-                                Color(0xFF241E35)
-                            )
-                        ),
-                        shape = RoundedCornerShape(4.dp)
-                    )
-                    .border(
-                        width = 1.dp,
-                        color = Color(0xFF5271FF).copy(alpha = 0.5f),
-                        shape = RoundedCornerShape(4.dp)
-                    )
-            ) {
-                // Card back pattern
-                Image(
-                    painter = painterResource(id = R.drawable.eagle_standard),
-                    contentDescription = "Opponent Card Background",
-                    modifier = Modifier
-                        .size(24.dp)
-                        .align(Alignment.Center)
-                )
-
+            CardBack(index = index)
             }
         }
+    }
+
+@Composable
+fun CardBack(index: Int) {
+    // Card back display
+    Box(
+        modifier = Modifier
+            .size(45.dp, 70.dp)
+            .offset(x = if (index > 0) (-15 * index).dp else 0.dp)
+            .shadow(
+                elevation = 2.dp,
+                shape = RoundedCornerShape(2.dp)
+            )
+            .background(
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        Color(0xFF000099),
+                        Color(0xFF2962FF)
+                    )
+                ),
+                shape = RoundedCornerShape(4.dp)
+            )
+            .border(
+                width = 2.dp,
+                color = Color(0xFFFFD700),
+                shape = RoundedCornerShape(1.dp)
+            )
+    ) {
+        // Card back pattern
+        Image(
+            painter = painterResource(id = R.drawable.card_back),
+            contentDescription = "Opponent Card Background",
+            modifier = Modifier
+                .fillMaxSize()
+                .align(Alignment.Center)
+        )
+
     }
 }

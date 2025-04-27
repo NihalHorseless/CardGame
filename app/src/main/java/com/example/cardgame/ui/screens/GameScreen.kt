@@ -1,6 +1,5 @@
 package com.example.cardgame.ui.screens
 
-import android.app.Activity
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -13,28 +12,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
-import com.example.cardgame.ui.components.board.BattlefieldBackground
 import com.example.cardgame.ui.components.board.GameBoard
 import com.example.cardgame.ui.components.board.GameStatusBar
 import com.example.cardgame.ui.components.board.PlayerPortrait
 import com.example.cardgame.ui.components.effects.CardSlotAnimation
-import com.example.cardgame.ui.components.effects.DamageNumberEffect
 import com.example.cardgame.ui.components.effects.GifAttackAnimation
 import com.example.cardgame.ui.components.effects.TacticCardEffectAnimation
-import com.example.cardgame.ui.components.effects.UnitDeathAnimation
 import com.example.cardgame.ui.components.player.OpponentHand
 import com.example.cardgame.ui.components.player.PlayerHand
 import com.example.cardgame.ui.viewmodel.GameViewModel
@@ -67,10 +58,7 @@ fun GameScreen(
     val isSimpleAttackVisible by viewModel.isSimpleAttackVisible
     val attackingUnitType by viewModel.attackingUnitType
     val attackTargetPosition by viewModel.attackTargetPosition
-    val isDamageNumberVisible by viewModel.isDamageNumberVisible
-    val damageToShow by viewModel.damageToShow
-    val damagePosition by viewModel.damagePosition
-    val isHealingEffect by viewModel.isHealingEffect
+    val visualHealthMap by viewModel.visualHealthMap
     val isCardAnimationVisible by viewModel.isCardAnimationVisible
     val cardAnimationPosition by viewModel.cardAnimationPosition
     val isTacticEffectVisible by viewModel.isTacticEffectVisible
@@ -168,6 +156,7 @@ fun GameScreen(
                             viewModel.registerCellPosition(row, col, x, y)
                             cellPositionsMap[Pair(row, col)] = Pair(x, y)
                         },
+                        visualHealthMap = visualHealthMap,
                         modifier = Modifier.fillMaxSize()
                     )
 
@@ -240,18 +229,6 @@ fun GameScreen(
             )
         }
 
-        // Damage number animation
-        if (isDamageNumberVisible) {
-            DamageNumberEffect(
-                damage = damageToShow,
-                isHealing = isHealingEffect,
-                x = damagePosition.first,
-                y = damagePosition.second,
-                isVisible = isDamageNumberVisible,
-                onAnimationComplete = { /* Animation will be handled by ViewModel */ },
-                modifier = Modifier.fillMaxSize().zIndex(10f)
-            )
-        }
 
         // Card play animation
         if (isCardAnimationVisible) {

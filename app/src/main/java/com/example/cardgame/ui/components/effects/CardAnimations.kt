@@ -359,15 +359,17 @@ fun DamageNumberEffect(
     onAnimationComplete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Convert the absolute screen coordinates to dp
+    val density = LocalDensity.current
+    val xDp = with(density) { x.toDp() }
+    val yDp = with(density) { y.toDp() }
+
     var yOffset by remember { mutableFloatStateOf(0f) }
     val animatedYOffset by animateFloatAsState(
         targetValue = if (isVisible) -50f else 0f,
         animationSpec = tween(800),
         finishedListener = { if (it == -50f) onAnimationComplete() }
     )
-
-    val textColor = if (isHealing) Color.Green else Color.Red
-    val prefix = if (isHealing) "+" else "-"
 
     LaunchedEffect(isVisible) {
         if (isVisible) {
@@ -385,13 +387,13 @@ fun DamageNumberEffect(
 
         Box(
             modifier = modifier
-                .offset(x = x.dp, y = (y + yOffset).dp)
+                .offset(x = xDp - 20.dp, y = yDp + animatedYOffset.dp)
                 .padding(4.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "$prefix$damage",
-                color = textColor,
+                text = if (isHealing) "+$damage" else "-$damage",
+                color = if (isHealing) Color.Green else Color.Red,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 style = TextStyle(
