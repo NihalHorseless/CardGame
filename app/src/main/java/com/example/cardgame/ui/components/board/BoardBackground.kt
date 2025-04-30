@@ -18,7 +18,7 @@ fun BattlefieldBackground(modifier: Modifier = Modifier) {
     ) {
         // Main battlefield image
         Image(
-            painter = painterResource(id = R.drawable.third_try),
+            painter = painterResource(id = R.drawable.battlefield_background),
             contentDescription = null,
             contentScale = ContentScale.FillBounds,
             modifier = Modifier.fillMaxSize()

@@ -1,8 +1,10 @@
 package com.example.cardgame.data.repository
 
+import android.content.Context
 import com.example.cardgame.data.model.card.Card
 import com.example.cardgame.data.model.card.Deck
 import com.example.cardgame.data.storage.CardLoader
+import com.example.cardgame.data.storage.DeckStorageService
 
 class CardRepository(val cardLoader: CardLoader) {
 
@@ -32,6 +34,17 @@ class CardRepository(val cardLoader: CardLoader) {
      */
     fun getAvailableAIDeckNames(): List<String> {
         return cardLoader.getAvailableAIDeckNames()
+    }
+    /**
+     * Get all available decks, including player made ones
+     */
+    fun getAllAvailableDecks(context: Context): List<String> {
+        val predefinedDecks = getAvailablePlayerDeckNames()
+        val customDeckStorage = DeckStorageService(context)
+        val customDecks = customDeckStorage.getCustomDeckNames()
+
+        // Combine both lists
+        return predefinedDecks + customDecks
     }
 
     /**

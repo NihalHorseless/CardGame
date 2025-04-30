@@ -53,6 +53,7 @@ import com.example.cardgame.ui.components.board.TacticCardItem
 import com.example.cardgame.ui.components.board.UnitTypeIcon
 import com.example.cardgame.ui.theme.bloodDropShape
 import com.example.cardgame.ui.theme.kiteShieldShape
+import com.example.cardgame.ui.theme.libreFont
 import com.example.cardgame.ui.theme.thickSwordShape
 
 @Composable
@@ -230,6 +231,7 @@ fun HandCard(
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 fontSize = 12.sp,
+                fontFamily = libreFont,
                 textAlign = TextAlign.Center,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,

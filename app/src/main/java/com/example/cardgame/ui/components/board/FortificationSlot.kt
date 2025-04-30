@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -48,21 +47,6 @@ fun FortificationSlot(
     // Border color based on ownership
     val borderColor = if (isPlayerFortification) Color(0xFF4CAF50) else Color(0xFFE57373)
 
-    // Hexagonal shape for fortifications to distinguish them from units
-    val hexagonalShape = GenericShape { size, _ ->
-        val center = size.width / 2
-        val radius = size.width / 2
-        val height = size.height
-
-        // Draw a hexagon
-        moveTo(center, 0f)
-        lineTo(center + radius, height * 0.25f)
-        lineTo(center + radius, height * 0.75f)
-        lineTo(center, height)
-        lineTo(center - radius, height * 0.75f)
-        lineTo(center - radius, height * 0.25f)
-        close()
-    }
     Box(
         modifier = modifier
             .size(65.dp,80.dp) // Adjust size to fit the shield shape

@@ -34,7 +34,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -53,6 +53,7 @@ import com.example.cardgame.R
 import com.example.cardgame.data.model.campaign.Campaign
 import com.example.cardgame.data.model.campaign.CampaignLevel
 import com.example.cardgame.data.model.campaign.Difficulty
+import com.example.cardgame.ui.theme.libreFont
 
 @Composable
 fun LevelSelectionScreen(
@@ -65,7 +66,7 @@ fun LevelSelectionScreen(
     onBackPressed: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var currentLevelIndex by remember { mutableStateOf(0) }
+    var currentLevelIndex by remember { mutableIntStateOf(0) }
     val levels = campaign.levels
     val currentLevel = levels.getOrNull(currentLevelIndex) ?: return
 
@@ -110,6 +111,7 @@ fun LevelSelectionScreen(
                 text = campaign.name.uppercase(),
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
+                fontFamily = libreFont,
                 color = Color.White
             )
 
@@ -150,7 +152,7 @@ fun LevelSelectionScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.Center)
-                    .offset(y = -72.dp),
+                    .offset(y = (-72).dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 // Left arrow
@@ -380,23 +382,17 @@ fun LevelDetailsCard(
             text = level.name,
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
+            fontFamily = libreFont,
             color = Color.White
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = if (isLocked) "??? (Locked)" else level.opponentName,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = if (isLocked) Color.Gray else Color(0xFFFFA726)
-        )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
             text = if (isLocked) "Complete the previous level to unlock" else level.description,
             fontSize = 14.sp,
+            fontFamily = libreFont,
             color = Color.White.copy(alpha = 0.8f),
             modifier = Modifier.padding(bottom = 8.dp)
         )

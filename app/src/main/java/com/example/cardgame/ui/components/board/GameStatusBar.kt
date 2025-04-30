@@ -59,6 +59,7 @@ fun GameStatusBar(
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Track current rotation state - persists between compositions
+        var isTurnChangeInProgress by remember { mutableStateOf(false) }
         var currentRotation by remember { mutableStateOf(0f) }
 
         // Animate to target rotation when it changes
@@ -70,11 +71,14 @@ fun GameStatusBar(
             )
         )
 
+
+
         // Reset rotation when turn changes
         LaunchedEffect(isPlayerTurn) {
             // When it becomes player's turn again, reset to 0 degrees
             if (isPlayerTurn) {
                 currentRotation = 0f
+                isTurnChangeInProgress = false
             }
         }
 
@@ -85,16 +89,21 @@ fun GameStatusBar(
         Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.Center) {
             Button(
                 onClick = {
-                    // Set rotation to 180 degrees when clicked
-                    currentRotation = 180f
+                    // Only allow clicking if no turn change is in progress
+                    if (!isTurnChangeInProgress && isPlayerTurn) {
+                        isTurnChangeInProgress = true
 
-                    // Delay the actual turn end slightly to show animation
-                    scope.launch {
-                        delay(400) // Half the animation time
-                        onEndTurn()
+                        // Set rotation to 180 degrees when clicked
+                        currentRotation = 180f
+
+                        // Delay the actual turn end slightly to show animation
+                        scope.launch {
+                            delay(400) // Half the animation time
+                            onEndTurn()
+                        }
                     }
                 },
-                enabled = isPlayerTurn,
+                enabled = isPlayerTurn && !isTurnChangeInProgress,
                 shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFFF5BF11),

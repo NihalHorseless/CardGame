@@ -129,8 +129,6 @@ class GameViewModel(
     val attackTargetPosition: State<Pair<Float, Float>> = _attackTargetPosition
 
 
-
-
     // Win conditions
     private val _isGameOver = mutableStateOf(false)
     val isGameOver: State<Boolean> = _isGameOver
@@ -579,26 +577,32 @@ class GameViewModel(
             return
         }
         // Handle both unit and fortification cards the same way
-        if (card is UnitCard || card is FortificationCard) {
-            // Check if player has enough mana
-            if (_playerMana.intValue < card.manaCost) {
-                _statusMessage.value = "Not enough mana!"
-                return
+        when (card) {
+            is UnitCard, is FortificationCard -> {
+                // Check if player has enough mana
+                if (_playerMana.intValue < card.manaCost) {
+                    _statusMessage.value = "Not enough mana!"
+                    return
+                }
+
+                // Set interaction mode to card targeting
+                _interactionMode.value = InteractionMode.CARD_TARGETING
+                _selectedCardIndex.value = cardIndex
+
+                // Get valid deployment positions
+                _validDeploymentPositions.value = getValidDeploymentPositions(0) // 0 is player ID
+
+                _statusMessage.value = "Select a position to deploy"
             }
 
-            // Set interaction mode to card targeting
-            _interactionMode.value = InteractionMode.CARD_TARGETING
-            _selectedCardIndex.value = cardIndex
+            is TacticCard -> {
+                handleTacticCardSelection(card, cardIndex)
+            }
 
-            // Get valid deployment positions
-            _validDeploymentPositions.value = getValidDeploymentPositions(0) // 0 is player ID
-
-            _statusMessage.value = "Select a position to deploy"
-        } else if (card is TacticCard) {
-            handleTacticCardSelection(card, cardIndex)
-        } else {
-            // For non-unit cards, just play them directly
-            playCard(cardIndex)
+            else -> {
+                // For non-unit cards, just play them directly
+                playCard(cardIndex)
+            }
         }
     }
 
@@ -772,7 +776,7 @@ class GameViewModel(
         _isTacticEffectVisible.value = false
     }
 
-    fun cancelDeployment() {
+    private fun cancelDeployment() {
         _selectedCardIndex.value = null
         _validDeploymentPositions.value = emptyList()
         _interactionMode.value = InteractionMode.DEFAULT
@@ -871,7 +875,7 @@ class GameViewModel(
                         executeAttackAgainstFortification(selectedRow, selectedCol, row, col)
                     } else {
                         // This is a regular unit attack
-                        executeAttack(selectedRow, selectedCol, row, col,playerContext)
+                        executeAttack(selectedRow, selectedCol, row, col, playerContext)
                     }
                 }
             }
@@ -930,7 +934,7 @@ class GameViewModel(
         // If a unit is selected and player clicks on a valid attack target
         else if (_selectedCell.value != null && Pair(row, col) in _validAttackTargets.value) {
             val (selectedRow, selectedCol) = _selectedCell.value!!
-            executeAttack(selectedRow, selectedCol, row, col,playerContext)
+            executeAttack(selectedRow, selectedCol, row, col, playerContext)
         }
         // If player clicks on another of their units, select that unit instead
         else if (clickedUnit != null && unitOwner == 0) {
@@ -955,7 +959,13 @@ class GameViewModel(
     /**
      * Execute a movement action
      */
-    private fun executeMove(fromRow: Int, fromCol: Int, toRow: Int, toCol: Int,context: PlayerContext) {
+    private fun executeMove(
+        fromRow: Int,
+        fromCol: Int,
+        toRow: Int,
+        toCol: Int,
+        context: PlayerContext
+    ) {
         val unit = _gameManager.gameBoard.getUnitAt(fromRow, fromCol) ?: return
 
 
@@ -994,7 +1004,7 @@ class GameViewModel(
                 _validMoveDestinations.value = emptyList()
                 _validAttackTargets.value = emptyList()
             }
-            Log.d("AIMove","Position : ${moveResult} Status: ${_statusMessage} ")
+            Log.d("AIMove", "Position : $moveResult Status: $_statusMessage ")
 
         }
     }
@@ -1024,7 +1034,13 @@ class GameViewModel(
     /**
      * Execute an attack between units with animations
      */
-    private fun executeAttack(attackerRow: Int, attackerCol: Int, targetRow: Int, targetCol: Int,context: PlayerContext) {
+    private fun executeAttack(
+        attackerRow: Int,
+        attackerCol: Int,
+        targetRow: Int,
+        targetCol: Int,
+        context: PlayerContext
+    ) {
         // Get units for the attack
         val attackerUnit = _gameManager.gameBoard.getUnitAt(attackerRow, attackerCol) ?: return
         val targetUnit = _gameManager.gameBoard.getUnitAt(targetRow, targetCol) ?: return
@@ -1193,7 +1209,7 @@ class GameViewModel(
 
                     // Reset counter state
                     _isCounterBonus.value = false
-                    Log.d("FortHealthVDamage", "Damage: $damage  Fort Health: ${targetFortHealth}")
+                    Log.d("FortHealthVDamage", "Damage: $damage  Fort Health: $targetFortHealth")
 
 
                     updateAllGameStates()
@@ -1234,18 +1250,25 @@ class GameViewModel(
         val (row, col) = _selectedCell.value!!
 
         if (playerContext.canAttackOpponentDirectly(row, col, _gameManager)) {
-            // Execute direct attack
-            val attackResult = _gameManager.executeDirectAttackWithContext(playerContext, row, col)
+            // Get the unit to determine damage amount
+            val attackingUnit = _gameManager.gameBoard.getUnitAt(row, col) ?: return
+            val damageAmount = attackingUnit.attack
 
-            if (attackResult) {
-                soundManager.playSound(SoundType.PLAYER_HIT)
-                _statusMessage.value = "Direct attack successful!"
-                _selectedCell.value = null
-                _validAttackTargets.value = emptyList()
-                _validMoveDestinations.value = emptyList()
-                updateAllGameStates()
-            } else {
-                _statusMessage.value = "Cannot attack opponent directly"
+            // Start the health animation
+            animatePlayerHealthDecrease(isPlayer = false, damageAmount = damageAmount) {
+                // After animation completes, execute the actual attack
+                val attackResult =
+                    _gameManager.executeDirectAttackWithContext(playerContext, row, col)
+
+                if (attackResult) {
+                    _statusMessage.value = "Direct attack successful!"
+                    _selectedCell.value = null
+                    _validAttackTargets.value = emptyList()
+                    _validMoveDestinations.value = emptyList()
+                    updateAllGameStates()
+                } else {
+                    _statusMessage.value = "Cannot attack opponent directly"
+                }
             }
         } else {
             _statusMessage.value = "This unit cannot reach the opponent"
@@ -1413,7 +1436,7 @@ class GameViewModel(
                             bestMove.second,
                             context = opponentContext
                         )
-                        Log.d("AIMove","Position : ${position} Best Move: ${bestMove} ")
+                        Log.d("AIMove", "Position : ${position} Best Move: ${bestMove} ")
                         updateAllGameStates()
                         delay(300)
                     }
@@ -1443,7 +1466,13 @@ class GameViewModel(
 
 
                     // Execute attack
-                    executeAttack(aiUnitPos.first,aiUnitPos.second,target.first, target.second,opponentContext)
+                    executeAttack(
+                        aiUnitPos.first,
+                        aiUnitPos.second,
+                        target.first,
+                        target.second,
+                        opponentContext
+                    )
                     updateAllGameStates()
                     delay(800)
                 } else if (opponentContext.canAttackOpponentDirectly(
@@ -1453,9 +1482,16 @@ class GameViewModel(
                     )
                 ) {
                     // Direct attack on player
-                    _gameManager.executeDirectAttack(aiUnit, 0)
-                    updateAllGameStates()
-                    delay(500)
+                    val damageAmount = aiUnit.attack
+                    viewModelScope.launch {
+                        // Animate player health decrease
+                        animatePlayerHealthDecrease(isPlayer = true, damageAmount = damageAmount) {
+                            // After animation, execute the actual attack
+                            _gameManager.executeDirectAttack(aiUnit, 0)
+                            updateAllGameStates()
+                        }
+                        delay(500)
+                    }
                 }
             }
 
@@ -1616,7 +1652,7 @@ class GameViewModel(
         }
     }
 
-    // To this:
+    // Property for tracking health change for units
     private val _visualHealthMap = mutableStateOf<Map<UnitCard, Int>>(emptyMap())
     val visualHealthMap: State<Map<UnitCard, Int>> = _visualHealthMap
 
@@ -1662,6 +1698,75 @@ class GameViewModel(
             // Remove from visual map once animation is complete
             _visualHealthMap.value = _visualHealthMap.value.toMutableMap().apply {
                 remove(unit)
+            }
+
+            // Call completion handler
+            completion()
+        }
+    }
+
+    // Properties for tracking damaged health of Players
+    private val _playerVisualHealth = mutableStateOf<Int?>(null)
+    val playerVisualHealth: State<Int?> = _playerVisualHealth
+
+    private val _opponentVisualHealth = mutableStateOf<Int?>(null)
+    val opponentVisualHealth: State<Int?> = _opponentVisualHealth
+
+    // Animation method for player health decreases
+    fun animatePlayerHealthDecrease(isPlayer: Boolean, damageAmount: Int, completion: () -> Unit) {
+        val player = if (isPlayer) _gameManager.players[0] else _gameManager.players[1]
+        val startHealth = player.health
+        var remainingDamage = damageAmount
+
+        // Set initial visual health
+        if (isPlayer) {
+            _playerVisualHealth.value = startHealth
+        } else {
+            _opponentVisualHealth.value = startHealth
+        }
+
+        viewModelScope.launch {
+            // Play initial hit sound
+            soundManager.playSound(SoundType.PLAYER_HIT)
+
+            // Animate health decrements one by one
+            while (remainingDamage > 0) {
+                val currentVisualHealth = if (isPlayer)
+                    _playerVisualHealth.value ?: startHealth
+                else
+                    _opponentVisualHealth.value ?: startHealth
+
+                // Update the visual health
+                if (isPlayer) {
+                    _playerVisualHealth.value = currentVisualHealth - 1
+                } else {
+                    _opponentVisualHealth.value = currentVisualHealth - 1
+                }
+
+                // Play tick sound for each health point lost
+                if (remainingDamage % 3 == 0) { // Less frequent sounds for player damage
+                    soundManager.playSound(SoundType.PLAYER_HIT, volume = 0.2f)
+                }
+
+                // Adjust delay based on damage amount
+                val tickDelay = when {
+                    damageAmount > 10 -> 70L
+                    damageAmount > 7 -> 90L
+                    else -> 180L
+                }
+                delay(tickDelay)
+
+                remainingDamage--
+            }
+
+            // Small delay after animation completes
+            delay(300)
+
+            // Clear visual health values
+            if (isPlayer) {
+                _playerVisualHealth.value = null
+            } else {
+                _opponentVisualHealth.value = null
             }
 
             // Call completion handler

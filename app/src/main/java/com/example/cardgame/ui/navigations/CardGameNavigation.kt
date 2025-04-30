@@ -2,15 +2,21 @@ package com.example.cardgame.ui.navigations
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.cardgame.ui.screens.CampaignSelectionScreen
+import com.example.cardgame.ui.screens.DeckBuilderScreen
+import com.example.cardgame.ui.screens.DeckEditorScreen
 import com.example.cardgame.ui.screens.DeckSelectionScreen
 import com.example.cardgame.ui.screens.GameScreen
 import com.example.cardgame.ui.screens.LevelSelectionScreen
 import com.example.cardgame.ui.screens.MainMenuScreen
+import com.example.cardgame.ui.viewmodel.DeckBuilderViewModel
 import com.example.cardgame.ui.viewmodel.GameViewModel
 import com.example.cardgame.ui.viewmodel.GameViewModelFactory
 
@@ -19,6 +25,9 @@ fun CardGameNavigation() {
     val navController = rememberNavController()
     val gameViewModel: GameViewModel = viewModel(
         factory = GameViewModelFactory(navController.context)
+    )
+    val deckBuilderViewModel: DeckBuilderViewModel = viewModel(
+        factory = GameViewModelFactory(LocalContext.current)
     )
 
     NavHost(navController = navController, startDestination = "main_menu") {
@@ -119,10 +128,38 @@ fun CardGameNavigation() {
         }
 
         composable("deck_builder") {
-            // Deck builder screen would go here
-            // Text("Deck Builder - Not Implemented Yet")
+            DeckBuilderScreen(
+                viewModel = deckBuilderViewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToEditor = { deckId ->
+                    // Navigate to editor screen with or without a deck ID
+                    if (deckId != null) {
+                        navController.navigate("deck_editor/$deckId")
+                    } else {
+                        navController.navigate("deck_editor/new")
+                    }
+                    gameViewModel.playMenuSoundTwo()
+                }
+            )
         }
+        composable(
+            "deck_editor/{deckId}",
+            arguments = listOf(navArgument("deckId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val deckId = backStackEntry.arguments?.getString("deckId") ?: "new"
+            val deckBuilderViewModel: DeckBuilderViewModel = viewModel(
+                factory = GameViewModelFactory(navController.context)
+            )
 
+            DeckEditorScreen(
+                viewModel = deckBuilderViewModel,
+                deckId = deckId,
+                onNavigateBack = {
+                    navController.popBackStack()
+                    gameViewModel.playMenuSoundOne()
+                }
+            )
+        }
         composable("options") {
             // Options screen would go here
             // Text("Options - Not Implemented Yet")

@@ -12,6 +12,7 @@ import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.util.Locale
 
 class CardLoader(private val context: Context) {
 
@@ -179,6 +180,7 @@ class CardLoader(private val context: Context) {
             val deckNames = fileList
                 .filter { it.endsWith("deck.json") }
                 .map { it.removeSuffix(".json") }
+
 
             Log.d(TAG, "Found ${deckNames.size} player decks: ${deckNames.joinToString()}")
             return deckNames

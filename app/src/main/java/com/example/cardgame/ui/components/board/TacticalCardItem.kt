@@ -31,10 +31,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.cardgame.R
+import com.example.cardgame.data.enum.FortificationType
 import com.example.cardgame.data.enum.TacticCardType
 import com.example.cardgame.data.enum.TargetType
 import com.example.cardgame.data.model.card.TacticCard
 import com.example.cardgame.ui.theme.bloodDropShape
+import com.example.cardgame.ui.theme.libreFont
 
 /**
  * UI component for displaying a Tactic Card in the player's hand or collection
@@ -129,6 +131,7 @@ fun TacticCardItem(
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 fontSize = 12.sp,
+                fontFamily = libreFont,
                 maxLines = 2,
                 textAlign = TextAlign.Center,
                 overflow = TextOverflow.Ellipsis,
@@ -158,8 +161,9 @@ fun TacticCardItem(
             Text(
                 text = card.description,
                 color = Color.White,
-                fontSize = 9.sp,
+                fontSize = 10.sp,
                 textAlign = TextAlign.Center,
+                fontFamily = libreFont,
                 maxLines = 2,
                 lineHeight = 12.sp,
                 overflow = TextOverflow.Ellipsis,
@@ -170,4 +174,23 @@ fun TacticCardItem(
             )
         }
     }
+}
+@Composable
+fun TacticTypeIcon(
+    tacticCardType: TacticCardType,
+    modifier: Modifier = Modifier
+) {
+    val imageRes: Int = when (tacticCardType) {
+        TacticCardType.DIRECT_DAMAGE -> R.drawable.aoe_damage_effect_icon
+        TacticCardType.AREA_EFFECT -> R.drawable.aoe_damage_effect_icon
+        TacticCardType.BUFF -> R.drawable.magic_effect_icon
+        TacticCardType.DEBUFF -> R.drawable.magic_effect_icon
+        TacticCardType.SPECIAL -> R.drawable.magic_effect_icon
+    }
+
+    Image(
+        painter = painterResource(id = imageRes),
+        contentDescription = tacticCardType.name,
+        modifier = modifier
+    )
 }

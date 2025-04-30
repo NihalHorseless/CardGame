@@ -20,6 +20,7 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import com.example.cardgame.ui.components.board.BattlefieldBackground
 import com.example.cardgame.ui.components.board.GameBoard
 import com.example.cardgame.ui.components.board.GameStatusBar
 import com.example.cardgame.ui.components.board.PlayerPortrait
@@ -49,6 +50,8 @@ fun GameScreen(
     val isPlayerTurn by viewModel.isPlayerTurn
     val statusMessage by viewModel.statusMessage
     val oppoonentName by viewModel.opponentName
+    val playerVisualHealth by viewModel.playerVisualHealth
+    val opponentVisualHealth by viewModel.opponentVisualHealth
 
     // Movement and attack highlighting
     val validMoveDestinations by viewModel.validMoveDestinations
@@ -88,10 +91,12 @@ fun GameScreen(
                 onReturnToMainMenu = onNavigateToMain
             )
         } else {
+            if(viewModel.isInCampaign.value) BattlefieldBackground()
             Column(
-                modifier = Modifier
+                modifier = if(!viewModel.isInCampaign.value) Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.background)
+                else Modifier.fillMaxSize()
             ) {
                 // Status message
                 if (statusMessage.isNotEmpty()) {
@@ -110,6 +115,7 @@ fun GameScreen(
                         playerName = oppoonentName,
                         health = opponentHealth,
                         maxHealth = opponentHealth,
+                        visualHealth = opponentVisualHealth,
                         isCurrentPlayer = !isPlayerTurn,
                         isTargetable = selectedCell != null &&
                                 viewModel.playerContext.canAttackOpponentDirectly(
@@ -181,6 +187,7 @@ fun GameScreen(
                         playerName = "Player",
                         health = playerHealth,
                         maxHealth = 30,
+                        visualHealth = playerVisualHealth,
                         isCurrentPlayer = isPlayerTurn,
                         isTargetable = false,
                         onPortraitClick = { /* No action needed */ },

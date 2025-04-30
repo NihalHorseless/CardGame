@@ -3,6 +3,7 @@ package com.example.cardgame.ui.components.board
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -21,10 +22,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -35,6 +41,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.cardgame.ui.screens.getOpponentPortrait
+import com.example.cardgame.ui.theme.libreFont
+import kotlinx.coroutines.delay
 
 /**
  * Player portrait composable with health display and attack target functionality
@@ -44,11 +52,14 @@ fun PlayerPortrait(
     playerName: String,
     health: Int,
     maxHealth: Int,
+    visualHealth: Int? = null,
     isCurrentPlayer: Boolean,
     isTargetable: Boolean,
     onPortraitClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Use visualHealth for display if available, otherwise use actual health
+    val displayHealth = visualHealth ?: health
     // Animation for when portrait is targetable
     val targetablePulse = rememberInfiniteTransition()
     val borderWidth by targetablePulse.animateFloat(
@@ -70,6 +81,23 @@ fun PlayerPortrait(
         health <= maxHealth / 4 -> Color(0xFFFF6961) // Red when low health
         health <= maxHealth / 2 -> Color(0xFFFFB347) // Orange when medium health
         else -> Color(0xFF77DD77) // Green when high health
+    }
+
+    // Shake effect when taking damage
+    val isBeingDamaged = visualHealth != null && visualHealth < health
+    var offsetX by remember { mutableStateOf(0f) }
+
+    // Apply a shake effect when taking damage
+    LaunchedEffect(isBeingDamaged) {
+        if (isBeingDamaged) {
+            // Create a shake pattern
+            val pattern = listOf(3f, -5f, 4f, -3f, 2f, -1f, 0f)
+            for (offset in pattern) {
+                offsetX = offset
+                delay(45)
+            }
+            offsetX = 0f
+        }
     }
 
     Column(
@@ -129,11 +157,20 @@ fun PlayerPortrait(
                     .background(Color(0x80000000)),
                 contentAlignment = Alignment.Center
             ) {
+                // Animate text scale when health changes
+                val textScale by animateFloatAsState(
+                    targetValue = if (isBeingDamaged) 1.3f else 1.0f,
+                    animationSpec = tween(
+                        durationMillis = 100,
+                        easing = FastOutSlowInEasing
+                    )
+                )
                 Text(
-                    text = "$health",
+                    text = "$displayHealth",
                     color = healthColor,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    fontSize = 16.sp,
+                    modifier = Modifier.scale(textScale)
                 )
             }
         }
@@ -144,73 +181,10 @@ fun PlayerPortrait(
         Text(
             text = playerName,
             color = Color.White,
-            fontSize = 14.sp,
+            fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
+            fontFamily = libreFont,
             textAlign = TextAlign.Center
-        )
-    }
-}
-
-/**
- * Portrait with more hero-specific details, useful for games with hero powers
- */
-@Composable
-fun HeroPortrait(
-    playerName: String,
-    heroClass: String,
-    health: Int,
-    maxHealth: Int,
-    isCurrentPlayer: Boolean,
-    isTargetable: Boolean,
-    onPortraitClick: () -> Unit,
-    onHeroPowerClick: () -> Unit,
-    heroPowerEnabled: Boolean,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.padding(8.dp)
-    ) {
-        // Main portrait (reusing the basic PlayerPortrait)
-        PlayerPortrait(
-            playerName = playerName,
-            health = health,
-            maxHealth = maxHealth,
-            isCurrentPlayer = isCurrentPlayer,
-            isTargetable = isTargetable,
-            onPortraitClick = onPortraitClick
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Hero power button
-        Box(
-            modifier = Modifier
-                .size(50.dp)
-                .shadow(4.dp, CircleShape)
-                .background(
-                    if (heroPowerEnabled) Color(0xFF5271FF) else Color(0xFF555555),
-                    CircleShape
-                )
-                .border(1.dp, Color.White.copy(alpha = 0.5f), CircleShape)
-                .clickable(enabled = heroPowerEnabled) { onHeroPowerClick() },
-            contentAlignment = Alignment.Center
-        ) {
-            // Hero power icon placeholder
-            Text(
-                text = "HP",
-                color = Color.White,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        // Hero class
-        Text(
-            text = heroClass,
-            color = Color.White,
-            fontSize = 12.sp
         )
     }
 }
