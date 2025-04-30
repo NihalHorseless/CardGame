@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.example.cardgame.data.ServiceLocator
 import com.example.cardgame.ui.navigations.CardGameNavigation
 import com.example.cardgame.ui.viewmodel.GameViewModel
 import com.example.cardgame.ui.screens.GameScreen
@@ -20,6 +21,7 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
 
         screenConfigurations()
         enableEdgeToEdge()

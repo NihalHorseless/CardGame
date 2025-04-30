@@ -39,6 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -78,9 +79,9 @@ fun LevelSelectionScreen(
         val previousLevel = levels.getOrNull(currentLevelIndex - 1)
         previousLevel?.isCompleted == false
     }
-
-    Column(
-        modifier = modifier
+    // Main layout
+    Box(
+        modifier = Modifier
             .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(
@@ -90,177 +91,190 @@ fun LevelSelectionScreen(
                     )
                 )
             )
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Header with campaign name and back button
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        // Background Image
+        Image(
+            painter = painterResource(id = R.drawable.campaign_menu_background),
+            contentDescription = null,
+            contentScale = ContentScale.FillBounds,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+
         ) {
-            IconButton(onClick = onBackPressed) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color.White
-                )
-            }
 
-            Text(
-                text = campaign.name.uppercase(),
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = libreFont,
-                color = Color.White
-            )
-
-            // Empty box for alignment
-            Box(modifier = Modifier.size(48.dp))
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Main content: opponent portrait and level navigation
-        Box(
-            modifier = Modifier.weight(1f)
-        ) {
-            // Level content with portrait
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                // Opponent portrait
-                OpponentPortrait(
-                    opponentName = currentLevel.opponentName,
-                    isCompleted = currentLevel.isCompleted,
-                    isLocked = isLevelLocked,
-                    modifier = Modifier.size(180.dp)
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Level details
-                LevelDetailsCard(
-                    level = currentLevel,
-                    isLocked = isLevelLocked
-                )
-            }
-
-            // Left/Right navigation arrows
+            // Header with campaign name and back button
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.Center)
-                    .offset(y = (-72).dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Left arrow
-                IconButton(
-                    onClick = {
-                        if (currentLevelIndex > 0) {
-                            currentLevelIndex--
-                            onLevelScroll()
-                        }
-                    },
-                    enabled = currentLevelIndex > 0,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .background(
-                            color = if (currentLevelIndex > 0)
-                                Color(0xFF5271FF) else Color(0xFF2D3250),
-                            shape = CircleShape
-                        )
-                ) {
+                IconButton(onClick = onBackPressed) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Previous Level",
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
+                        contentDescription = "Back",
+                        tint = Color.White
                     )
                 }
 
-                // Right arrow
-                IconButton(
-                    onClick = {
-                        if (currentLevelIndex < levels.size - 1) {
-                            currentLevelIndex++
-                            onLevelScroll()
-                        }
-                    },
-                    enabled = currentLevelIndex < levels.size - 1,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .background(
-                            color = if (currentLevelIndex < levels.size - 1)
-                                Color(0xFF5271FF) else Color(0xFF2D3250),
-                            shape = CircleShape
-                        )
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = "Next Level",
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Deck selection at the bottom
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    color = Color(0xFF1A1C2A),
-                    shape = RoundedCornerShape(8.dp)
+                Text(
+                    text = campaign.name.uppercase(),
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = libreFont,
+                    color = Color.White
                 )
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "Select Your Deck",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color.White
-            )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                // Empty box for alignment
+                Box(modifier = Modifier.size(48.dp))
+            }
 
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(vertical = 8.dp)
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Main content: opponent portrait and level navigation
+            Box(
+                modifier = Modifier.weight(1f)
             ) {
-                items(playerDecks) { deckName ->
-                    DeckSelectionItem(
-                        deckName = deckName,
-                        isSelected = deckName == selectedDeck,
-                        onClick = { onDeckSelected(deckName) }
+                // Level content with portrait
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    // Opponent portrait
+                    OpponentPortrait(
+                        opponentName = currentLevel.opponentName,
+                        isCompleted = currentLevel.isCompleted,
+                        isLocked = isLevelLocked,
+                        modifier = Modifier.size(180.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Level details
+                    LevelDetailsCard(
+                        level = currentLevel,
+                        isLocked = isLevelLocked
                     )
                 }
+
+                // Left/Right navigation arrows
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.Center)
+                        .offset(y = (-72).dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Left arrow
+                    IconButton(
+                        onClick = {
+                            if (currentLevelIndex > 0) {
+                                currentLevelIndex--
+                                onLevelScroll()
+                            }
+                        },
+                        enabled = currentLevelIndex > 0,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .background(
+                                color = if (currentLevelIndex > 0)
+                                    Color(0xFF946125) else Color(0xFFAA7A39),
+                                shape = CircleShape
+                            )
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Previous Level",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    // Right arrow
+                    IconButton(
+                        onClick = {
+                            if (currentLevelIndex < levels.size - 1) {
+                                currentLevelIndex++
+                                onLevelScroll()
+                            }
+                        },
+                        enabled = currentLevelIndex < levels.size - 1,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .background(
+                                color = if (currentLevelIndex < levels.size - 1)
+                                    Color(0xFF946125) else Color(0xFFAA7A39),
+                                shape = CircleShape
+                            )
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = "Next Level",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
             }
-        }
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // Start battle button
-        Button(
-            onClick = { onLevelSelected(currentLevel) },
-            enabled = !isLevelLocked && selectedDeck != null,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (!isLevelLocked) Color(0xFF5271FF) else Color(0xFF4E4E4E)
-            ),
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Text(
-                text = if (isLevelLocked) "LEVEL LOCKED" else "START BATTLE",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
+            // Deck selection at the bottom
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        color = Color.Transparent,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = "Select Your Deck",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.White
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(vertical = 8.dp)
+                ) {
+                    items(playerDecks) { deckName ->
+                        DeckSelectionItem(
+                            deckName = deckName,
+                            isSelected = deckName == selectedDeck,
+                            onClick = { onDeckSelected(deckName) }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Start battle button
+            Button(
+                onClick = { onLevelSelected(currentLevel) },
+                enabled = !isLevelLocked && selectedDeck != null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = if (isLevelLocked) "LEVEL LOCKED" else "START BATTLE",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
@@ -285,8 +299,7 @@ fun OpponentPortrait(
                 .background(
                     color = when {
                         isLocked -> Color(0xFF4E4E4E)
-                        isCompleted -> Color(0xFF3E8C50)
-                        else -> Color(0xFF343861)
+                        else -> Color(0xFFB07F3F)
                     },
                     shape = CircleShape
                 )
@@ -294,8 +307,7 @@ fun OpponentPortrait(
                     width = 3.dp,
                     color = when {
                         isLocked -> Color(0xFF757575)
-                        isCompleted -> Color(0xFF4CAF50)
-                        else -> Color(0xFF5271FF)
+                        else -> Color(0xFF814F16)
                     },
                     shape = CircleShape
                 )
@@ -327,7 +339,8 @@ fun OpponentPortrait(
                     contentDescription = opponentName,
                     modifier = Modifier
                         .fillMaxSize()
-                        .clip(CircleShape),
+                        .clip(CircleShape)
+                        .alpha(0.8f),
                     contentScale = ContentScale.Crop
                 )
             }
@@ -339,15 +352,14 @@ fun OpponentPortrait(
                 modifier = Modifier
                     .size(48.dp)
                     .align(Alignment.BottomEnd)
-                    .background(Color(0xFF4CAF50), CircleShape)
-                    .border(2.dp, Color.White, CircleShape),
+                    .background(Color(0xFF2E7D32), CircleShape)
+                    .border(2.dp, Color(0xFF814F16), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = "Completed",
-                    tint = Color.White,
-                    modifier = Modifier.size(32.dp)
+                Image(
+                    painter = painterResource(R.drawable.eagle_standard),
+                    contentDescription = "Level Completed",
+                    modifier = Modifier.size(36.dp).alpha(0.75f)
                 )
             }
         }
@@ -364,26 +376,17 @@ fun LevelDetailsCard(
         modifier = modifier
             .fillMaxWidth()
             .background(
-                color = Color(0xFF1A1C2A),
-                shape = RoundedCornerShape(8.dp)
-            )
-            .border(
-                width = 1.dp,
-                color = when {
-                    level.isCompleted -> Color(0xFF4CAF50)
-                    isLocked -> Color(0xFF757575)
-                    else -> Color(0xFF5271FF)
-                },
+                color = Color.Transparent,
                 shape = RoundedCornerShape(8.dp)
             )
             .padding(16.dp)
     ) {
         Text(
             text = level.name,
-            fontSize = 22.sp,
+            fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = libreFont,
-            color = Color.White
+            color = Color.White.copy(0.9f)
         )
 
 
@@ -405,7 +408,7 @@ fun LevelDetailsCard(
             Text(
                 text = "Difficulty: ",
                 fontSize = 14.sp,
-                color = Color.White
+                color = Color.White.copy(alpha = 0.8f)
             )
 
             DifficultyStars(difficulty = level.difficulty)
@@ -420,7 +423,7 @@ fun LevelDetailsCard(
                 Icon(
                     imageVector = Icons.Default.Check,
                     contentDescription = null,
-                    tint = Color(0xFFFFD700),
+                    tint = Color(0xFFFFD700).copy(0.8f),
                     modifier = Modifier.size(20.dp)
                 )
 
@@ -429,7 +432,7 @@ fun LevelDetailsCard(
                 Text(
                     text = "Reward: ${level.reward}",
                     fontSize = 14.sp,
-                    color = Color(0xFFFFD700)
+                    color = Color(0xFFFFD700).copy(0.8f)
                 )
             }
         }
@@ -453,7 +456,7 @@ fun DifficultyStars(
             Icon(
                 imageVector = Icons.Filled.Star,
                 contentDescription = null,
-                tint = Color(0xFFFFC107),
+                tint = Color(0xFFFFC107).copy(0.8f),
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -462,7 +465,7 @@ fun DifficultyStars(
             Icon(
                 imageVector = Icons.Filled.Star,
                 contentDescription = null,
-                tint = Color(0xFF757575),
+                tint = Color(0xFF804D15),
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -481,11 +484,11 @@ fun DeckSelectionItem(
             .height(80.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(
-                if (isSelected) Color(0xFF5271FF) else Color(0xFF343861)
+                if (isSelected) Color(0xFF8A571D) else Color(0xFFA77738)
             )
             .border(
                 width = 1.dp,
-                color = if (isSelected) Color.White else Color(0xFF3D4160),
+                color = Color(0xFF6A3C0C),
                 shape = RoundedCornerShape(8.dp)
             )
             .clickable(onClick = onClick)
@@ -497,9 +500,9 @@ fun DeckSelectionItem(
         ) {
             // Deck icon
             Image(
-                painter = painterResource(R.drawable.eagle_standard),
+                painter = painterResource(R.drawable.deck_icon),
                 contentDescription = null,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(32.dp)
             )
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -514,17 +517,6 @@ fun DeckSelectionItem(
                 overflow = TextOverflow.Ellipsis,
                 fontSize = 12.sp
             )
-
-            // Selection indicator
-            if (isSelected) {
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .background(Color.White, CircleShape)
-                )
-            }
         }
     }
 }

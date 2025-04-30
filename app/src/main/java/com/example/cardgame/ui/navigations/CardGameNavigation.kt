@@ -2,6 +2,7 @@ package com.example.cardgame.ui.navigations
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -23,12 +24,14 @@ import com.example.cardgame.ui.viewmodel.GameViewModelFactory
 @Composable
 fun CardGameNavigation() {
     val navController = rememberNavController()
-    val gameViewModel: GameViewModel = viewModel(
-        factory = GameViewModelFactory(navController.context)
-    )
-    val deckBuilderViewModel: DeckBuilderViewModel = viewModel(
-        factory = GameViewModelFactory(LocalContext.current)
-    )
+    val context = LocalContext.current
+
+    // Create ViewModel factory using the companion object method
+    val factory = remember { GameViewModelFactory.create(context) }
+
+    // Create ViewModels using the factory
+    val gameViewModel: GameViewModel = viewModel(factory = factory)
+    val deckBuilderViewModel: DeckBuilderViewModel = viewModel(factory = factory)
 
     NavHost(navController = navController, startDestination = "main_menu") {
         composable("main_menu") {
@@ -147,9 +150,6 @@ fun CardGameNavigation() {
             arguments = listOf(navArgument("deckId") { type = NavType.StringType })
         ) { backStackEntry ->
             val deckId = backStackEntry.arguments?.getString("deckId") ?: "new"
-            val deckBuilderViewModel: DeckBuilderViewModel = viewModel(
-                factory = GameViewModelFactory(navController.context)
-            )
 
             DeckEditorScreen(
                 viewModel = deckBuilderViewModel,

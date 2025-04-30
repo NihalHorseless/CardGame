@@ -1,12 +1,14 @@
 package com.example.cardgame.data.repository
 
-import android.content.Context
 import com.example.cardgame.data.model.card.Card
 import com.example.cardgame.data.model.card.Deck
 import com.example.cardgame.data.storage.CardLoader
-import com.example.cardgame.data.storage.DeckStorageService
 
-class CardRepository(val cardLoader: CardLoader) {
+class CardRepository(
+    private val cardLoader: CardLoader,
+    private val customDeckRepository: CustomDeckRepository
+) {
+    private val TAG = "CardRepository"
 
     /**
      * Get all cards
@@ -23,7 +25,7 @@ class CardRepository(val cardLoader: CardLoader) {
     }
 
     /**
-     * Get a list of all available player deck names
+     * Get a list of all available predefined player deck names
      */
     fun getAvailablePlayerDeckNames(): List<String> {
         return cardLoader.getAvailableDeckNames()
@@ -35,20 +37,9 @@ class CardRepository(val cardLoader: CardLoader) {
     fun getAvailableAIDeckNames(): List<String> {
         return cardLoader.getAvailableAIDeckNames()
     }
-    /**
-     * Get all available decks, including player made ones
-     */
-    fun getAllAvailableDecks(context: Context): List<String> {
-        val predefinedDecks = getAvailablePlayerDeckNames()
-        val customDeckStorage = DeckStorageService(context)
-        val customDecks = customDeckStorage.getCustomDeckNames()
-
-        // Combine both lists
-        return predefinedDecks + customDecks
-    }
 
     /**
-     * Load a player deck by name
+     * Load a predefined player deck by name
      */
     fun loadPlayerDeck(deckName: String): Deck? {
         return cardLoader.loadDeck(deckName, isAIDeck = false)
@@ -67,5 +58,58 @@ class CardRepository(val cardLoader: CardLoader) {
     fun getDeckInfo(deckName: String): Deck? {
         // Try as player deck first, then as AI deck
         return loadPlayerDeck(deckName) ?: loadAIDeck(deckName)
+    }
+
+    /**
+     * Get all available decks, including both predefined and custom decks
+     */
+    suspend fun getAllAvailableDecks(): List<String> {
+        val predefinedDecks = getAvailablePlayerDeckNames()
+        val customDecks = customDeckRepository.getCustomDeckIds()
+
+        // Combine both lists
+        return predefinedDecks + customDecks
+    }
+
+    /**
+     * Load any deck by name, checking both predefined and custom decks
+     */
+    suspend fun loadAnyDeck(deckName: String): Deck? {
+        // First try loading as a predefined deck
+        val predefinedDeck = loadPlayerDeck(deckName)
+        if (predefinedDeck != null) {
+            return predefinedDeck
+        }
+
+        // If not found, check custom decks
+        return customDeckRepository.loadDeck(deckName)
+    }
+
+    /**
+     * Save a custom deck
+     */
+    suspend fun saveCustomDeck(deck: Deck): Boolean {
+        return customDeckRepository.saveDeck(deck)
+    }
+
+    /**
+     * Delete a custom deck
+     */
+    suspend fun deleteCustomDeck(deckId: String): Boolean {
+        return customDeckRepository.deleteDeck(deckId)
+    }
+
+    /**
+     * Get all custom decks
+     */
+    suspend fun getCustomDecks(): List<Deck> {
+        return customDeckRepository.getAllCustomDecks()
+    }
+
+    /**
+     * Get the count of custom decks
+     */
+    suspend fun getCustomDeckCount(): Int {
+        return customDeckRepository.getCustomDeckCount()
     }
 }

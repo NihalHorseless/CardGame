@@ -191,14 +191,18 @@ class GameViewModel(
      */
     private fun loadAvailableDecks() {
         viewModelScope.launch {
-            val deckNames = cardRepository.getAvailablePlayerDeckNames()
-            _availableDecks.value = deckNames
+            val allDeckNames = cardRepository.getAllAvailableDecks()
+            _availableDecks.value = allDeckNames
+        }
+    }
 
-            // Set default selections if decks are available
-            if (deckNames.isNotEmpty()) {
-                // Take the first deck for player and second for opponent by default
-                _selectedPlayerDeck.value = deckNames.firstOrNull()
-                _selectedOpponentDeck.value = deckNames.getOrNull(1) ?: deckNames.firstOrNull()
+    fun loadPlayerDeck(deckName: String) {
+        viewModelScope.launch {
+            val deck = cardRepository.loadAnyDeck(deckName)
+            if (deck != null) {
+                _gameManager.players[0].setDeck(deck)
+            } else {
+                _statusMessage.value = "Failed to load deck: $deckName"
             }
         }
     }
@@ -208,8 +212,14 @@ class GameViewModel(
      */
     fun setPlayerDeck(deckName: String) {
         _selectedPlayerDeck.value = deckName
+        loadPlayerDeck(deckName) // Actually load the deck
     }
-
+    fun loadAllDecks() {
+        viewModelScope.launch {
+            val allDeckNames = cardRepository.getAllAvailableDecks()
+            _availableDecks.value = allDeckNames
+        }
+    }
     /**
      * Sets the selected campaign for the player
      */
@@ -235,14 +245,7 @@ class GameViewModel(
         cellPositions[Pair(row, col)] = Pair(x, y)
     }
 
-    // In GameViewModel
-    fun getPlayerDecks(): List<String> {
-        return cardRepository.cardLoader.getAvailableDeckNames()
-    }
 
-    fun getAIDeck(deckId: String): Deck? {
-        return cardRepository.cardLoader.loadDeck(deckId, isAIDeck = true)
-    }
 
     /**
      * Load all available campaigns

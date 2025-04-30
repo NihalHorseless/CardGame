@@ -496,9 +496,8 @@ fun CompactCardItem(
                 }
 
                 is TacticCard -> {
-                    Image(
-                        painter = painterResource(R.drawable.magic_effect_icon),
-                        contentDescription = "Tactic Card",
+                    TacticTypeIcon(
+                        tacticCardType = card.cardType,
                         modifier = Modifier
                             .size(32.dp)
                             .alpha(0.75f)

@@ -41,6 +41,10 @@ class DeckBuilderViewModel(
     private val _currentDeckCards = mutableStateListOf<Card>()
     val currentDeckCards: List<Card> = _currentDeckCards
 
+    // Loading state
+    private val _isLoading = mutableStateOf(false)
+    val isLoading: State<Boolean> = _isLoading
+
     // Status messages
     private val _statusMessage = MutableStateFlow<String?>(null)
     val statusMessage: StateFlow<String?> = _statusMessage
@@ -56,9 +60,11 @@ class DeckBuilderViewModel(
      */
     fun loadAvailableCards() {
         viewModelScope.launch {
+            _isLoading.value = true
             val cards = deckBuilderRepository.getAllAvailableCards()
             _availableCards.value = cards
             _filteredCards.value = cards
+            _isLoading.value = false
         }
     }
 
@@ -67,7 +73,9 @@ class DeckBuilderViewModel(
      */
     fun loadPlayerDecks() {
         viewModelScope.launch {
+            _isLoading.value = true
             _playerDecks.value = deckBuilderRepository.getCustomDecks()
+            _isLoading.value = false
         }
     }
 
@@ -93,6 +101,7 @@ class DeckBuilderViewModel(
      */
     fun createNewDeck(name: String, description: String) {
         viewModelScope.launch {
+            _isLoading.value = true
             val newDeck = deckBuilderRepository.createDeck(name, description)
 
             if (newDeck != null) {
@@ -100,8 +109,9 @@ class DeckBuilderViewModel(
                 playMenuSoundOne()
                 _statusMessage.value = "Created new deck: ${newDeck.name}"
             } else {
-                _statusMessage.value = "Cannot create more decks (maximum 5)"
+                _statusMessage.value = "Cannot create more decks (maximum ${DeckBuilderRepository.MAX_CUSTOM_DECKS})"
             }
+            _isLoading.value = false
         }
     }
 
@@ -110,6 +120,7 @@ class DeckBuilderViewModel(
      */
     fun editDeck(deckId: String) {
         viewModelScope.launch {
+            _isLoading.value = true
             val deck = deckBuilderRepository.getDeck(deckId)
 
             if (deck != null) {
@@ -118,6 +129,7 @@ class DeckBuilderViewModel(
             } else {
                 _statusMessage.value = "Deck not found"
             }
+            _isLoading.value = false
         }
     }
 
@@ -169,9 +181,7 @@ class DeckBuilderViewModel(
         val currentDeck = _currentDeck.value ?: return
 
         // Update deck with current cards
-        val updatedDeck = currentDeck.copy(
-            cards = _currentDeckCards.toMutableList()
-        )
+        val updatedDeck = currentDeck.copy(cards = _currentDeckCards.toMutableList())
 
         // Validate deck
         val validationResult = deckBuilderRepository.validateDeck(updatedDeck)
@@ -183,6 +193,7 @@ class DeckBuilderViewModel(
 
         // Save deck
         viewModelScope.launch {
+            _isLoading.value = true
             val success = deckBuilderRepository.saveDeck(updatedDeck)
 
             if (success) {
@@ -193,6 +204,7 @@ class DeckBuilderViewModel(
             } else {
                 _statusMessage.value = "Failed to save deck"
             }
+            _isLoading.value = false
         }
     }
 
@@ -201,6 +213,7 @@ class DeckBuilderViewModel(
      */
     fun deleteDeck(deckId: String) {
         viewModelScope.launch {
+            _isLoading.value = true
             val success = deckBuilderRepository.deleteDeck(deckId)
 
             if (success) {
@@ -218,6 +231,7 @@ class DeckBuilderViewModel(
             } else {
                 _statusMessage.value = "Failed to delete deck"
             }
+            _isLoading.value = false
         }
     }
 

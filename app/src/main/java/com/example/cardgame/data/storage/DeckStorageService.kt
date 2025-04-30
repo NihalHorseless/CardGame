@@ -10,14 +10,20 @@ import com.example.cardgame.data.model.card.Deck
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
+import java.io.File
+
 
 class DeckStorageService(private val context: Context) {
     private val TAG = "DeckStorageService"
     private val PREFS_NAME = "player_decks"
     private val DECK_LIST_KEY = "deck_list"
     private val MAX_PLAYER_DECKS = 5
+    private val CUSTOM_DECKS_DIR = "custom_decks"
 
-    private val cardLoader = CardLoader(context)
+    // Store application context to avoid leaks
+    private val appContext = context.applicationContext
+
+    private val cardLoader = CardLoader(appContext)
 
     // Create a Gson instance that can handle our card types
     private val gson = GsonBuilder()
@@ -27,6 +33,15 @@ class DeckStorageService(private val context: Context) {
 
     private val prefs: SharedPreferences by lazy {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    }
+
+    // Directory for custom decks
+    private val customDecksDir: File by lazy {
+        val dir = File(appContext.filesDir, CUSTOM_DECKS_DIR)
+        if (!dir.exists()) {
+            dir.mkdirs()
+        }
+        dir
     }
 
     /**
@@ -68,25 +83,38 @@ class DeckStorageService(private val context: Context) {
             saveDeckList(deckNames)
         }
 
-        // Save the deck data
-        val deckJson = gson.toJson(DeckStorage(
-            id = deck.id,
-            name = deck.name,
-            description = deck.description,
-            cardIds = deck.cards.map { it.id }
-        ))
+        // Save the deck data to a file
+        try {
+            val deckStorage = DeckStorage(
+                id = deck.id,
+                name = deck.name,
+                description = deck.description,
+                cardIds = deck.cards.map { it.id }
+            )
 
-        prefs.edit().putString(deck.id, deckJson).apply()
-        return true
+            val deckJson = gson.toJson(deckStorage)
+            val deckFile = File(customDecksDir, "${deck.id}.json")
+            deckFile.writeText(deckJson)
+
+            return true
+        } catch (e: Exception) {
+            Log.e(TAG, "Error saving deck ${deck.id}", e)
+            return false
+        }
     }
 
     /**
      * Load a custom deck by ID
      */
     fun loadDeck(deckId: String): Deck? {
-        val deckJson = prefs.getString(deckId, null) ?: return null
-
         try {
+            val deckFile = File(customDecksDir, "${deckId}.json")
+
+            if (!deckFile.exists()) {
+                return null
+            }
+
+            val deckJson = deckFile.readText()
             val deckStorage: DeckStorage = gson.fromJson(deckJson, DeckStorage::class.java)
 
             // Load all cards by their IDs
@@ -122,9 +150,17 @@ class DeckStorageService(private val context: Context) {
         // Update deck list
         saveDeckList(deckNames)
 
-        // Remove deck data
-        prefs.edit().remove(deckId).apply()
-        return true
+        // Delete deck file
+        try {
+            val deckFile = File(customDecksDir, "${deckId}.json")
+            if (deckFile.exists()) {
+                return deckFile.delete()
+            }
+            return true
+        } catch (e: Exception) {
+            Log.e(TAG, "Error deleting deck file for $deckId", e)
+            return false
+        }
     }
 
     /**
