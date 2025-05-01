@@ -116,15 +116,15 @@ class CardLoader(private val context: Context) {
      * Load a predefined deck from assets
      */
     fun loadDeck(deckName: String, isAIDeck: Boolean = false): Deck? {
-        // Return from cache if available
+        // Check cache first
         deckCache[deckName]?.let { return it }
 
         try {
-            // Try to load the deck definition from appropriate subdirectory
+            // Determine correct path
             val deckPath = if (isAIDeck) "decks/ai" else "decks/player"
             val fileName = "$deckPath/$deckName.json"
-            Log.d(TAG, "Trying to load deck: $fileName")
 
+            // Try to load the deck
             val inputStream = appContext.assets.open(fileName)
             val reader = BufferedReader(InputStreamReader(inputStream))
             val jsonString = reader.readText()
@@ -162,13 +162,9 @@ class CardLoader(private val context: Context) {
 
             return deck
         } catch (e: Exception) {
-            if (isAIDeck) {
-                Log.e(TAG, "Error loading AI deck: $deckName, trying player deck", e)
-                return loadDeck(deckName, false)
-            } else {
-                Log.e(TAG, "Error loading player deck: $deckName, trying AI deck", e)
-                return loadDeck(deckName, true)
-            }
+            // Don't try recursive loading - just log and return null
+            Log.e(TAG, "Error loading deck: $deckName from ${if(isAIDeck) "AI" else "player"} path", e)
+            return null
         }
     }
 

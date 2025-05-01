@@ -52,6 +52,7 @@ class CardRepository(
         return cardLoader.loadDeck(deckName, isAIDeck = true)
     }
 
+
     /**
      * Get information about a deck (works for both player and AI decks)
      */
@@ -71,18 +72,31 @@ class CardRepository(
         return predefinedDecks + customDecks
     }
 
+    suspend fun getAllAvailableDeckNames(): List<String> {
+        // Get predefined deck names
+        val predefinedDecks = getAvailablePlayerDeckNames().map {
+            it.replace("_", " ").split(" ").joinToString(" ") { word -> word.capitalize() }
+        }
+
+        // Get custom decks
+        val customDecks = customDeckRepository.getAllCustomDecks().map { it.name }
+
+        // Combine both lists and return
+        return predefinedDecks + customDecks
+    }
+
     /**
      * Load any deck by name, checking both predefined and custom decks
      */
     suspend fun loadAnyDeck(deckName: String): Deck? {
-        // First try loading as a predefined deck
-        val predefinedDeck = loadPlayerDeck(deckName)
-        if (predefinedDeck != null) {
-            return predefinedDeck
+        // First try loading as a custom deck (from database)
+        val customDeck = customDeckRepository.loadDeck(deckName)
+        if (customDeck != null) {
+            return customDeck
         }
 
-        // If not found, check custom decks
-        return customDeckRepository.loadDeck(deckName)
+        // If not found in custom decks, try predefined decks
+        return loadPlayerDeck(deckName) ?: loadAIDeck(deckName)
     }
 
     /**

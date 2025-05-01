@@ -7,7 +7,6 @@ import com.example.cardgame.data.repository.CardRepository
 import com.example.cardgame.data.repository.CustomDeckRepository
 import com.example.cardgame.data.repository.DeckBuilderRepository
 import com.example.cardgame.data.storage.CardLoader
-import com.example.cardgame.data.storage.DeckStorageService
 
 object ServiceLocator {
     private var applicationContext: Context? = null

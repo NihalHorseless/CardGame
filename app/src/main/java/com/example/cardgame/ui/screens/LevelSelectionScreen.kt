@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -33,6 +34,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -54,17 +56,20 @@ import com.example.cardgame.R
 import com.example.cardgame.data.model.campaign.Campaign
 import com.example.cardgame.data.model.campaign.CampaignLevel
 import com.example.cardgame.data.model.campaign.Difficulty
+import com.example.cardgame.data.model.card.Deck
 import com.example.cardgame.ui.theme.libreFont
 
 @Composable
 fun LevelSelectionScreen(
     campaign: Campaign,
     playerDecks: List<String>,
+    playerDeckNames: List<String>,
     selectedDeck: String?,
     onDeckSelected: (String) -> Unit,
     onLevelScroll: () -> Unit,
     onLevelSelected: (CampaignLevel) -> Unit,
     onBackPressed: () -> Unit,
+    onInitial: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var currentLevelIndex by remember { mutableIntStateOf(0) }
@@ -78,6 +83,9 @@ fun LevelSelectionScreen(
         // A level is locked if the previous level is not completed
         val previousLevel = levels.getOrNull(currentLevelIndex - 1)
         previousLevel?.isCompleted == false
+    }
+    LaunchedEffect(Unit) {
+        onInitial()
     }
     // Main layout
     Box(
@@ -245,11 +253,13 @@ fun LevelSelectionScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
-                    items(playerDecks) { deckName ->
+                    itemsIndexed(playerDecks) { index, originalDeckName ->
+                        val formattedDeckName = playerDeckNames.getOrNull(index) ?: "Default Deck Name" // Handle potential index out of bounds
+
                         DeckSelectionItem(
-                            deckName = deckName,
-                            isSelected = deckName == selectedDeck,
-                            onClick = { onDeckSelected(deckName) }
+                            deckName = formattedDeckName,
+                            isSelected = originalDeckName == selectedDeck, // Still compare with the original for selection
+                            onClick = { onDeckSelected(originalDeckName) } // Pass the original for selection logic
                         )
                     }
                 }
@@ -352,14 +362,16 @@ fun OpponentPortrait(
                 modifier = Modifier
                     .size(48.dp)
                     .align(Alignment.BottomEnd)
-                    .background(Color(0xFF2E7D32), CircleShape)
+                    .background(Color(0xFF558B2F), CircleShape)
                     .border(2.dp, Color(0xFF814F16), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
-                    painter = painterResource(R.drawable.eagle_standard),
+                    painter = painterResource(R.drawable.french_medal),
                     contentDescription = "Level Completed",
-                    modifier = Modifier.size(36.dp).alpha(0.75f)
+                    modifier = Modifier
+                        .size(48.dp)
+                        .alpha(0.9f)
                 )
             }
         }
@@ -444,7 +456,7 @@ fun DifficultyStars(
     difficulty: Difficulty,
     modifier: Modifier = Modifier
 ) {
-    val stars = when(difficulty) {
+    val stars = when (difficulty) {
         Difficulty.EASY -> 1
         Difficulty.MEDIUM -> 2
         Difficulty.HARD -> 3
@@ -471,6 +483,7 @@ fun DifficultyStars(
         }
     }
 }
+
 @Composable
 fun DeckSelectionItem(
     deckName: String,

@@ -189,10 +189,20 @@ class GameViewModel(
     /**
      * Loads the list of available decks from the CardRepository
      */
-    private fun loadAvailableDecks() {
+    fun loadAvailableDecks() {
         viewModelScope.launch {
             val allDeckNames = cardRepository.getAllAvailableDecks()
             _availableDecks.value = allDeckNames
+            loadAvailableDeckNames()
+        }
+    }
+    private val _availableDeckNames = mutableStateOf<List<String>>(emptyList())
+    val availableDeckNames: State<List<String>> = _availableDeckNames
+
+    fun loadAvailableDeckNames() {
+        viewModelScope.launch {
+            val deckNames = cardRepository.getAllAvailableDeckNames()
+            _availableDeckNames.value = deckNames
         }
     }
 
@@ -212,14 +222,17 @@ class GameViewModel(
      */
     fun setPlayerDeck(deckName: String) {
         _selectedPlayerDeck.value = deckName
-        loadPlayerDeck(deckName) // Actually load the deck
-    }
-    fun loadAllDecks() {
         viewModelScope.launch {
-            val allDeckNames = cardRepository.getAllAvailableDecks()
-            _availableDecks.value = allDeckNames
+            // First try to load from custom decks, then predefined decks
+            val deck = cardRepository.loadAnyDeck(deckName)
+            if (deck != null) {
+                _gameManager.players[0].setDeck(deck)
+            } else {
+                _statusMessage.value = "Failed to load deck: $deckName"
+            }
         }
     }
+
     /**
      * Sets the selected campaign for the player
      */
@@ -237,7 +250,8 @@ class GameViewModel(
     /**
      * Gets detailed information about a specific deck
      */
-    fun getDeckInfo(deckName: String): Deck? {
+      fun getDeckInfo(deckName: String): Deck? {
+
         return cardRepository.loadPlayerDeck(deckName)
     }
 
@@ -265,37 +279,41 @@ class GameViewModel(
             _statusMessage.value = "Select a proper Deck name"
             return
         }
-        val playerDeck = cardRepository.loadPlayerDeck(playerDeckName)
-        if (playerDeck == null) {
-            _statusMessage.value = "Failed to load player deck: $playerDeckName"
-            return
-        }
-        playerDeck.shuffle()
-        _gameManager.players[0].setDeck(playerDeck)
+        viewModelScope.launch {
+            val playerDeck = cardRepository.loadAnyDeck(playerDeckName)
 
-        // Load campaign
-        val campaign = campaignRepository.getCampaign(campaignId)
-        _currentCampaign.value = campaign
+            if (playerDeck == null) {
+                _statusMessage.value = "Failed to load player deck: $playerDeckName"
+                return@launch
+            }
+            playerDeck.shuffle()
+            _gameManager.players[0].setDeck(playerDeck)
 
-        if (campaign != null) {
-            // Find the requested level
-            val level = campaign.levels.find { it.id == levelId }
-            _currentLevel.value = level
+            // Load campaign
+            val campaign = campaignRepository.getCampaign(campaignId)
+            _currentCampaign.value = campaign
 
-            if (level != null) {
-                // Set current objective if any
-                val customObjective =
-                    level.specialRules.filterIsInstance<SpecialRule.CustomObjective>().firstOrNull()
-                _currentObjective.value = customObjective?.description
+            if (campaign != null) {
+                // Find the requested level
+                val level = campaign.levels.find { it.id == levelId }
+                _currentLevel.value = level
 
-                // Configure game for this level
-                configureGameForLevel(level)
+                if (level != null) {
+                    // Set current objective if any
+                    val customObjective =
+                        level.specialRules.filterIsInstance<SpecialRule.CustomObjective>().firstOrNull()
+                    _currentObjective.value = customObjective?.description
 
-                // Start the game
-                _gameManager.startCampaignGame(level)
-                updateAllGameStates()
+                    // Configure game for this level
+                    configureGameForLevel(level)
+
+                    // Start the game
+                    _gameManager.startCampaignGame(level)
+                    updateAllGameStates()
+                }
             }
         }
+
     }
 
     /**
@@ -504,36 +522,41 @@ class GameViewModel(
         // Reset game over state
         _isGameOver.value = false
 
-        // Load decks
-        val playerDeck = cardRepository.loadPlayerDeck(playerDeckName)
-        val opponentDeck = cardRepository.loadAIDeck(opponentDeckName)
+        // Use viewModelScope to handle loading decks asynchronously
+        viewModelScope.launch {
+            // Load player deck - check custom decks first, then predefined decks
+            val playerDeck = cardRepository.loadAnyDeck(playerDeckName)
 
-        if (playerDeck == null) {
-            _statusMessage.value = "Failed to load player deck: $playerDeckName"
-            return
+            if (playerDeck == null) {
+                _statusMessage.value = "Failed to load player deck: $playerDeckName"
+                return@launch
+            }
+
+            // For opponent deck, still use predefined AI decks
+            val opponentDeck = cardRepository.loadAnyDeck(opponentDeckName)
+
+            if (opponentDeck == null) {
+                _statusMessage.value = "Failed to load opponent deck: $opponentDeckName"
+                return@launch
+            }
+
+            // Shuffle decks
+            playerDeck.shuffle()
+            opponentDeck.shuffle()
+
+            // Set player decks
+            _gameManager.players[0].setDeck(playerDeck)
+            _gameManager.players[1].setDeck(opponentDeck)
+Log.d("StartGame",playerDeck.toString())
+            _opponentName.value = "Opponent"
+            _isInCampaign.value = false
+
+            // Start the game
+            _gameManager.startGame()
+            updateAllGameStates()
+
+            _statusMessage.value = "Game started with decks: $playerDeckName vs $opponentDeckName"
         }
-
-        if (opponentDeck == null) {
-            _statusMessage.value = "Failed to load opponent deck: $opponentDeckName"
-            return
-        }
-
-        // Shuffle decks
-        playerDeck.shuffle()
-        opponentDeck.shuffle()
-
-        // Set player decks
-        _gameManager.players[0].setDeck(playerDeck)
-        _gameManager.players[1].setDeck(opponentDeck)
-
-        _opponentName.value = "Opponent"
-        _isInCampaign.value = false
-
-        // Start the game
-        _gameManager.startGame()
-        updateAllGameStates()
-
-        _statusMessage.value = "Game started with decks: $playerDeckName vs $opponentDeckName"
     }
 
     /**

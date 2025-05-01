@@ -67,14 +67,6 @@ fun TacticCardItem(
         TargetType.NONE -> Color(0xFF607D8B)      // Blue Grey
     }
 
-    // Get icon resource based on card type
-    val cardIconRes = when (card.cardType) {
-        TacticCardType.DIRECT_DAMAGE -> R.drawable.aoe_damage_effect_icon
-        TacticCardType.AREA_EFFECT -> R.drawable.aoe_damage_effect_icon
-        TacticCardType.BUFF -> R.drawable.magic_effect_icon
-        TacticCardType.DEBUFF -> R.drawable.magic_effect_icon
-        TacticCardType.SPECIAL -> R.drawable.magic_effect_icon
-    }
 
     Card(
         modifier = modifier
@@ -151,10 +143,7 @@ fun TacticCardItem(
                     .padding(4.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter = painterResource(id = cardIconRes),
-                    contentDescription = "Card type: ${card.cardType}"
-                )
+                TacticTypeIcon(tacticCardType = card.cardType)
             }
 
             // Card description
@@ -183,8 +172,8 @@ fun TacticTypeIcon(
     val imageRes: Int = when (tacticCardType) {
         TacticCardType.DIRECT_DAMAGE -> R.drawable.aoe_damage_effect_icon
         TacticCardType.AREA_EFFECT -> R.drawable.aoe_damage_effect_icon
-        TacticCardType.BUFF -> R.drawable.magic_effect_icon
-        TacticCardType.DEBUFF -> R.drawable.magic_effect_icon
+        TacticCardType.BUFF -> R.drawable.buff_effect
+        TacticCardType.DEBUFF -> R.drawable.buff_effect
         TacticCardType.SPECIAL -> R.drawable.magic_effect_icon
     }
 

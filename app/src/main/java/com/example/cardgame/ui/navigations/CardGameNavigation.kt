@@ -75,6 +75,7 @@ fun CardGameNavigation() {
                 LevelSelectionScreen(
                     campaign = campaign,
                     playerDecks = gameViewModel.availableDecks.value,
+                    playerDeckNames =  gameViewModel.availableDeckNames.value,
                     selectedDeck = gameViewModel.selectedPlayerDeck.value,
                     onDeckSelected = { deckName ->
                         gameViewModel.setPlayerDeck(deckName)
@@ -90,6 +91,9 @@ fun CardGameNavigation() {
                     onBackPressed = {
                         navController.popBackStack()
                         gameViewModel.playMenuSoundOne()
+                    },
+                    onInitial = {
+                        gameViewModel.loadAvailableDecks()
                     }
                 )
             } else {
@@ -103,8 +107,10 @@ fun CardGameNavigation() {
         composable("deck_selection") {
             DeckSelectionScreen(
                 viewModel = gameViewModel,
-                onStartGame = { navController.navigate("game")
-                    gameViewModel.playMenuSoundTwo()}
+                onStartGame = {
+                    navController.navigate("game")
+                    gameViewModel.playMenuSoundTwo()
+                }
             )
         }
 

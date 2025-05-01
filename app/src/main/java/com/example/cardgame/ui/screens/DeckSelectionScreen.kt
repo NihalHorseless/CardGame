@@ -1,5 +1,6 @@
 package com.example.cardgame.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,6 +19,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +41,10 @@ fun DeckSelectionScreen(
     val availableDecks by viewModel.availableDecks
     val selectedPlayerDeck by viewModel.selectedPlayerDeck
     val selectedOpponentDeck by viewModel.selectedOpponentDeck
+
+    LaunchedEffect(Unit) {
+        viewModel.loadAvailableDecks()
+    }
 
     Column(
         modifier = Modifier
@@ -155,7 +161,9 @@ fun DeckSelectionColumn(
             if (deck != null) {
                 DeckInfoPanel(deck, highlightColor)
             }
+            Log.d("SelectedDeck",deck.toString())
         }
+        Log.d("SelectedDeck",selectedDeck.toString())
 
         Text(
             text = "Available Decks",
@@ -170,8 +178,9 @@ fun DeckSelectionColumn(
             modifier = Modifier.weight(1f)
         ) {
             items(decks) { deckName ->
+                val deckTitleName = getDeckInfo(deckName)?.name ?:deckName
                 DeckListItem(
-                    deckName = deckName,
+                    deckName = deckTitleName,
                     isSelected = deckName == selectedDeck,
                     onClick = { onDeckSelected(deckName) },
                     highlightColor = highlightColor
@@ -201,13 +210,6 @@ fun DeckInfoPanel(
             )
             .padding(8.dp)
     ) {
-        Text(
-            text = deck.name,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White
-        )
-
         Text(
             text = deck.description,
             fontSize = 14.sp,

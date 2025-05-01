@@ -151,7 +151,7 @@ class DeckBuilderViewModel(
             return
         }
 
-        if (_currentDeckCards.size >= DeckBuilderRepository.MAX_DECK_SIZE) {
+        if (_currentDeckCards.size == DeckBuilderRepository.DECK_SIZE) {
             _statusMessage.value = "Deck is already at maximum size"
             return
         }
@@ -262,8 +262,7 @@ class DeckBuilderViewModel(
         if (_currentDeck.value == null) return false
 
         // Just check card count for basic validation
-        return _currentDeckCards.size >= DeckBuilderRepository.MIN_DECK_SIZE &&
-                _currentDeckCards.size <= DeckBuilderRepository.MAX_DECK_SIZE
+        return _currentDeckCards.size == DeckBuilderRepository.DECK_SIZE
     }
 
     /**

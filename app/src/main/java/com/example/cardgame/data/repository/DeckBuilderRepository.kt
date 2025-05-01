@@ -1,10 +1,7 @@
 package com.example.cardgame.data.repository
 
-import android.content.Context
 import com.example.cardgame.data.model.card.Card
 import com.example.cardgame.data.model.card.Deck
-import com.example.cardgame.data.storage.CardLoader
-import com.example.cardgame.data.storage.DeckStorageService
 
 
 /**
@@ -15,7 +12,7 @@ class DeckBuilderRepository(
 ) {
     // Constants for deck validation
     companion object {
-        const val MIN_DECK_SIZE = 20
+        const val DECK_SIZE = 30
         const val MAX_DECK_SIZE = 40
         const val MAX_CUSTOM_DECKS = 5
     }
@@ -110,12 +107,8 @@ class DeckBuilderRepository(
         val cardCount = deck.cards.size
 
         // Validation rules
-        if (cardCount < MIN_DECK_SIZE) {
-            return DeckValidationResult(false, "Deck must have at least $MIN_DECK_SIZE cards")
-        }
-
-        if (cardCount > MAX_DECK_SIZE) {
-            return DeckValidationResult(false, "Deck cannot have more than $MAX_DECK_SIZE cards")
+        if (cardCount != DECK_SIZE) {
+            return DeckValidationResult(false, "Deck must have  $DECK_SIZE cards")
         }
 
         // Additional validation rules could go here

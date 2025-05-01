@@ -50,6 +50,7 @@ import com.example.cardgame.data.model.card.TacticCard
 import com.example.cardgame.data.model.card.UnitCard
 import com.example.cardgame.ui.components.board.FortificationTypeIcon
 import com.example.cardgame.ui.components.board.TacticCardItem
+import com.example.cardgame.ui.components.board.TacticTypeIcon
 import com.example.cardgame.ui.components.board.UnitTypeIcon
 import com.example.cardgame.ui.theme.bloodDropShape
 import com.example.cardgame.ui.theme.kiteShieldShape
@@ -258,15 +259,14 @@ fun HandCard(
                         modifier = Modifier.size(40.dp)
                     )
 
-                    is TacticCard -> Image(
-                        painter = painterResource(R.drawable.magic_effect_icon),
-                        contentDescription = "Tactic Card",
+                    is TacticCard -> TacticTypeIcon(
+                        tacticCardType = card.cardType,
                         modifier = Modifier.size(40.dp)
                     )
 
                     else -> Image(
                         painter = painterResource(R.drawable.magic_effect_icon),
-                        contentDescription = "Tactic Card",
+                        contentDescription = "Default Card Image",
                         modifier = Modifier.size(40.dp)
                     )
                 }

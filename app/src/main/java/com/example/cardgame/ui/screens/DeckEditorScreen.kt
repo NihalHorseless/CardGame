@@ -111,6 +111,9 @@ fun DeckEditorScreen(
     var deckName by remember { mutableStateOf("") }
     var deckDescription by remember { mutableStateOf("") }
 
+    // Track if we're creating a new deck
+    var isCreatingNewDeck by remember { mutableStateOf(deckId == "new") }
+
     // If editing existing deck, load it
     LaunchedEffect(deckId) {
         if (deckId != "new") {
@@ -122,7 +125,7 @@ fun DeckEditorScreen(
     }
 
     // For new decks, show name/description dialog
-    var showNewDeckDialog by remember { mutableStateOf(deckId == "new") }
+    var showNewDeckDialog by remember { mutableStateOf(isCreatingNewDeck) }
 
     // Load available cards
     LaunchedEffect(Unit) {
@@ -179,13 +182,15 @@ fun DeckEditorScreen(
                 // Save button
                 Button(
                     onClick = {
-                        if (deckId == "new") {
+                        if (isCreatingNewDeck) {
+                            // For a new deck, show the dialog
                             showNewDeckDialog = true
                         } else {
+                            // For an existing deck, just save
                             viewModel.saveCurrentDeck()
                         }
                     },
-                    enabled = viewModel.isCurrentDeckValid() || deckId == "new",
+                    enabled = viewModel.isCurrentDeckValid() || isCreatingNewDeck,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF8E6432),
                         disabledContainerColor = Color(0xFF422D1E).copy(alpha = 0.5f)
@@ -294,11 +299,11 @@ fun DeckEditorScreen(
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                 // Current deck cards at bottom
                 Text(
-                    text = "Your Deck: ${currentDeckCards.size}/${DeckBuilderRepository.MAX_DECK_SIZE}",
+                    text = "Your Deck: ${currentDeckCards.size}/${DeckBuilderRepository.DECK_SIZE}",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = libreFont,
-                    color = if (currentDeckCards.size >= DeckBuilderRepository.MIN_DECK_SIZE)
+                    color = if (currentDeckCards.size != DeckBuilderRepository.DECK_SIZE)
                         Color(0xFF633E18) else Color.White
                 )
             }
@@ -325,7 +330,7 @@ fun DeckEditorScreen(
                 onAddToDeck = {
                     viewModel.addCardToDeck(it)
                 },
-                isDeckFull = currentDeckCards.size >= DeckBuilderRepository.MAX_DECK_SIZE
+                isDeckFull = currentDeckCards.size == DeckBuilderRepository.DECK_SIZE
             )
         }
         // New deck dialog
@@ -338,10 +343,14 @@ fun DeckEditorScreen(
                 onConfirm = {
                     viewModel.createNewDeck(deckName, deckDescription)
                     showNewDeckDialog = false
+                    isCreatingNewDeck = false // Mark that we're no longer creating a new deck
                 },
                 onDismiss = {
-                    if (deckId == "new") {
-                        // If this is a new deck and user cancels, go back
+                    if (deckId == "new" && !isCreatingNewDeck) {
+                        // If this is a new deck and we've already created it once, just close the dialog
+                        showNewDeckDialog = false
+                    } else if (deckId == "new") {
+                        // If this is a new deck and we haven't created it yet, go back
                         onNavigateBack()
                     } else {
                         showNewDeckDialog = false
@@ -463,7 +472,7 @@ fun CompactCardItem(
             )
             .clip(RoundedCornerShape(2.dp))
             .background(
-                cardColor.copy(0.6f)
+                Color.Transparent
             )
             .clickable(onClick = onClick)
             .padding(4.dp),
@@ -508,7 +517,7 @@ fun CompactCardItem(
                     // Fallback
                     Icon(
                         painter = painterResource(R.drawable.magic_effect_icon),
-                        contentDescription = "Card",
+                        contentDescription = "Default Card Icon",
                         tint = Color.White,
                         modifier = Modifier.size(32.dp)
                     )
@@ -632,7 +641,7 @@ fun DeckCardWithCount(
                     shape = RoundedCornerShape(8.dp)
                 )
                 .clip(RoundedCornerShape(8.dp))
-                .background(cardColors.copy(0.5f))
+                .background(Color.Transparent)
                 .clickable(onClick = onClick)
                 .padding(4.dp),
             contentAlignment = Alignment.Center
@@ -642,6 +651,7 @@ fun DeckCardWithCount(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
+                Spacer(modifier = Modifier.size(12.dp))
                 // Card name
                 Text(
                     text = card.name,
@@ -654,22 +664,23 @@ fun DeckCardWithCount(
                 )
                 Spacer(modifier = Modifier.size(8.dp))
 
-                // Mana cost
-                Box(
-                    modifier = Modifier
-                        .size(22.dp)
-                        .background(Color(0xFFC41E3A), bloodDropShape)
-                        .border(1.dp, Color.White, bloodDropShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = card.manaCost.toString(),
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 10.sp
-                    )
-                }
             }
+        }
+        // Mana cost
+        Box(
+            modifier = Modifier
+                .size(22.dp)
+                .background(Color(0xFFC41E3A), bloodDropShape)
+                .border(1.dp, Color.White, bloodDropShape)
+                .align(Alignment.BottomEnd),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = card.manaCost.toString(),
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 10.sp
+            )
         }
 
         // Card count badge
@@ -677,10 +688,10 @@ fun DeckCardWithCount(
             Box(
                 modifier = Modifier
                     .size(22.dp)
-                    .align(Alignment.BottomEnd)
+                    .align(Alignment.TopStart)
                     .background(Color(0xFF5271FF), CircleShape)
                     .border(1.dp, Color.White, CircleShape),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.BottomCenter
             ) {
                 Text(
                     text = "x$count",
@@ -853,17 +864,7 @@ fun CardDetailOverlay(
                         }
 
                         is TacticCard -> {
-                            StatBadge(
-                                label = "Type",
-                                value = card.cardType.toString(),
-                                color = Color(0xFF9C27B0)
-                            )
-
-                            StatBadge(
-                                label = "Target",
-                                value = card.targetType.toString(),
-                                color = Color(0xFF2196F3)
-                            )
+                            // None, it clearly says what it does in the description!
                         }
                     }
                 }

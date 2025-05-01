@@ -235,15 +235,6 @@ fun DeckBuilderScreen(
                 }
             }
         }
-
-        // Status message
-        statusMessage?.let { message ->
-            StatusMessage(
-                message = message,
-                onDismiss = { viewModel.clearStatusMessage() },
-                modifier = Modifier.align(Alignment.BottomCenter)
-            )
-        }
     }
 }
 
@@ -408,45 +399,3 @@ fun EmptyDeckState(onCreateDeck: () -> Unit) {
     }
 }
 
-@Composable
-fun StatusMessage(
-    message: String,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .padding(16.dp)
-            .fillMaxWidth()
-    ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onDismiss() },
-            colors = CardDefaults.cardColors(
-                containerColor = Color(0xFF323755)
-            )
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = message,
-                    color = Color.White,
-                    fontSize = 14.sp,
-                    modifier = Modifier.weight(1f)
-                )
-
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = "Dismiss",
-                    tint = Color.White,
-                    modifier = Modifier.clickable { onDismiss() }
-                )
-            }
-        }
-    }
-}
