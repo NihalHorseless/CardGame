@@ -170,8 +170,8 @@ fun TacticTypeIcon(
     modifier: Modifier = Modifier
 ) {
     val imageRes: Int = when (tacticCardType) {
-        TacticCardType.DIRECT_DAMAGE -> R.drawable.aoe_damage_effect_icon
-        TacticCardType.AREA_EFFECT -> R.drawable.aoe_damage_effect_icon
+        TacticCardType.DIRECT_DAMAGE -> R.drawable.tactic_card_direct
+        TacticCardType.AREA_EFFECT -> R.drawable.tactic_card_area_effect
         TacticCardType.BUFF -> R.drawable.buff_effect
         TacticCardType.DEBUFF -> R.drawable.buff_effect
         TacticCardType.SPECIAL -> R.drawable.magic_effect_icon

@@ -26,6 +26,7 @@ object TacticEffectFactory {
             "healing" -> SingleTargetHealingEffect(effectValue)
             "area_healing" -> AreaHealingEffect(effectValue, radius)
             "buff_attack" -> AttackBuffEffect(effectValue, duration)
+            "buff_health" -> HealthBuffEffect(effectValue,duration)
             "draw_cards" -> DrawCardsEffect(effectValue)
             "charge" -> GrantChargeEffect()
             "taunt" -> GrantTauntEffect()

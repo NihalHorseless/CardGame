@@ -55,7 +55,7 @@ class SoundManager(private val context: Context) {
             soundMap[SoundType.SPELL_AREA_EFFECT] = soundPool.load(context, R.raw.tactic_card_explosion, 1)
             soundMap[SoundType.SPELL_BUFF] = soundPool.load(context, R.raw.fantasy_magic_button_1, 1)
             soundMap[SoundType.SPELL_SPECIAL] = soundPool.load(context, R.raw.fantasy_magic_button_1, 1)
-            soundMap[SoundType.SPELL_DIRECT_DAMAGE] = soundPool.load(context, R.raw.tactic_card_lighting, 1)
+            soundMap[SoundType.SPELL_DIRECT_DAMAGE] = soundPool.load(context, R.raw.rocket_effect, 1)
 
             // Unit and fortification sounds
             soundMap[SoundType.FOOT_UNIT_TAP] = soundPool.load(context, R.raw.foot_unit_tap, 1)
@@ -66,6 +66,7 @@ class SoundManager(private val context: Context) {
             soundMap[SoundType.FORTIFICATION_DESTROY] = soundPool.load(context, R.raw.fortification_fall, 1)
             soundMap[SoundType.PLAYER_HIT] = soundPool.load(context, R.raw.attack_on_player, 1)
             soundMap[SoundType.DAMAGE_TAP] = soundPool.load(context, R.raw.damage_tick, 1)
+            soundMap[SoundType.BAYONET_SHEATHE] = soundPool.load(context, R.raw.bayonet_sheathe, 1)
 
 
             // Game state sounds
@@ -75,6 +76,7 @@ class SoundManager(private val context: Context) {
             soundMap[SoundType.MENU_TAP] = soundPool.load(context, R.raw.menu_click_one, 1)
             soundMap[SoundType.MENU_TAP_TWO] = soundPool.load(context, R.raw.menu_click_two, 1)
             soundMap[SoundType.MENU_SCROLL] = soundPool.load(context, R.raw.menu_page_turn, 1)
+            soundMap[SoundType.LEVEL_START] = soundPool.load(context,R.raw.level_start,1)
 
         } catch (e: Exception) {
             Log.e("SoundManager", "Error loading sounds: ${e.message}")

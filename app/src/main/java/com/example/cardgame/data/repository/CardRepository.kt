@@ -3,6 +3,7 @@ package com.example.cardgame.data.repository
 import com.example.cardgame.data.model.card.Card
 import com.example.cardgame.data.model.card.Deck
 import com.example.cardgame.data.storage.CardLoader
+import java.util.Locale
 
 class CardRepository(
     private val cardLoader: CardLoader,
@@ -75,7 +76,11 @@ class CardRepository(
     suspend fun getAllAvailableDeckNames(): List<String> {
         // Get predefined deck names
         val predefinedDecks = getAvailablePlayerDeckNames().map {
-            it.replace("_", " ").split(" ").joinToString(" ") { word -> word.capitalize() }
+            it.replace("_", " ").split(" ").joinToString(" ") { word -> word.replaceFirstChar {
+                if (it.isLowerCase()) it.titlecase(
+                    Locale.ROOT
+                ) else it.toString()
+            } }
         }
 
         // Get custom decks

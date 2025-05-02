@@ -1799,6 +1799,39 @@ Log.d("StartGame",playerDeck.toString())
             completion()
         }
     }
+    // Add this method to your GameViewModel class
+    fun attachBayonet(row: Int, col: Int) {
+        // Get the unit at the specified position
+        val unit = _gameManager.gameBoard.getUnitAt(row, col) ?: return
+
+        // Check if it's a player's unit
+        val unitOwner = _gameManager.gameBoard.getUnitOwner(unit)
+        if (unitOwner != 0) return // Only player can attach bayonet for now
+
+        // Check if it's a MUSKET unit
+        if (unit.unitType != UnitType.MUSKET) {
+            _statusMessage.value = "Only MUSKET units can use bayonets"
+            return
+        }
+
+        // Check if the unit has already moved or attacked this turn
+        if (!playerContext.canUnitMove(row, col, _gameManager)) {
+            _statusMessage.value = "Unit has already acted this turn and cannot attach bayonet"
+            return
+        }
+
+        // Attach the bayonet
+        _gameManager.attachBayonetToUnit(unit)
+
+        // Play a sound effect for the bayonet attachment
+        soundManager.playSound(SoundType.BAYONET_SHEATHE)
+
+        // Update the message
+        _statusMessage.value = "Bayonet attached! Unit transformed to INFANTRY but cannot move or attack this turn"
+
+        // Update game state to reflect changes
+        updateAllGameStates()
+    }
 
     private fun resetSelectionStates() {
         _selectedCell.value = null

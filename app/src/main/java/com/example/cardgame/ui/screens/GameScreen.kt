@@ -158,6 +158,9 @@ fun GameScreen(
                         onCellClick = { row, col ->
                             viewModel.onCellClick(row, col)
                         },
+                        onAttachBayonet = { row, col ->  // New parameter
+                            viewModel.attachBayonet(row, col)
+                        } ,
                         registerCellPosition = { row, col, x, y ->
                             viewModel.registerCellPosition(row, col, x, y)
                             cellPositionsMap[Pair(row, col)] = Pair(x, y)

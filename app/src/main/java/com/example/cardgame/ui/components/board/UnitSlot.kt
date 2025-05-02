@@ -44,6 +44,7 @@ fun UnitSlot(
     visualHealth: Int? = null,
     isSelected: Boolean,
     isPlayerUnit: Boolean,
+    onAttachBayonet: (() -> Unit)? = null,
     canAttack: Boolean = false,
     canMove: Boolean = false,
     onClick: () -> Unit,
@@ -224,6 +225,29 @@ fun UnitSlot(
                     )
                 }
             }
+            if (isSelected && unit?.unitType == UnitType.MUSKET && isPlayerUnit && (canMove || canAttack)) {
+                // Bayonet button in top-end corner
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .align(Alignment.TopEnd)
+                        .offset(4.dp, (-4).dp)
+                        .zIndex(2f)
+                        .shadow(4.dp, CircleShape)
+                        .background(Color(0xFF795548), CircleShape)
+                        .border(1.dp, Color.White, CircleShape)
+                        .clickable { onAttachBayonet?.invoke() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    // Bayonet icon - using a simple sword icon as placeholder
+                    Icon(
+                        painter = painterResource(R.drawable.bayonet),
+                        contentDescription = "Attach Bayonet",
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
         }
     }
 }
@@ -237,7 +261,7 @@ fun UnitTypeIcon(
     modifier: Modifier = Modifier
 ) {
     val imageRes: Int = when (unitType) {
-        UnitType.INFANTRY -> R.drawable.unit_type_infantry
+        UnitType.INFANTRY -> R.drawable.rifle_with_bayonet
         UnitType.CAVALRY -> R.drawable.unit_type_cavalry
         UnitType.ARTILLERY -> R.drawable.unit_type_cannon
         UnitType.MISSILE -> R.drawable.unit_type_missile

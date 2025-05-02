@@ -303,8 +303,8 @@ fun GifAttackAnimation(
             .build()
     }
     val animationRes = when (unitType) {
-        UnitType.CAVALRY -> R.drawable.blood_slash
-        UnitType.INFANTRY -> R.drawable.blood_slash
+        UnitType.CAVALRY -> R.drawable.blood_splash
+        UnitType.INFANTRY -> R.drawable.blood_splash
         UnitType.MISSILE -> R.drawable.arrow_rain_two
         UnitType.ARTILLERY -> R.drawable.blood_explosion
         UnitType.MUSKET -> R.drawable.artillery_hit_anim
@@ -318,8 +318,8 @@ fun GifAttackAnimation(
         // Calculate offset to center animation on target
         // (half the animation size)
         val animSize = when (unitType) {
-            UnitType.CAVALRY -> 50.dp
-            UnitType.INFANTRY -> 50.dp
+            UnitType.CAVALRY -> 70.dp
+            UnitType.INFANTRY -> 70.dp
             UnitType.MISSILE -> 50.dp
             UnitType.ARTILLERY -> 90.dp
             UnitType.MUSKET -> 80.dp
@@ -327,7 +327,7 @@ fun GifAttackAnimation(
         val offsetX =
             if (unitType == UnitType.INFANTRY || unitType == UnitType.CAVALRY) targetXDp - (animSize / 2 ) else targetXDp - (animSize / 2)
         val offsetY =
-            if (unitType == UnitType.INFANTRY || unitType == UnitType.CAVALRY) targetYDp - (25.dp) else targetYDp - (animSize / 2)
+            if (unitType == UnitType.INFANTRY || unitType == UnitType.CAVALRY) targetYDp - (40.dp) else targetYDp - (animSize / 2)
 
         AsyncImage(
             model = ImageRequest.Builder(context)

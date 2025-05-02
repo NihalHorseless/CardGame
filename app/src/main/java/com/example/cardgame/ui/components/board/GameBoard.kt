@@ -51,6 +51,7 @@ fun GameBoard(
     validMoveDestinations: List<Pair<Int, Int>> = emptyList(),
     validAttackTargets: List<Pair<Int, Int>> = emptyList(),
     onCellClick: (row: Int, col: Int) -> Unit,
+    onAttachBayonet: (row: Int, col: Int) -> Unit,
     visualHealthMap: Map<UnitCard, Int> = emptyMap(),
     registerCellPosition: (row: Int, col: Int, x: Float, y: Float) -> Unit,
     modifier: Modifier = Modifier
@@ -157,6 +158,7 @@ fun GameBoard(
                             canMove = canMove,
                             canAttack = canAttack,
                             canFortificationAttack = canFortificationAttack,
+                            onAttachBayonet = {onAttachBayonet(row, col)},
                             onClick = { onCellClick(row, col) },
                             modifier = Modifier.fillMaxSize()
                         )
@@ -183,6 +185,7 @@ fun UnifiedBoardCell(
     pulseAlpha: Float = 0.6f,
     canMove: Boolean = false,
     canAttack: Boolean = false,
+    onAttachBayonet: (() -> Unit)? = null,
     visualHealthMap: Map<UnitCard, Int> = emptyMap(),
     canFortificationAttack: Boolean = false, // Add this parameter
     onClick: () -> Unit,
@@ -237,6 +240,7 @@ fun UnifiedBoardCell(
                     canMove = canMove,
                     canAttack = canAttack,
                     onClick = onClick,
+                    onAttachBayonet = onAttachBayonet,
                     visualHealth = visualHealthMap[unit],
                     modifier = Modifier.fillMaxSize(0.9f)
                 )

@@ -18,7 +18,7 @@ object CardTestData {
         hasTaunt = false,
         manaCost = 1,
         canAttackThisTurn = false,
-        abilities = emptyList<Ability>(),
+        abilities = mutableListOf(),
         maxHealth = 1,
         hasCharge = false,
         imagePath = ""

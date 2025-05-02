@@ -2,9 +2,7 @@ package com.example.cardgame.ui.components.effects
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseInOutQuad
-import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.EaseOutQuad
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -23,7 +21,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale

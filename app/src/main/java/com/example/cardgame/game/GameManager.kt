@@ -4,6 +4,8 @@ import android.util.Log
 import com.example.cardgame.data.enum.FortificationType
 import com.example.cardgame.data.enum.GameState
 import com.example.cardgame.data.enum.UnitType
+import com.example.cardgame.data.model.abilities.Ability
+import com.example.cardgame.data.model.abilities.BayonetAbility
 import com.example.cardgame.data.model.abilities.TauntManager
 import com.example.cardgame.data.model.campaign.CampaignLevel
 import com.example.cardgame.data.model.campaign.Difficulty
@@ -678,5 +680,27 @@ class GameManager {
         // and reset it after the specified number of turns
         // For this example, we'll just print a message
         println("Boosted movement range of ${unit.name} by $moveBoost for $duration turns")
+    }
+    fun attachBayonetToUnit(unit: UnitCard) {
+        // Only allow attaching to MUSKET units
+        if (unit.unitType != UnitType.MUSKET) {
+            return
+        }
+
+        // Create a new BayonetAbility
+        val bayonetAbility = BayonetAbility()
+
+        // Apply the ability
+        bayonetAbility.apply(unit, this)
+
+        // Add the ability to the unit's list of abilities if you want to track it
+        // Note: This requires making the abilities list mutable
+        if (unit.abilities is MutableList) {
+            (unit.abilities as MutableList<Ability>).add(bayonetAbility)
+        }
+
+        // Notify any listeners that the unit has changed
+        // This could trigger UI updates
+        // For example: notifyUnitChanged(unit)
     }
 }

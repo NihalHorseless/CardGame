@@ -74,3 +74,65 @@ class AttackBuffEffect(
         return false
     }
 }
+/**
+ * Increases a unit's attack power
+ */
+class HealthBuffEffect(
+    buffAmount: Int,
+    duration: Int = 1
+) : BuffEffect(
+    name = "Health Boost",
+    description = "Increase a unit's health by $buffAmount for $duration turn${if(duration > 1) "s" else ""}",
+    buffAmount = buffAmount,
+    duration = duration
+) {
+    override fun apply(player: Player, gameManager: GameManager, targetPosition: Int?): Boolean {
+        if (targetPosition == null) return false
+
+        // Convert linear position to 2D coordinates
+        val row = targetPosition / gameManager.gameBoard.columns
+        val col = targetPosition % gameManager.gameBoard.columns
+
+        // Check for a unit at the target position
+        val targetUnit = gameManager.gameBoard.getUnitAt(row, col)
+        if (targetUnit != null) {
+            val targetOwnerId = gameManager.gameBoard.getUnitOwner(targetUnit)
+            // Only buff friendly units
+            if (targetOwnerId == player.id) {
+                // Apply the buff
+                targetUnit.health += buffAmount
+                targetUnit.maxHealth += buffAmount
+
+                // In a real implementation, you would need to track this
+                // temporary effect to remove it after the duration
+                // For example:
+                // gameManager.addTemporaryEffect(
+                //     target = targetUnit,
+                //     duration = duration,
+                //     onExpire = { targetUnit.attack -= buffAmount }
+                // )
+
+                return true
+            }
+        }
+
+        // Check for a fortification
+        val targetFort = gameManager.gameBoard.getFortificationAt(row, col)
+        if (targetFort != null && targetFort.fortType == FortificationType.TOWER) {
+            val targetOwnerId = gameManager.gameBoard.getFortificationOwner(targetFort)
+            // Only buff friendly towers
+            if (targetOwnerId == player.id) {
+                // Apply the buff
+                targetFort.health += buffAmount
+                targetFort.maxHealth += buffAmount
+
+                // In a real implementation, you would track this
+                // temporary effect to remove it after the duration
+
+                return true
+            }
+        }
+
+        return false
+    }
+}

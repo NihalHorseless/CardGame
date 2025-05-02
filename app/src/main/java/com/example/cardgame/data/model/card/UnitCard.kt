@@ -15,9 +15,9 @@ class UnitCard(
     var attack: Int,
     var health: Int,
     var maxHealth: Int,
-    val unitType: UnitType,           // Combat role of the unit
+    var unitType: UnitType,           // Combat role of the unit
     val unitEra: UnitEra,
-    val abilities: List<Ability> = emptyList(),
+    val abilities: MutableList<Ability> = mutableListOf(),
     var canAttackThisTurn: Boolean = false,
     var hasCharge: Boolean = false,
     var hasTaunt: Boolean = false
@@ -95,7 +95,7 @@ class UnitCard(
             maxHealth = maxHealth,
             unitType = unitType,
             unitEra = unitEra,
-            abilities = abilities.toList(), // Create a new list to avoid reference issues
+            abilities = abilities.toMutableList(), // Create a new list to avoid reference issues
             canAttackThisTurn = canAttackThisTurn,
             hasCharge = hasCharge,
             hasTaunt = hasTaunt

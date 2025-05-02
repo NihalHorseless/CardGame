@@ -1,7 +1,7 @@
 [
   {
     "id": 100,
-    "name": "Thunder Strike",
+    "name": "Congreve Rockets",
     "description": "Deal 4 damage",
     "manaCost": 3,
     "imagePath": "tactic_fireball",
@@ -33,7 +33,7 @@
   },
   {
     "id": 102,
-    "name": "Easy Pete",
+    "name": "Pete Dynamites",
     "description": "Deal 3 damage to all units in 1 radius",
     "manaCost": 6,
     "imagePath": "tactic_explosion",
@@ -50,7 +50,7 @@
   },
   {
     "id": 103,
-    "name": "Berserker Mode",
+    "name": "Rally the Corps!",
     "description": "Increase a unit's attack by 3 for 2 turns",
     "manaCost": 4,
     "imagePath": "tactic_rage",
@@ -67,7 +67,7 @@
   },
   {
     "id": 104,
-    "name": "Hit me Dealer",
+    "name": "Roll the Dice",
     "description": "Draw 2 cards from your deck",
     "manaCost": 3,
     "imagePath": "tactic_intellect",
@@ -94,6 +94,23 @@
       {
         "effectType": "charge",
         "effectValue": 0
+      }
+    ]
+  },
+  {
+    "id": 106,
+    "name": "Stand Ground!",
+    "description": "Increase a unit's health by 3 for 2 turns",
+    "manaCost": 3,
+    "imagePath": "tactic_rage",
+    "type": "tactic",
+    "cardType": "BUFF",
+    "targetType": "FRIENDLY",
+    "effects": [
+      {
+        "effectType": "buff_health",
+        "effectValue": 3,
+        "duration": 2
       }
     ]
   }

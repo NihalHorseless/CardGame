@@ -49,7 +49,7 @@ fun TacticCardEffectAnimation(
 
     // Select the appropriate GIF resource based on card type
     val gifResourceId = when (cardType) {
-        TacticCardType.DIRECT_DAMAGE -> R.drawable.light_spark // Fire/impact effect
+        TacticCardType.DIRECT_DAMAGE -> R.drawable.tactical_card_rockets // Fire/impact effect
         TacticCardType.AREA_EFFECT -> R.drawable.blood_explosion_two // Explosion effect
         TacticCardType.BUFF -> R.drawable.buff_particles // Green magical glow
         TacticCardType.DEBUFF -> R.drawable.buff_particles // Purple energy swirl

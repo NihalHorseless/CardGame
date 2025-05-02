@@ -107,7 +107,7 @@ class CardTypeAdapter : JsonSerializer<Card>, JsonDeserializer<Card> {
                     maxHealth = maxHealth,
                     unitType = unitType,
                     unitEra = unitEra,
-                    abilities = abilities,
+                    abilities = abilities.toMutableList(),
                     hasCharge = hasCharge,
                     hasTaunt = hasTaunt
                 )
