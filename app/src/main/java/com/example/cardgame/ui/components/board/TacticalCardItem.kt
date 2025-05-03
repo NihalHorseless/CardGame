@@ -138,7 +138,6 @@ fun TacticCardItem(
                 modifier = Modifier
                     .size(50.dp)
                     .align(Alignment.Center)
-                    .clip(CircleShape)
                     .offset(y = (-6).dp)
                     .padding(4.dp),
                 contentAlignment = Alignment.Center
@@ -173,7 +172,7 @@ fun TacticTypeIcon(
         TacticCardType.DIRECT_DAMAGE -> R.drawable.tactic_card_direct
         TacticCardType.AREA_EFFECT -> R.drawable.tactic_card_area_effect
         TacticCardType.BUFF -> R.drawable.buff_effect
-        TacticCardType.DEBUFF -> R.drawable.buff_effect
+        TacticCardType.DEBUFF -> R.drawable.tactic_efffect_debuff
         TacticCardType.SPECIAL -> R.drawable.magic_effect_icon
     }
 

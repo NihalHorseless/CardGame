@@ -136,3 +136,46 @@ class HealthBuffEffect(
         return false
     }
 }
+/**
+* An effect that converts an enemy unit to your control
+*/
+class BribeUnitEffect : TacticEffect {
+    override val name = "Bribery"
+    override val description = "Bribe an enemy unit"
+
+    override fun apply(player: Player, gameManager: GameManager, targetPosition: Int?): Boolean {
+        if (targetPosition == null) return false
+
+        // Convert linear position to 2D coordinates
+        val row = targetPosition / gameManager.gameBoard.columns
+        val col = targetPosition % gameManager.gameBoard.columns
+
+        // Check for a unit at the target position
+        val targetUnit = gameManager.gameBoard.getUnitAt(row, col)
+        if (targetUnit != null) {
+            val targetOwnerId = gameManager.gameBoard.getUnitOwner(targetUnit)
+            // Only convert enemy units
+            if (targetOwnerId != player.id) {
+                // Get the unit's position
+                val position = gameManager.gameBoard.getUnitPosition(targetUnit)
+                if (position != null) {
+                    // Remove the unit from its current position
+                    gameManager.gameBoard.removeUnit(position.first, position.second)
+
+                    // Place it back at the same position but with new ownership
+                    val placed = gameManager.gameBoard.placeUnit(targetUnit, position.first, position.second, player.id)
+
+                    // Reset unit's ability to attack this turn so it can't be used immediately
+                    targetUnit.canAttackThisTurn = false
+
+                    // Note: we don't reset its movement because the unit was likely already moved
+                    // by the opponent, and this would be unfair otherwise
+
+                    return placed
+                }
+            }
+        }
+
+        return false
+    }
+}

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
@@ -38,7 +39,8 @@ fun DeckSelectionScreen(
     viewModel: GameViewModel,
     onStartGame: () -> Unit
 ) {
-    val availableDecks by viewModel.availableDecks
+    val availableDeckNames by viewModel.availableDeckNames
+    val availableDeckIds by viewModel.availableDecks
     val selectedPlayerDeck by viewModel.selectedPlayerDeck
     val selectedOpponentDeck by viewModel.selectedOpponentDeck
 
@@ -78,10 +80,10 @@ fun DeckSelectionScreen(
             // Player deck selection
             DeckSelectionColumn(
                 title = "YOUR DECK",
-                decks = availableDecks,
+                deckNames = availableDeckNames,
+                deckIds = availableDeckIds,
                 selectedDeck = selectedPlayerDeck,
                 onDeckSelected = { viewModel.setPlayerDeck(it) },
-                getDeckInfo = { viewModel.getDeckInfo(it) },
                 modifier = Modifier.weight(1f),
                 highlightColor = Color(0xFF5271FF)
             )
@@ -89,10 +91,10 @@ fun DeckSelectionScreen(
             // Opponent deck selection
             DeckSelectionColumn(
                 title = "OPPONENT",
-                decks = availableDecks,
+                deckNames = availableDeckNames,
+                deckIds = availableDeckIds,
                 selectedDeck = selectedOpponentDeck,
                 onDeckSelected = { viewModel.setOpponentDeck(it) },
-                getDeckInfo = { viewModel.getDeckInfo(it) },
                 modifier = Modifier.weight(1f),
                 highlightColor = Color(0xFFFF5252)
             )
@@ -122,10 +124,10 @@ fun DeckSelectionScreen(
 @Composable
 fun DeckSelectionColumn(
     title: String,
-    decks: List<String>,
+    deckNames: List<String>,
+    deckIds: List<String>,
     selectedDeck: String?,
     onDeckSelected: (String) -> Unit,
-    getDeckInfo: (String) -> Deck?,
     modifier: Modifier = Modifier,
     highlightColor: Color
 ) {
@@ -155,14 +157,7 @@ fun DeckSelectionColumn(
 
         HorizontalDivider(color = Color(0xFF3D4160))
 
-        // Selected deck info
-        selectedDeck?.let { deckName ->
-            val deck = getDeckInfo(deckName)
-            if (deck != null) {
-                DeckInfoPanel(deck, highlightColor)
-            }
-            Log.d("SelectedDeck",deck.toString())
-        }
+
         Log.d("SelectedDeck",selectedDeck.toString())
 
         Text(
@@ -177,12 +172,12 @@ fun DeckSelectionColumn(
         LazyColumn(
             modifier = Modifier.weight(1f)
         ) {
-            items(decks) { deckName ->
-                val deckTitleName = getDeckInfo(deckName)?.name ?:deckName
+            itemsIndexed(deckIds) { index, deckId ->
+                val deckTitleName = deckNames.getOrNull(index) ?: "Default Deck Name"
                 DeckListItem(
                     deckName = deckTitleName,
-                    isSelected = deckName == selectedDeck,
-                    onClick = { onDeckSelected(deckName) },
+                    isSelected = deckId == selectedDeck,
+                    onClick = { onDeckSelected(deckId) },
                     highlightColor = highlightColor
                 )
             }
@@ -190,64 +185,6 @@ fun DeckSelectionColumn(
     }
 }
 
-@Composable
-fun DeckInfoPanel(
-    deck: Deck,
-    highlightColor: Color
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .background(
-                Color(0xFF252842),
-                RoundedCornerShape(4.dp)
-            )
-            .border(
-                width = 1.dp,
-                color = highlightColor.copy(alpha = 0.5f),
-                shape = RoundedCornerShape(4.dp)
-            )
-            .padding(8.dp)
-    ) {
-        Text(
-            text = deck.description,
-            fontSize = 14.sp,
-            color = Color.White.copy(alpha = 0.7f),
-            modifier = Modifier.padding(vertical = 4.dp)
-        )
-
-        Text(
-            text = "${deck.cards.size} Cards",
-            fontSize = 14.sp,
-            color = highlightColor,
-            fontWeight = FontWeight.Medium
-        )
-
-        // Card type distribution
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            val unitCards = deck.cards.count { it.toString().contains("UnitCard") }
-            val tacticCards = deck.cards.size - unitCards
-
-            Text(
-                text = "Units: $unitCards",
-                fontSize = 12.sp,
-                color = Color.White.copy(alpha = 0.8f)
-            )
-
-            Text(
-                text = "Tactics: $tacticCards",
-                fontSize = 12.sp,
-                color = Color.White.copy(alpha = 0.8f)
-            )
-        }
-    }
-}
 
 @Composable
 fun DeckListItem(

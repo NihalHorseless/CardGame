@@ -116,6 +116,7 @@ fun DeckEditorScreen(
 
     // If editing existing deck, load it
     LaunchedEffect(deckId) {
+        viewModel.playEditorMusic()
         if (deckId != "new") {
             viewModel.editDeck(deckId)
         } else {

@@ -5,6 +5,8 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.cardgame.audio.MusicManager
+import com.example.cardgame.audio.MusicTrack
 import com.example.cardgame.audio.SoundManager
 import com.example.cardgame.audio.SoundType
 import com.example.cardgame.data.model.card.Card
@@ -16,7 +18,8 @@ import kotlinx.coroutines.launch
 
 class DeckBuilderViewModel(
     private val deckBuilderRepository: DeckBuilderRepository,
-    private val soundManager: SoundManager? = null
+    private val soundManager: SoundManager? = null,
+    private val musicManager: MusicManager? = null
 ) : ViewModel() {
 
     // State for card collection and filtering
@@ -301,4 +304,12 @@ class DeckBuilderViewModel(
     private fun playCardRemovedSound() {
         soundManager?.playSound(SoundType.FOOT_UNIT_TAP)
     }
+    fun playEditorMusic() {
+        musicManager?.playMusic(MusicTrack.DECK_EDITOR,true)
+    }
+    override fun onCleared() {
+        super.onCleared()
+        musicManager?.release()
+    }
+
 }

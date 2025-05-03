@@ -35,6 +35,7 @@ fun FortificationSlot(
     isSelected: Boolean,
     isPlayerFortification: Boolean,
     canAttack: Boolean = false,
+    visualHealth: Int? = null,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -46,6 +47,7 @@ fun FortificationSlot(
 
     // Border color based on ownership
     val borderColor = if (isPlayerFortification) Color(0xFF4CAF50) else Color(0xFFE57373)
+    val displayHealth = visualHealth ?: fortification.health
 
     Box(
         modifier = modifier
@@ -105,8 +107,8 @@ fun FortificationSlot(
 
         // Health value (outside the shield)
         val healthColor = when {
-            fortification.health <= fortification.maxHealth / 3 -> Color.Red
-            fortification.health <= fortification.maxHealth * 2 / 3 -> Color(0xFFFFA500) // Orange
+            displayHealth <= fortification.maxHealth / 3 -> Color.Red
+            displayHealth <= fortification.maxHealth * 2 / 3 -> Color(0xFFFFA500) // Orange
             else -> Color.Green
         }
 
@@ -122,7 +124,7 @@ fun FortificationSlot(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = fortification.health.toString(),
+                text = displayHealth.toString(),
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 fontSize = 12.sp,

@@ -6,6 +6,8 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.cardgame.audio.MusicManager
+import com.example.cardgame.audio.MusicTrack
 import com.example.cardgame.audio.SoundManager
 import com.example.cardgame.audio.SoundType
 import com.example.cardgame.data.enum.FortificationType
@@ -34,7 +36,8 @@ import kotlin.math.abs
 class GameViewModel(
     private val cardRepository: CardRepository,
     private val campaignRepository: CampaignRepository,
-    private val soundManager: SoundManager
+    private val soundManager: SoundManager,
+    private val musicManager: MusicManager
 ) : ViewModel() {
 
     private val _gameManager = GameManager()
@@ -693,6 +696,7 @@ Log.d("StartGame",playerDeck.toString())
         // Play the card with the target
         val success = card.play(_gameManager.players[0], _gameManager, linearPosition)
 
+
         if (success) {
             // Show animation effect
             playTacticCardSound(card.cardType)
@@ -1189,6 +1193,10 @@ Log.d("StartGame",playerDeck.toString())
             _gameManager.gameBoard.getFortificationAt(targetRow, targetCol)?.health
                 ?: return
 
+        val targetFort = _gameManager.gameBoard.getFortificationAt(targetRow, targetCol)
+            ?: return
+
+
         // Check if this attack has a counter bonus
         val hasCounterBonus = _gameManager.hasFortificationCounterBonus(attackerUnit)
         _isCounterBonus.value = hasCounterBonus
@@ -1230,15 +1238,31 @@ Log.d("StartGame",playerDeck.toString())
                 )
 
                 if (attackResult) {
-                    // Reset selection state
-                    resetSelectionStates()
 
-                    // Reset counter state
-                    _isCounterBonus.value = false
-                    Log.d("FortHealthVDamage", "Damage: $damage  Fort Health: $targetFortHealth")
+                    // Animate health decrease
+                    val actualDamage = targetFortHealth - targetFort.health
+
+                    // Restore health temporarily for animation
+                    val tempHealth = targetFort.health
+                    targetFort.health = targetFortHealth
+
+                    // Animate health decrease
+                    animateHealthDecrease(targetFort, actualDamage) {
+                        // Restore the actual health once animation completes
+                        targetFort.health = tempHealth
+
+                        Log.d("AnimateHealth", "ViewModel")
+                        // Reset  states
+                        resetSelectionStates()
+
+                        // Reset counter state
+                        _isCounterBonus.value = false
+                        Log.d("FortHealthVDamage", "Damage: $damage  Fort Health: $targetFortHealth")
 
 
-                    updateAllGameStates()
+                        updateAllGameStates()
+                    }
+
                 } else {
                     _statusMessage.value = "Cannot attack this fortification"
                     _interactionMode.value = InteractionMode.DEFAULT
@@ -1628,6 +1652,7 @@ Log.d("StartGame",playerDeck.toString())
 
         // Get target position for animation
         val targetPos = cellPositions[Pair(targetRow, targetCol)]
+        val targetUnit = _gameManager.gameBoard.getUnitAt(targetRow, targetCol) ?: return
 
         if (targetPos != null) {
             // Start attack animation (use a distinct attack type for towers)
@@ -1645,16 +1670,37 @@ Log.d("StartGame",playerDeck.toString())
                 // Wait for damage
                 delay(300)
 
+                // Store original health before attack for animation
+                val originalHealth = targetUnit.health
+
                 // Execute the attack
                 val attackResult =
                     _gameManager.executeFortificationAttack(fortification, targetRow, targetCol)
 
                 if (attackResult) {
-                    _statusMessage.value = "Tower attack successful!"
-                    _selectedCell.value = null
-                    _validAttackTargets.value = emptyList()
-                    _interactionMode.value = InteractionMode.DEFAULT
-                    updateAllGameStates()
+
+                    // Animate health decrease
+                    val actualDamage = originalHealth - targetUnit.health
+
+                    // Restore health temporarily for animation
+                    val tempHealth = targetUnit.health
+                    targetUnit.health = originalHealth
+
+                    // Animate health decrease
+                    animateHealthDecrease(targetUnit, actualDamage) {
+                        // Restore the actual health once animation completes
+                        targetUnit.health = tempHealth
+
+                        Log.d("AnimateHealth", "ViewModel")
+                        // Reset states
+                        _statusMessage.value = "Tower attack successful!"
+                        _selectedCell.value = null
+                        _validAttackTargets.value = emptyList()
+                        _interactionMode.value = InteractionMode.DEFAULT
+
+                        updateAllGameStates()
+                    }
+
                 } else {
                     _statusMessage.value = "Attack failed"
                     _interactionMode.value = InteractionMode.DEFAULT
@@ -1679,11 +1725,16 @@ Log.d("StartGame",playerDeck.toString())
     }
 
     // Property for tracking health change for units
-    private val _visualHealthMap = mutableStateOf<Map<UnitCard, Int>>(emptyMap())
-    val visualHealthMap: State<Map<UnitCard, Int>> = _visualHealthMap
+    private val _visualHealthMap = mutableStateOf<Map<Card, Int>>(emptyMap())
+    val visualHealthMap: State<Map<Card, Int>> = _visualHealthMap
 
-    fun animateHealthDecrease(unit: UnitCard, damageAmount: Int, completion: () -> Unit) {
-        val startHealth = unit.health
+    fun animateHealthDecrease(unit: Card, damageAmount: Int, completion: () -> Unit) {
+
+        val startHealth = when(unit) {
+            is FortificationCard -> unit.health
+            is UnitCard -> unit.health
+            else -> return
+        }
         var remainingDamage = damageAmount
 
         // Initialize with current health
@@ -1881,6 +1932,12 @@ Log.d("StartGame",playerDeck.toString())
     fun playMenuScrollSound() {
         soundManager.playSound(SoundType.MENU_SCROLL)
     }
+    fun playStartBattleSound() {
+        viewModelScope.launch {
+            soundManager.playSound(SoundType.LEVEL_START)
+            delay(200)
+        }
+    }
 
     private fun playTacticCardSound(tacticCardType: TacticCardType) {
         val effectSound = when (tacticCardType) {
@@ -1891,6 +1948,18 @@ Log.d("StartGame",playerDeck.toString())
             TacticCardType.AREA_EFFECT -> SoundType.SPELL_AREA_EFFECT
         }
         soundManager.playSound(effectSound)
+    }
+    fun playScreenMusic(screen: String) {
+        when (screen) {
+            "main_menu" -> musicManager.playMusic(MusicTrack.MAIN_MENU,false)
+            "level_selection" -> musicManager.playMusic(MusicTrack.LEVEL_SELECTION,false)
+            "deck_editor" -> musicManager.playMusic(MusicTrack.DECK_EDITOR,true)
+            else -> musicManager.stopMusic()
+        }
+    }
+    override fun onCleared() {
+        super.onCleared()
+        musicManager.release()
     }
 
 

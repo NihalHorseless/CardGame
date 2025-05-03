@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import com.example.cardgame.data.enum.FortificationType
+import com.example.cardgame.data.model.card.Card
 import com.example.cardgame.data.model.card.FortificationCard
 import com.example.cardgame.data.model.card.UnitCard
 import com.example.cardgame.game.Board
@@ -52,7 +53,7 @@ fun GameBoard(
     validAttackTargets: List<Pair<Int, Int>> = emptyList(),
     onCellClick: (row: Int, col: Int) -> Unit,
     onAttachBayonet: (row: Int, col: Int) -> Unit,
-    visualHealthMap: Map<UnitCard, Int> = emptyMap(),
+    visualHealthMap: Map<Card, Int> = emptyMap(),
     registerCellPosition: (row: Int, col: Int, x: Float, y: Float) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -186,7 +187,7 @@ fun UnifiedBoardCell(
     canMove: Boolean = false,
     canAttack: Boolean = false,
     onAttachBayonet: (() -> Unit)? = null,
-    visualHealthMap: Map<UnitCard, Int> = emptyMap(),
+    visualHealthMap: Map<Card, Int> = emptyMap(),
     canFortificationAttack: Boolean = false, // Add this parameter
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -253,6 +254,7 @@ fun UnifiedBoardCell(
                     isPlayerFortification = isPlayerFortification,
                     canAttack = canFortificationAttack,
                     onClick = onClick,
+                    visualHealth = visualHealthMap[fortification],
                     modifier = Modifier.fillMaxSize(0.9f)
                 )
             }

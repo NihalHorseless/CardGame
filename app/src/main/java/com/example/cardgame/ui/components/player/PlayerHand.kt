@@ -163,7 +163,7 @@ fun PlayerHand(
 fun HandCard(
     card: Card,
     isPlayable: Boolean,
-    isSelected: Boolean = false,  // Added parameter for selection state
+    isSelected: Boolean = false,
     elevation: Dp = 4.dp,
     onClick: () -> Unit
 ) {

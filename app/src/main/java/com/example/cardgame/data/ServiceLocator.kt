@@ -1,6 +1,7 @@
 package com.example.cardgame.data
 
 import android.content.Context
+import com.example.cardgame.audio.MusicManager
 import com.example.cardgame.data.db.CardGameDatabase
 import com.example.cardgame.data.repository.CampaignRepository
 import com.example.cardgame.data.repository.CardRepository
@@ -40,6 +41,10 @@ object ServiceLocator {
     private val deckBuilderRepository by lazy {
         DeckBuilderRepository(cardRepository)
     }
+    private val musicManager by lazy {
+        val appContext = checkNotNull(applicationContext) { "Application context not initialized" }
+        MusicManager(appContext)
+    }
 
     /**
      * Initialize the ServiceLocator with application context
@@ -51,6 +56,7 @@ object ServiceLocator {
     }
 
     // Accessor methods for repositories
+    fun provideMusicManager(): MusicManager = musicManager
     fun provideCardRepository(): CardRepository = cardRepository
     fun provideCampaignRepository(): CampaignRepository = campaignRepository
     fun provideDeckBuilderRepository(): DeckBuilderRepository = deckBuilderRepository

@@ -31,6 +31,9 @@ object TacticEffectFactory {
             "charge" -> GrantChargeEffect()
             "taunt" -> GrantTauntEffect()
             "refresh_movement" -> RefreshMovementEffect()
+            "weaken_unit" -> WeakenUnitEffect()
+            "petrify" -> PetrifyUnitEffect()
+            "bribery" -> BribeUnitEffect() // New effect type
             else -> createNoOpEffect()
         }
     }

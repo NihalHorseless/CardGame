@@ -52,7 +52,7 @@ fun TacticCardEffectAnimation(
         TacticCardType.DIRECT_DAMAGE -> R.drawable.tactical_card_rockets // Fire/impact effect
         TacticCardType.AREA_EFFECT -> R.drawable.blood_explosion_two // Explosion effect
         TacticCardType.BUFF -> R.drawable.buff_particles // Green magical glow
-        TacticCardType.DEBUFF -> R.drawable.buff_particles // Purple energy swirl
+        TacticCardType.DEBUFF -> R.drawable.tactical_card_debuff // Purple energy swirl
         TacticCardType.SPECIAL -> R.drawable.buff_particles // Blue magical sparkles
     }
 
@@ -60,6 +60,7 @@ fun TacticCardEffectAnimation(
     val animationSize = when (cardType) {
         TacticCardType.AREA_EFFECT -> 210.dp
         TacticCardType.DIRECT_DAMAGE -> 100.dp
+        TacticCardType.DEBUFF -> 60.dp
         else -> 70.dp
     }
 

@@ -20,6 +20,7 @@ import com.example.cardgame.ui.screens.MainMenuScreen
 import com.example.cardgame.ui.viewmodel.DeckBuilderViewModel
 import com.example.cardgame.ui.viewmodel.GameViewModel
 import com.example.cardgame.ui.viewmodel.GameViewModelFactory
+import kotlinx.coroutines.time.delay
 
 @Composable
 fun CardGameNavigation() {
@@ -36,6 +37,9 @@ fun CardGameNavigation() {
     NavHost(navController = navController, startDestination = "main_menu") {
         composable("main_menu") {
             MainMenuScreen(
+                onIntro = {
+                    gameViewModel.playScreenMusic("main_menu")
+                },
                 onStartGame = {
                     navController.navigate("deck_selection")
                     gameViewModel.playMenuSoundOne()
@@ -83,8 +87,8 @@ fun CardGameNavigation() {
                     },
                     onLevelSelected = { level ->
                         gameViewModel.startCampaignLevel(campaign.id, level.id)
+                        gameViewModel.playStartBattleSound()
                         navController.navigate("game")
-                        gameViewModel.playMenuSoundTwo()
                     }, onLevelScroll = {
                         gameViewModel.playMenuScrollSound()
                     },
@@ -93,6 +97,7 @@ fun CardGameNavigation() {
                         gameViewModel.playMenuSoundOne()
                     },
                     onInitial = {
+                        gameViewModel.playScreenMusic("level_selection")
                         gameViewModel.loadAvailableDecks()
                     }
                 )

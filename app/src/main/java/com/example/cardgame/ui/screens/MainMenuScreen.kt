@@ -23,6 +23,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,6 +48,7 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun MainMenuScreen(
+    onIntro: () -> Unit,
     onStartGame: () -> Unit,
     onShowDeckBuilder: () -> Unit,
     onShowOptions: () -> Unit,
@@ -61,6 +63,9 @@ fun MainMenuScreen(
             repeatMode = RepeatMode.Restart
         )
     )
+    LaunchedEffect(Unit) {
+        onIntro()
+    }
 
     Box(
         modifier = Modifier

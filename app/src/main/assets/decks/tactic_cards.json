@@ -1,7 +1,7 @@
 [
   {
     "id": 100,
-    "name": "Congreve Rockets",
+    "name": "Congreve Rocket",
     "description": "Deal 4 damage",
     "manaCost": 3,
     "imagePath": "tactic_fireball",
@@ -111,6 +111,70 @@
         "effectType": "buff_health",
         "effectValue": 3,
         "duration": 2
+      }
+    ]
+  },
+  {
+    "id": 107,
+    "name": "Oh Me**e!",
+    "description": "Reduce enemy unit's attack and health to 1",
+    "manaCost": 4,
+    "imagePath": "tactic_debuff",
+    "type": "tactic",
+    "cardType": "DEBUFF",
+    "targetType": "ENEMY",
+    "effects": [
+      {
+        "effectType": "weaken_unit",
+        "effectValue": 0
+      }
+    ]
+  },
+  {
+    "id": 108,
+    "name": "Petrification",
+    "description": "Transform an enemy unit into a Stone Wall",
+    "manaCost": 5,
+    "imagePath": "tactic_petrify",
+    "type": "tactic",
+    "cardType": "DEBUFF",
+    "targetType": "ENEMY",
+    "effects": [
+      {
+        "effectType": "petrify",
+        "effectValue": 0
+      }
+    ]
+  },
+  {
+    "id": 109,
+    "name": "Bribery",
+    "description": "Take control of an enemy unit",
+    "manaCost": 7,
+    "imagePath": "tactic_mind_control",
+    "type": "tactic",
+    "cardType": "DEBUFF",
+    "targetType": "ENEMY",
+    "effects": [
+      {
+        "effectType": "bribery",
+        "effectValue": 0
+      }
+    ]
+  },
+  {
+    "id": 110,
+    "name": "Congreve Rocket Wave",
+    "description": "Deal 7 damage",
+    "manaCost": 6,
+    "imagePath": "tactic_fireball",
+    "type": "tactic",
+    "cardType": "DIRECT_DAMAGE",
+    "targetType": "ENEMY",
+    "effects": [
+      {
+        "effectType": "direct_damage",
+        "effectValue": 7
       }
     ]
   }
