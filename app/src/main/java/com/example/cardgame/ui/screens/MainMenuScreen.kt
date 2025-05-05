@@ -8,6 +8,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,11 +19,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,18 +47,26 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.example.cardgame.R
 
 @Composable
 fun MainMenuScreen(
     onIntro: () -> Unit,
+    onLeaveGame: () -> Unit,
     onStartGame: () -> Unit,
     onShowDeckBuilder: () -> Unit,
     onShowOptions: () -> Unit,
-    onShowCampaign: () -> Unit
+    onShowCampaign: () -> Unit,
+    isMusicMuted: Boolean,
+    onToggleMusicMute: () -> Unit
 ) {
     val infiniteTransition = rememberInfiniteTransition()
     val bgOffset by infiniteTransition.animateFloat(
@@ -63,8 +77,27 @@ fun MainMenuScreen(
             repeatMode = RepeatMode.Restart
         )
     )
+    val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(Unit) {
         onIntro()
+    }
+    // Stop and Resume Track
+    DisposableEffect(key1 = lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                onIntro()
+            } else if (event == Lifecycle.Event.ON_STOP) {
+                onLeaveGame()
+            }
+        }
+
+        // Add the observer to the lifecycle
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        // When the effect leaves the Composition, remove the observer
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
     Box(
@@ -198,6 +231,23 @@ fun MainMenuScreen(
             MenuButton(
                 text = "Exit Game",
                 onClick = { /* Handle exit */ }
+            )
+        }
+        // Add a mute button in the top right corner
+        IconButton(
+            onClick = { onToggleMusicMute() },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+                .size(48.dp)
+                .background(Color(0xFF2D3250).copy(alpha = 0.7f), CircleShape)
+                .border(1.dp, Color(0xFF5271FF), CircleShape)
+        ) {
+            Icon(
+                painter = painterResource(if (isMusicMuted) R.drawable.baseline_music_off else R.drawable.baseline_music_on),
+                contentDescription = if (isMusicMuted) "Unmute Music" else "Mute Music",
+                tint = Color.White,
+                modifier = Modifier.size(24.dp)
             )
         }
     }

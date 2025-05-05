@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.example.cardgame.audio.MusicManager
 import com.example.cardgame.data.ServiceLocator
 import com.example.cardgame.ui.navigations.CardGameNavigation
 import com.example.cardgame.ui.viewmodel.GameViewModel
@@ -18,6 +19,7 @@ import com.example.cardgame.ui.screens.GameScreen
 import com.example.cardgame.ui.theme.CardGameTheme
 
 class MainActivity : ComponentActivity() {
+
     @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,6 +33,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
 
     private fun screenConfigurations() {
         window?.let {

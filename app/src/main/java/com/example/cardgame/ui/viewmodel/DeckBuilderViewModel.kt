@@ -307,6 +307,9 @@ class DeckBuilderViewModel(
     fun playEditorMusic() {
         musicManager?.playMusic(MusicTrack.DECK_EDITOR,true)
     }
+    fun stopMusic() {
+        musicManager?.stopMusic()
+    }
     override fun onCleared() {
         super.onCleared()
         musicManager?.release()

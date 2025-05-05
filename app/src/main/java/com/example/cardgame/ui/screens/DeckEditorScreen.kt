@@ -48,6 +48,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -76,6 +77,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.cardgame.R
 import com.example.cardgame.data.enum.UnitEra
 import com.example.cardgame.data.model.card.Card
@@ -106,6 +110,7 @@ fun DeckEditorScreen(
     // Selected card for detail view
     var selectedCard by remember { mutableStateOf<Card?>(null) }
     val coroutineScope = rememberCoroutineScope()
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     // Deck name and description for new decks
     var deckName by remember { mutableStateOf("") }
@@ -133,6 +138,23 @@ fun DeckEditorScreen(
         viewModel.loadAvailableCards()
     }
 
+    DisposableEffect(key1 = lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.playEditorMusic()
+            } else if (event == Lifecycle.Event.ON_STOP) {
+                viewModel.stopMusic()
+            }
+        }
+
+        // Add the observer to the lifecycle
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        // When the effect leaves the Composition, remove the observer
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
     // Main layout
     Box(
         modifier = Modifier

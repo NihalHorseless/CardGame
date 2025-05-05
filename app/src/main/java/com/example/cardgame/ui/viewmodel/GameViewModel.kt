@@ -1957,6 +1957,16 @@ Log.d("StartGame",playerDeck.toString())
             else -> musicManager.stopMusic()
         }
     }
+    fun stopMusic() {
+        musicManager.stopMusic()
+    }
+    val isMusicMuted: State<Boolean> = musicManager.isMuted
+
+    // Add this method to toggle mute
+    fun toggleMusicMute() {
+        musicManager.toggleMute()
+    }
+
     override fun onCleared() {
         super.onCleared()
         musicManager.release()

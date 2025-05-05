@@ -34,6 +34,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -52,6 +53,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.cardgame.R
 import com.example.cardgame.data.model.campaign.Campaign
 import com.example.cardgame.data.model.campaign.CampaignLevel
@@ -70,6 +74,7 @@ fun LevelSelectionScreen(
     onLevelSelected: (CampaignLevel) -> Unit,
     onBackPressed: () -> Unit,
     onInitial: () -> Unit,
+    onLeaveGame: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var currentLevelIndex by remember { mutableIntStateOf(0) }
@@ -84,8 +89,29 @@ fun LevelSelectionScreen(
         val previousLevel = levels.getOrNull(currentLevelIndex - 1)
         previousLevel?.isCompleted == false
     }
+    val lifecycleOwner = LocalLifecycleOwner.current
+
     LaunchedEffect(Unit) {
         onInitial()
+    }
+
+    // Stop and Resume Track
+    DisposableEffect(key1 = lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                onInitial()
+            } else if (event == Lifecycle.Event.ON_STOP) {
+                onLeaveGame()
+            }
+        }
+
+        // Add the observer to the lifecycle
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        // When the effect leaves the Composition, remove the observer
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
     // Main layout
     Box(

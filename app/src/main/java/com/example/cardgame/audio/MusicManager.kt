@@ -3,6 +3,8 @@ package com.example.cardgame.audio
 import android.content.Context
 import android.media.MediaPlayer
 import android.util.Log
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import com.example.cardgame.R
 
 class MusicManager(private val context: Context) {
@@ -26,13 +28,23 @@ class MusicManager(private val context: Context) {
         // You can add more tracks here
     )
 
+    // Mute state
+    private val _isMuted = mutableStateOf(false)
+    val isMuted: State<Boolean> = _isMuted
+
     /**
      * Start playing a music track
      */
     fun playMusic(track: MusicTrack, loop: Boolean = true) {
-        // Don't restart if already playing this track
-        if (currentTrack == track && mediaPlayer?.isPlaying == true) {
+        // Don't restart if already playing this track or it's muted
+        if (currentTrack == track && mediaPlayer?.isPlaying == true || isMuted.value) {
             return
+        }
+
+        when (track) {
+            MusicTrack.MAIN_MENU -> volume = 0.1f
+            MusicTrack.DECK_EDITOR -> volume = 0.6f
+            else -> volume = 0.3f
         }
 
         // Stop any current playback
@@ -56,7 +68,24 @@ class MusicManager(private val context: Context) {
             Log.e("MusicManager", "Error playing music: ${e.message}")
         }
     }
+    /**
+     * Toggle mute status
+     */
+    fun toggleMute() {
+        _isMuted.value = !_isMuted.value
 
+        // Apply the new mute state to the current player
+        mediaPlayer?.setVolume(
+            if (_isMuted.value) 0f else volume,
+            if (_isMuted.value) 0f else volume
+        )
+    }
+    /**
+     * Check if music is currently playing
+     */
+    fun isPlaying(): Boolean {
+        return mediaPlayer?.isPlaying == true
+    }
     /**
      * Stop the currently playing music
      */

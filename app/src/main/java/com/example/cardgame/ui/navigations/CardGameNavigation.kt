@@ -2,6 +2,7 @@ package com.example.cardgame.ui.navigations
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -34,18 +35,31 @@ fun CardGameNavigation() {
     val gameViewModel: GameViewModel = viewModel(factory = factory)
     val deckBuilderViewModel: DeckBuilderViewModel = viewModel(factory = factory)
 
+    // Get the music mute state from the MusicManager
+    val isMusicMuted by gameViewModel.isMusicMuted
+
+    // Function to toggle mute state
+    val toggleMusicMute = {
+        gameViewModel.toggleMusicMute()
+    }
+
     NavHost(navController = navController, startDestination = "main_menu") {
         composable("main_menu") {
             MainMenuScreen(
                 onIntro = {
                     gameViewModel.playScreenMusic("main_menu")
                 },
+                onLeaveGame = {
+                    gameViewModel.stopMusic()
+                },
                 onStartGame = {
                     navController.navigate("deck_selection")
+                    gameViewModel.stopMusic()
                     gameViewModel.playMenuSoundOne()
                 },
                 onShowDeckBuilder = {
                     navController.navigate("deck_builder")
+                    gameViewModel.stopMusic()
                     gameViewModel.playMenuSoundOne()
                 },
                 onShowOptions = {
@@ -54,8 +68,11 @@ fun CardGameNavigation() {
                 },
                 onShowCampaign = {
                     navController.navigate("campaign_selection")
+                    gameViewModel.stopMusic()
                     gameViewModel.playMenuSoundOne()
-                }
+                },
+                isMusicMuted = isMusicMuted,
+                onToggleMusicMute = toggleMusicMute
             )
         }
         composable("campaign_selection") {
@@ -87,6 +104,7 @@ fun CardGameNavigation() {
                     },
                     onLevelSelected = { level ->
                         gameViewModel.startCampaignLevel(campaign.id, level.id)
+                        gameViewModel.stopMusic()
                         gameViewModel.playStartBattleSound()
                         navController.navigate("game")
                     }, onLevelScroll = {
@@ -94,11 +112,15 @@ fun CardGameNavigation() {
                     },
                     onBackPressed = {
                         navController.popBackStack()
+                        gameViewModel.stopMusic()
                         gameViewModel.playMenuSoundOne()
                     },
                     onInitial = {
                         gameViewModel.playScreenMusic("level_selection")
                         gameViewModel.loadAvailableDecks()
+                    },
+                    onLeaveGame = {
+                        gameViewModel.stopMusic()
                     }
                 )
             } else {
@@ -168,6 +190,7 @@ fun CardGameNavigation() {
                 onNavigateBack = {
                     navController.popBackStack()
                     gameViewModel.playMenuSoundOne()
+                    gameViewModel.stopMusic()
                 }
             )
         }
