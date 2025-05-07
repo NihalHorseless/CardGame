@@ -177,5 +177,22 @@
         "effectValue": 7
       }
     ]
+  },
+  {
+    "id": 111,
+    "name": "Leipzig Detonation",
+    "description": "Deal 5 damage to all units within 3x3 range",
+    "manaCost": 8,
+    "imagePath": "tactic_explosion",
+    "type": "tactic",
+    "cardType": "AREA_EFFECT",
+    "targetType": "BOARD",
+    "effects": [
+      {
+        "effectType": "area_damage",
+        "effectValue": 5,
+        "radius": 1
+      }
+    ]
   }
-  ]
+]

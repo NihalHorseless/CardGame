@@ -16,6 +16,7 @@ import com.example.cardgame.ui.screens.DeckBuilderScreen
 import com.example.cardgame.ui.screens.DeckEditorScreen
 import com.example.cardgame.ui.screens.DeckSelectionScreen
 import com.example.cardgame.ui.screens.GameScreen
+import com.example.cardgame.ui.screens.GuideScreen
 import com.example.cardgame.ui.screens.LevelSelectionScreen
 import com.example.cardgame.ui.screens.MainMenuScreen
 import com.example.cardgame.ui.viewmodel.DeckBuilderViewModel
@@ -62,9 +63,10 @@ fun CardGameNavigation() {
                     gameViewModel.stopMusic()
                     gameViewModel.playMenuSoundOne()
                 },
-                onShowOptions = {
-                    navController.navigate("options")
+                onShowGuide = {
+                    navController.navigate("guide")
                     gameViewModel.playMenuSoundOne()
+                    gameViewModel.stopMusic()
                 },
                 onShowCampaign = {
                     navController.navigate("campaign_selection")
@@ -194,9 +196,13 @@ fun CardGameNavigation() {
                 }
             )
         }
-        composable("options") {
-            // Options screen would go here
-            // Text("Options - Not Implemented Yet")
+        composable("guide") {
+            GuideScreen(
+                onBackPressed = {
+                    navController.popBackStack()
+                    gameViewModel.playMenuSoundOne()
+                }
+            )
         }
     }
 }

@@ -2,8 +2,8 @@ package com.example.cardgame.data.enum
 
 enum class InteractionMode {
     DEFAULT,       // Normal selection mode
-    CARD_TARGETING, // Selecting a target for a card
+    CARD_TARGETING, // Selecting a target for a tactic card
     UNIT_ATTACKING, // Unit is attacking
-    UNIT_MOVING,     // Unit is moving
-    DEPLOY // DEPLOY UNIT
+    UNIT_MOVING,    // Unit is moving
+    DEPLOY          // New mode for deploying units/fortifications
 }

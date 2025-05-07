@@ -90,12 +90,10 @@ class AreaDamageEffect(
                     // Check for units
                     val unit = gameManager.gameBoard.getUnitAt(row, col)
                     if (unit != null) {
-                        val unitOwnerId = gameManager.gameBoard.getUnitOwner(unit)
-                        // Only damage enemy units
-                        if (unitOwnerId != player.id) {
+
                             unit.takeDamage(damageAmount)
                             effectApplied = true
-                        }
+
                     }
 
                     // Check for fortifications

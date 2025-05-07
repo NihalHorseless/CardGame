@@ -155,6 +155,8 @@ fun GameScreen(
                         validDeploymentPositions = validDeploymentPositions,
                         validMoveDestinations = validMoveDestinations,  // Pass move destinations
                         validAttackTargets = validAttackTargets,       // Pass attack targets
+                        interactionMode = viewModel.interactionMode.value,
+                        targetingType = viewModel.targetingType.value,
                         onCellClick = { row, col ->
                             viewModel.onCellClick(row, col)
                         },

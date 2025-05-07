@@ -63,8 +63,8 @@ fun MainMenuScreen(
     onLeaveGame: () -> Unit,
     onStartGame: () -> Unit,
     onShowDeckBuilder: () -> Unit,
-    onShowOptions: () -> Unit,
     onShowCampaign: () -> Unit,
+    onShowGuide: () -> Unit,
     isMusicMuted: Boolean,
     onToggleMusicMute: () -> Unit
 ) {
@@ -222,8 +222,8 @@ fun MainMenuScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             MenuButton(
-                text = "Options",
-                onClick = onShowOptions
+                text = "Game Guide",
+                onClick = onShowGuide
             )
 
             Spacer(modifier = Modifier.height(16.dp))

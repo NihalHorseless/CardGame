@@ -87,6 +87,9 @@ class GameViewModel(
     private val _interactionMode = mutableStateOf(InteractionMode.DEFAULT)
     val interactionMode: State<InteractionMode> = _interactionMode
 
+    private val _targetingType = mutableStateOf<TacticCardType?>(null)
+    val targetingType: State<TacticCardType?> = _targetingType
+
     private val _playerMana = mutableIntStateOf(0)
     val playerMana: State<Int> = _playerMana
 
@@ -601,11 +604,14 @@ Log.d("StartGame",playerDeck.toString())
         val card = hand[cardIndex]
         soundManager.playSound(SoundType.CARD_PICK)
 
-        if (_interactionMode.value == InteractionMode.CARD_TARGETING) {
+        // If we're already in a targeting mode, cancel it
+        if (_interactionMode.value == InteractionMode.CARD_TARGETING ||
+            _interactionMode.value == InteractionMode.DEPLOY) {
             cancelDeployment()
             return
         }
-        // Handle both unit and fortification cards the same way
+
+        // Handle both unit and fortification cards - deploy mode
         when (card) {
             is UnitCard, is FortificationCard -> {
                 // Check if player has enough mana
@@ -614,8 +620,8 @@ Log.d("StartGame",playerDeck.toString())
                     return
                 }
 
-                // Set interaction mode to card targeting
-                _interactionMode.value = InteractionMode.CARD_TARGETING
+                // Set interaction mode to DEPLOY specifically for unit/fortification cards
+                _interactionMode.value = InteractionMode.DEPLOY
                 _selectedCardIndex.value = cardIndex
 
                 // Get valid deployment positions
@@ -635,6 +641,7 @@ Log.d("StartGame",playerDeck.toString())
         }
     }
 
+
     /**
      * Handle TacticCard selection from hand
      */
@@ -644,6 +651,10 @@ Log.d("StartGame",playerDeck.toString())
             _statusMessage.value = "Not enough mana!"
             return
         }
+        // Deselect cell
+        _selectedCell.value = null
+        _validMoveDestinations.value = emptyList()
+
 
         // Different handling based on card's target type
         when (card.targetType) {
@@ -653,21 +664,25 @@ Log.d("StartGame",playerDeck.toString())
                 if (success) {
                     _statusMessage.value = "${card.name} played successfully"
                     updateAllGameStates()
+                    // Deselect Card
+                    _selectedCardIndex.value = null
                 } else {
                     _statusMessage.value = "Failed to play ${card.name}"
                 }
             }
 
             else -> {
-                // Cards that need targets - switch to targeting mode
+                // Cards that need targets - switch to CARD_TARGETING mode (not DEPLOY)
                 _selectedCardIndex.value = cardIndex
                 _interactionMode.value = InteractionMode.CARD_TARGETING
+
+                _targetingType.value = card.cardType
 
                 // Highlight valid targets based on card target type
                 _validDeploymentPositions.value = when (card.targetType) {
                     TargetType.FRIENDLY -> getFriendlyTargets()
                     TargetType.ENEMY -> getEnemyTargets()
-                    TargetType.BOARD -> getBoardTargets()
+                    TargetType.BOARD -> getFriendlyTargets() + getEnemyTargets()
                     TargetType.ANY -> getFriendlyTargets() + getEnemyTargets()
                     else -> emptyList()
                 }
@@ -712,6 +727,9 @@ Log.d("StartGame",playerDeck.toString())
 
             // Update game state
             updateAllGameStates()
+
+            // Deselect Card
+            _selectedCardIndex.value = null
         } else {
             _statusMessage.value = "Failed to play ${card.name}"
         }
@@ -867,16 +885,31 @@ Log.d("StartGame",playerDeck.toString())
      */
     fun onCellClick(row: Int, col: Int) {
         if (!_isPlayerTurn.value) return
-
-        // If in deployment mode, try to place the unit or fortification
-        if (_interactionMode.value == InteractionMode.CARD_TARGETING) {
-            if (_validDeploymentPositions.value.contains(Pair(row, col))) {
-                handleTacticCardTargeting(row, col)
-                deployCardAtPosition(row, col)
-            } else {
-                _statusMessage.value = "Cannot deploy at this position"
+        when (_interactionMode.value) {
+            InteractionMode.DEPLOY -> {
+                // Handle unit/fortification deployment
+                if (_validDeploymentPositions.value.contains(Pair(row, col))) {
+                    deployCardAtPosition(row, col)
+                } else {
+                    _statusMessage.value = "Cannot deploy at this position"
+                }
+                return
             }
-            return
+
+            InteractionMode.CARD_TARGETING -> {
+                // Handle tactic card targeting
+                if (_validDeploymentPositions.value.contains(Pair(row, col))) {
+                    handleTacticCardTargeting(row, col)
+                } else {
+                    _statusMessage.value = "Invalid target"
+                }
+                return
+            }
+
+            else -> {
+                // Continue with the existing unit selection and movement logic
+                // (No changes needed to the existing code here)
+            }
         }
 
         val clickedUnit = _gameManager.gameBoard.getUnitAt(row, col)
@@ -1888,7 +1921,9 @@ Log.d("StartGame",playerDeck.toString())
         _selectedCell.value = null
         _validMoveDestinations.value = emptyList()
         _validAttackTargets.value = emptyList()
+        _validDeploymentPositions.value = emptyList()
         _interactionMode.value = InteractionMode.DEFAULT
+        _targetingType.value = null
     }
 
     private fun playUnitAttackSound(unitType: UnitType) {

@@ -79,7 +79,7 @@ class PetrifyUnitEffect : TacticEffect {
                 gameManager.gameBoard.removeUnit(row, col)
 
                 // Place the wall at the same position, but owned by the casting player
-                val placed = gameManager.gameBoard.placeFortification(stoneWall, row, col, player.id)
+                val placed = gameManager.gameBoard.placeFortification(stoneWall, row, col, targetOwnerId?:1)
 
                 return placed
             }
