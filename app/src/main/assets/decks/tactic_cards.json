@@ -164,7 +164,7 @@
   },
   {
     "id": 110,
-    "name": "Congreve Rocket Wave",
+    "name": "Rocket Wave",
     "description": "Deal 7 damage",
     "manaCost": 6,
     "imagePath": "tactic_fireball",

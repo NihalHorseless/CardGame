@@ -1,8 +1,8 @@
 [
   {
     "id": 1,
-    "name": "Roman Legionary",
-    "description": "Disciplined infantry unit with shield wall formation",
+    "name": "Cossack Infantry",
+    "description": "Brave in the battlefield and ruthless in plunder",
     "manaCost": 3,
     "imagePath": "unit_roman_legionary",
     "type": "unit",
@@ -37,16 +37,16 @@
   },
   {
     "id": 3,
-    "name": "Greek Archer",
-    "description": "Ranged unit with precision attacks",
+    "name": "Civilian Corps",
+    "description": "Basic Infantry for cannon fodder",
     "manaCost": 2,
     "imagePath": "unit_greek_archer",
     "type": "unit",
     "attack": 2,
     "health": 2,
     "maxHealth": 2,
-    "unitType": "MISSILE",
-    "unitEra": "ANCIENT",
+    "unitType": "INFANTRY",
+    "unitEra": "NAPOLEONIC",
     "abilities": [],
     "hasCharge": false,
     "hasTaunt": false

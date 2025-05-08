@@ -58,20 +58,6 @@ class UnitCard(
 
         return true
     }
-
-    /**
-     * Attack the enemy player directly
-     */
-    fun attackOpponent(gameManager: GameManager): Boolean {
-        // Determine the owner of this unit
-        val ownerId = gameManager.gameBoard.getUnitOwner(this) ?: return false
-
-        // Get the opponent's player ID
-        val opponentId = if (ownerId == 0) 1 else 0
-
-        return gameManager.executeDirectAttack(this, opponentId)
-    }
-
     fun takeDamage(amount: Int) {
         val actualDamage = maxOf(0, amount)
         health -= actualDamage

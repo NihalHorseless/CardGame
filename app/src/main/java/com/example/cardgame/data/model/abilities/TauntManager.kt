@@ -2,7 +2,6 @@ package com.example.cardgame.data.model.abilities
 
 import com.example.cardgame.data.model.card.UnitCard
 import com.example.cardgame.game.Board
-import com.example.cardgame.game.GameManager
 
 /**
  * Helper class to manage taunt effects and targeting rules

@@ -41,10 +41,10 @@ class MusicManager(private val context: Context) {
             return
         }
 
-        when (track) {
-            MusicTrack.MAIN_MENU -> volume = 0.1f
-            MusicTrack.DECK_EDITOR -> volume = 0.6f
-            else -> volume = 0.3f
+        volume = when (track) {
+            MusicTrack.MAIN_MENU -> 0.1f
+            MusicTrack.DECK_EDITOR -> 0.6f
+            else -> 0.3f
         }
 
         // Stop any current playback

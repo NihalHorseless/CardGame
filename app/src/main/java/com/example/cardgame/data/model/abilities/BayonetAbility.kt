@@ -22,9 +22,5 @@ class BayonetAbility : Ability {
         // Mark the unit as moved in the movement manager
         gameManager.movementManager.markUnitAsMoved(unit)
 
-        // Potentially adjust other stats if needed
-        // For example, maybe INFANTRY has more health but less attack than MUSKET
-        // unit.attack -= 1
-        // unit.health += 1
     }
 }

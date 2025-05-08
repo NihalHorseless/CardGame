@@ -76,7 +76,7 @@ class PlayerContext(val player: Player, val gameBoard: Board) {
      * Converts a linear position index to a 2D board position.
      * This is useful for backward compatibility with code that uses linear positions.
      */
-    fun linearToGridPosition(position: Int): Pair<Int, Int> {
+    private fun linearToGridPosition(position: Int): Pair<Int, Int> {
         // For a 5x5 board, we need to adjust the calculation
         val row = if (player.id == 0)
             gameBoard.rows - 1 - (position / gameBoard.columns)

@@ -82,7 +82,7 @@ class CampaignRepository(private val context: Context) {
     /**
      * Save campaign progress (completed levels)
      */
-    fun saveCampaignProgress(campaignId: String, completedLevels: List<String>) {
+    private fun saveCampaignProgress(campaignId: String, completedLevels: List<String>) {
         try {
             val json = gson.toJson(completedLevels)
             prefs.edit().putString("${COMPLETED_LEVELS_KEY}_$campaignId", json).apply()
@@ -147,9 +147,27 @@ class CampaignRepository(private val context: Context) {
                     ),
                     reward = "artillery_card"
                 ),
-
                 CampaignLevel(
                     id = "level_3",
+                    name = "Catching Marshal Soult",
+                    description = "Try to out fox the brilliant Jean-de-Dieu Soult.",
+                    opponentName = "Marshal Soult",
+                    opponentDeckId = "soult_deck",  // Aggressive, infantry-heavy deck
+                    difficulty = Difficulty.MEDIUM,
+                    specialRules = listOf(
+                        SpecialRule.StartingBoard(listOf(
+                            BoardSetup(unitId = 301, row = 2, col = 0, isPlayerUnit = false),  // Enemy infantry
+                            BoardSetup(unitId = 302, row = 2, col = 1, isPlayerUnit = false),  // Enemy infantry
+                            BoardSetup(unitId = 303, row = 2, col = 2, isPlayerUnit = false),  // Enemy infantry
+                            BoardSetup(unitId = 401, row = 4, col = 2, isPlayerUnit = true)    // Player's fortification
+                        )),
+                        SpecialRule.ModifiedMana(1)  // Player gets +1 max mana
+                    ),
+                    reward = "taunt_tactic_card"
+                ),
+
+                CampaignLevel(
+                    id = "level_4",
                     name = "Marshal Ney's Assault",
                     description = "Withstand Michel Ney's relentless frontal assault tactics.",
                     opponentName = "Marshal Ney",
@@ -168,7 +186,7 @@ class CampaignRepository(private val context: Context) {
                 ),
 
                 CampaignLevel(
-                    id = "level_4",
+                    id = "level_5",
                     name = "Marshal Davout's Iron Will",
                     description = "Outmaster Louis-Nicolas Davout, the Prince of Eckmühl known for his tactical brilliance.",
                     opponentName = "Marshal Davout",
@@ -185,9 +203,27 @@ class CampaignRepository(private val context: Context) {
                     ),
                     reward = "special_tactic_cards"
                 ),
+                CampaignLevel(
+                    id = "level_6",
+                    name = "Lannes",
+                    description = "Face Jean Lannes, a child of the revolution and dear friend of the Emperor whom courage is indisputable ",
+                    opponentName = "Marshal Lannes",
+                    opponentDeckId = "lannes_deck",  // Balanced deck with many tactical cards
+                    difficulty = Difficulty.HARD,
+                    specialRules = listOf(
+                        SpecialRule.CustomObjective(
+                            description = "Win the battle while keeping at least 20 health",
+                            checkCompletion = { gameManager ->
+                                gameManager.players[0].health >= 20 &&
+                                        gameManager.players[1].health <= 0
+                            }
+                        )
+                    ),
+                    reward = "special_tactic_cards"
+                ),
 
                 CampaignLevel(
-                    id = "level_5",
+                    id = "level_7",
                     name = "Emperor Napoleon Bonaparte",
                     description = "Face the Emperor himself in the ultimate battle of wits and strategy!",
                     opponentName = "Napoleon Bonaparte",

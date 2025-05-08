@@ -2,7 +2,6 @@ package com.example.cardgame.util
 
 import com.example.cardgame.data.enum.UnitEra
 import com.example.cardgame.data.enum.UnitType
-import com.example.cardgame.data.model.abilities.Ability
 import com.example.cardgame.data.model.card.UnitCard
 import com.example.cardgame.game.Player
 
@@ -24,4 +23,5 @@ object CardTestData {
         imagePath = ""
     )
     val samplePlayer = Player(id = 999, name = "SAMPLE PLAYER")
+
 }

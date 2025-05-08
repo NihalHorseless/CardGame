@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -60,7 +59,6 @@ import com.example.cardgame.R
 import com.example.cardgame.data.model.campaign.Campaign
 import com.example.cardgame.data.model.campaign.CampaignLevel
 import com.example.cardgame.data.model.campaign.Difficulty
-import com.example.cardgame.data.model.card.Deck
 import com.example.cardgame.ui.theme.libreFont
 
 @Composable
@@ -432,7 +430,7 @@ fun LevelDetailsCard(
 
         Text(
             text = if (isLocked) "Complete the previous level to unlock" else level.description,
-            fontSize = 14.sp,
+            fontSize = 16.sp,
             fontFamily = libreFont,
             color = Color.White.copy(alpha = 0.8f),
             modifier = Modifier.padding(bottom = 8.dp)
@@ -445,35 +443,13 @@ fun LevelDetailsCard(
         ) {
             Text(
                 text = "Difficulty: ",
-                fontSize = 14.sp,
-                color = Color.White.copy(alpha = 0.8f)
+                fontSize = 16.sp,
+                color = Color.White.copy(alpha = 0.6f)
             )
 
             DifficultyStars(difficulty = level.difficulty)
         }
 
-        if (level.reward != null && !isLocked) {
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = null,
-                    tint = Color(0xFFFFD700).copy(0.8f),
-                    modifier = Modifier.size(20.dp)
-                )
-
-                Spacer(modifier = Modifier.width(4.dp))
-
-                Text(
-                    text = "Reward: ${level.reward}",
-                    fontSize = 14.sp,
-                    color = Color(0xFFFFD700).copy(0.8f)
-                )
-            }
-        }
     }
 }
 
@@ -568,6 +544,8 @@ fun getOpponentPortrait(opponentName: String): Int {
         "Marshal Ney" -> R.drawable.ney_portrait
         "Marshal Marmont" -> R.drawable.marmont_avatar
         "Napoleon Bonaparte" -> R.drawable.napoleon_avatar
+        "Marshal Lannes" -> R.drawable.lannes_avatar
+        "Marshal Soult" -> R.drawable.marshall_soult
         "Player " -> R.drawable.player_avatar
         else -> R.drawable.player_avatar // Fallback
     }

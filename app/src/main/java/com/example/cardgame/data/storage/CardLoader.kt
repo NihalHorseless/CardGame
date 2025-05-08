@@ -5,16 +5,13 @@ import android.util.Log
 import com.example.cardgame.data.model.abilities.Ability
 import com.example.cardgame.data.model.card.Card
 import com.example.cardgame.data.model.card.Deck
-import com.example.cardgame.data.model.card.FortificationCard
 import com.example.cardgame.data.model.card.TacticCard
-import com.example.cardgame.data.model.card.UnitCard
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import java.util.Locale
 
-class CardLoader(private val context: Context) {
+class CardLoader(context: Context) {
 
     private val TAG = "CardLoader"
     private val appContext = context.applicationContext
@@ -52,7 +49,7 @@ class CardLoader(private val context: Context) {
     /**
      * Load standard cards (units and fortifications) from a file
      */
-    fun loadStandardCards(fileName: String): List<Card> {
+    private fun loadStandardCards(fileName: String): List<Card> {
         try {
             val inputStream = appContext.assets.open(fileName)
             val reader = BufferedReader(InputStreamReader(inputStream))
@@ -76,7 +73,7 @@ class CardLoader(private val context: Context) {
     /**
      * Load tactic cards from a file
      */
-    fun loadTacticCards(fileName: String): List<TacticCard> {
+    private fun loadTacticCards(fileName: String): List<TacticCard> {
         try {
             val inputStream = appContext.assets.open(fileName)
             val reader = BufferedReader(InputStreamReader(inputStream))
@@ -202,50 +199,6 @@ class CardLoader(private val context: Context) {
         }
     }
 
-    fun createDefaultDecksIfNeeded(): List<String> {
-        val availableDecks = getAvailableDeckNames()
-        if (availableDecks.isNotEmpty()) {
-            return availableDecks
-        }
-
-        // Create temporary decks in memory since we can't write to assets at runtime
-        Log.d(TAG, "No decks found, creating default decks in memory")
-
-        // Load all cards first
-        val allCards = loadAllCards()
-        if (allCards.isEmpty()) {
-            Log.e(TAG, "Cannot create default decks: no cards available")
-            return emptyList()
-        }
-
-        // Create some simple decks
-        val unitCards = allCards.filterIsInstance<UnitCard>()
-        val tacticCards = allCards.filterIsInstance<TacticCard>()
-        val fortificationCards = allCards.filterIsInstance<FortificationCard>()
-
-        // Player deck
-        val playerDeckCards = (unitCards.take(8) + tacticCards.take(6) + fortificationCards.take(2)).toMutableList()
-        val playerDeck = Deck(
-            id = "player_deck",
-            name = "Player's Balanced Deck",
-            description = "A balanced deck with units, tactics, and fortifications",
-            cards = playerDeckCards
-        )
-        deckCache["player_deck"] = playerDeck
-
-        // Opponent deck
-        val opponentDeckCards = (unitCards.takeLast(8) + tacticCards.takeLast(6) + fortificationCards.takeLast(2)).toMutableList()
-        val opponentDeck = Deck(
-            id = "opponent_deck",
-            name = "Opponent's Deck",
-            description = "AI opponent's balanced deck",
-            cards = opponentDeckCards
-        )
-        deckCache["opponent_deck"] = opponentDeck
-
-        Log.d(TAG, "Created default decks in memory")
-        return listOf("player_deck", "opponent_deck")
-    }
 
     /**
      * Data class for deck definition in JSON

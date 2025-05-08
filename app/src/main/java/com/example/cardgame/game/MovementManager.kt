@@ -16,7 +16,7 @@ class MovementManager(private val gameBoard: Board) {
      * Cavalry: 2 tiles
      * Other units: 1 tile
      */
-    fun getMovementRange(unit: UnitCard): Int {
+    private fun getMovementRange(unit: UnitCard): Int {
         return when (unit.unitType) {
             UnitType.CAVALRY -> 2
             else -> 1

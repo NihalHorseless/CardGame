@@ -49,7 +49,7 @@ fun GameScreen(
     val isPlayerWinner by viewModel.isPlayerWinner
     val isPlayerTurn by viewModel.isPlayerTurn
     val statusMessage by viewModel.statusMessage
-    val oppoonentName by viewModel.opponentName
+    val opponentName by viewModel.opponentName
     val playerVisualHealth by viewModel.playerVisualHealth
     val opponentVisualHealth by viewModel.opponentVisualHealth
 
@@ -72,7 +72,6 @@ fun GameScreen(
     // Deployment system states
     val selectedCardIndex by viewModel.selectedCardIndex
     val validDeploymentPositions by viewModel.validDeploymentPositions
-    val interactionMode by viewModel.interactionMode
 
     // Map to store cell positions for animations
     val cellPositionsMap = mutableMapOf<Pair<Int, Int>, Pair<Float, Float>>()
@@ -112,7 +111,7 @@ fun GameScreen(
                 ) {Log.d("Opponent", opponentHealth.toString())
                     // Opponent's portrait
                     PlayerPortrait(
-                        playerName = oppoonentName,
+                        playerName = opponentName,
                         health = opponentHealth,
                         maxHealth = opponentHealth,
                         visualHealth = opponentVisualHealth,
@@ -222,7 +221,7 @@ fun GameScreen(
         if (isSimpleAttackVisible) {
             GifAttackAnimation(
                 unitType = attackingUnitType,
-                isVisible = isSimpleAttackVisible,
+                isVisible = true,
                 targetX = attackTargetPosition.first,
                 targetY = attackTargetPosition.second,
                 onAnimationComplete = {
@@ -233,7 +232,7 @@ fun GameScreen(
         }
         if (isTacticEffectVisible) {
             TacticCardEffectAnimation(
-                isVisible = isTacticEffectVisible,
+                isVisible = true,
                 cardType = tacticEffectType,
                 targetPosition = tacticEffectPosition,
                 onAnimationComplete = { viewModel.onTacticEffectComplete() },
@@ -245,7 +244,7 @@ fun GameScreen(
         // Card play animation
         if (isCardAnimationVisible) {
             CardSlotAnimation(
-                isVisible = isCardAnimationVisible,
+                isVisible = true,
                 targetX = cardAnimationPosition.first,
                 targetY = cardAnimationPosition.second,
                 onAnimationComplete = { /* Handled by ViewModel */ },

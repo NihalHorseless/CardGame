@@ -22,7 +22,6 @@ import com.example.cardgame.ui.screens.MainMenuScreen
 import com.example.cardgame.ui.viewmodel.DeckBuilderViewModel
 import com.example.cardgame.ui.viewmodel.GameViewModel
 import com.example.cardgame.ui.viewmodel.GameViewModelFactory
-import kotlinx.coroutines.time.delay
 
 @Composable
 fun CardGameNavigation() {

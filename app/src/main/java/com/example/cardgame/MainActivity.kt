@@ -6,16 +6,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import com.example.cardgame.audio.MusicManager
-import com.example.cardgame.data.ServiceLocator
 import com.example.cardgame.ui.navigations.CardGameNavigation
-import com.example.cardgame.ui.viewmodel.GameViewModel
-import com.example.cardgame.ui.screens.GameScreen
 import com.example.cardgame.ui.theme.CardGameTheme
 
 class MainActivity : ComponentActivity() {
@@ -35,6 +29,7 @@ class MainActivity : ComponentActivity() {
     }
 
 
+    @SuppressLint("SourceLockedOrientationActivity")
     private fun screenConfigurations() {
         window?.let {
             // Enable immersive mode

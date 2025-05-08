@@ -7,7 +7,7 @@ import com.example.cardgame.game.Player
  * Draw cards from your deck
  */
 class DrawCardsEffect(
-    val cardCount: Int
+    private val cardCount: Int
 ) : TacticEffect {
     override val name = "Card Draw"
     override val description = "Draw $cardCount card${if(cardCount > 1) "s" else ""} from your deck"

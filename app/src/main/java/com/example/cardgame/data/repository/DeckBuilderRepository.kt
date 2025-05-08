@@ -13,7 +13,6 @@ class DeckBuilderRepository(
     // Constants for deck validation
     companion object {
         const val DECK_SIZE = 30
-        const val MAX_DECK_SIZE = 40
         const val MAX_CUSTOM_DECKS = 5
     }
 
@@ -27,7 +26,7 @@ class DeckBuilderRepository(
     /**
      * Get a filtered list of cards based on search criteria
      */
-    fun searchCards(query: String, filters: Map<String, Any> = emptyMap()): List<Card> {
+    fun searchCards(query: String): List<Card> {
         return cardRepository.getAllCards().filter { card ->
             // Simple name search
             val matchesQuery = card.name.contains(query, ignoreCase = true) ||

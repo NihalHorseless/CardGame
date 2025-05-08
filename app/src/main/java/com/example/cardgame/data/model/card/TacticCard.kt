@@ -2,7 +2,6 @@ package com.example.cardgame.data.model.card
 
 import com.example.cardgame.data.enum.TacticCardType
 import com.example.cardgame.data.enum.TargetType
-import com.example.cardgame.data.model.effect.TacticEffect
 import com.example.cardgame.game.GameManager
 import com.example.cardgame.game.Player
 

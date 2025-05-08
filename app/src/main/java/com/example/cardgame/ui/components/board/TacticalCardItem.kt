@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -20,7 +19,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -31,9 +29,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.cardgame.R
-import com.example.cardgame.data.enum.FortificationType
 import com.example.cardgame.data.enum.TacticCardType
-import com.example.cardgame.data.enum.TargetType
 import com.example.cardgame.data.model.card.TacticCard
 import com.example.cardgame.ui.theme.bloodDropShape
 import com.example.cardgame.ui.theme.libreFont
@@ -56,15 +52,6 @@ fun TacticCardItem(
         TacticCardType.BUFF -> Color(0xFF4CAF50)           // Green
         TacticCardType.DEBUFF -> Color(0xFF7B1FA2)         // Purple
         TacticCardType.SPECIAL -> Color(0xFF1976D2)        // Blue
-    }
-
-    // Target type indicator color
-    val targetColor = when (card.targetType) {
-        TargetType.FRIENDLY -> Color(0xFF4CAF50)  // Green
-        TargetType.ENEMY -> Color(0xFFE53935)     // Red
-        TargetType.ANY -> Color(0xFFFFC107)       // Amber
-        TargetType.BOARD -> Color(0xFF673AB7)     // Deep Purple
-        TargetType.NONE -> Color(0xFF607D8B)      // Blue Grey
     }
 
 

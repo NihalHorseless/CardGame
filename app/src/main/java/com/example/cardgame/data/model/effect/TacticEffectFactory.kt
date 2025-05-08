@@ -60,18 +60,6 @@ object TacticEffectFactory {
     }
 
     /**
-     * Create a function that can be used with TacticCard's effect parameter
-     *
-     * @param effect The TacticEffect to convert
-     * @return A function that applies the effect
-     */
-    fun createEffectFunction(effect: TacticEffect): (Player, GameManager, Int?) -> Boolean {
-        return { player, gameManager, targetPosition ->
-            effect.apply(player, gameManager, targetPosition)
-        }
-    }
-
-    /**
      * Create a no-op effect that does nothing
      */
     private fun createNoOpEffect(): TacticEffect {

@@ -1,8 +1,6 @@
 package com.example.cardgame.data.storage
 
 import com.example.cardgame.data.enum.FortificationType
-import com.example.cardgame.data.enum.TacticCardType
-import com.example.cardgame.data.enum.TargetType
 import com.example.cardgame.data.enum.UnitEra
 import com.example.cardgame.data.enum.UnitType
 import com.example.cardgame.data.model.abilities.Ability
@@ -12,8 +10,6 @@ import com.example.cardgame.data.model.card.FortificationCard
 import com.example.cardgame.data.model.card.TacticCard
 import com.example.cardgame.data.model.card.UnitCard
 import com.example.cardgame.game.GameManager
-import com.example.cardgame.game.Player
-import com.example.cardgame.util.CardTestData.samplePlayer
 import com.google.gson.JsonDeserializationContext
 import com.google.gson.JsonDeserializer
 import com.google.gson.JsonElement

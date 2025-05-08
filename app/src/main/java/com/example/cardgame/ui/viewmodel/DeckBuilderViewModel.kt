@@ -93,7 +93,7 @@ class DeckBuilderViewModel(
     /**
      * Filter cards based on current query and filters
      */
-    fun filterCards() {
+    private fun filterCards() {
         viewModelScope.launch {
             _filteredCards.value = deckBuilderRepository.searchCards(_searchQuery.value)
         }
@@ -268,28 +268,15 @@ class DeckBuilderViewModel(
         return _currentDeckCards.size == DeckBuilderRepository.DECK_SIZE
     }
 
-    /**
-     * Get current deck card count
-     */
-    fun getCurrentDeckCardCount(): Int {
-        return _currentDeckCards.size
-    }
-
-    /**
-     * Clear status message
-     */
-    fun clearStatusMessage() {
-        _statusMessage.value = null
-    }
 
     /**
      * Sound effects for menu actions
      */
-    fun playMenuSoundOne() {
+    private fun playMenuSoundOne() {
         soundManager?.playSound(SoundType.MENU_TAP)
     }
 
-    fun playMenuSoundTwo() {
+    private fun playMenuSoundTwo() {
         soundManager?.playSound(SoundType.MENU_TAP_TWO)
     }
 

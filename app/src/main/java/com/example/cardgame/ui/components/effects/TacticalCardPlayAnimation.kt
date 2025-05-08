@@ -50,7 +50,7 @@ fun TacticCardEffectAnimation(
     // Select the appropriate GIF resource based on card type
     val gifResourceId = when (cardType) {
         TacticCardType.DIRECT_DAMAGE -> R.drawable.tactical_card_rockets // Fire/impact effect
-        TacticCardType.AREA_EFFECT -> R.drawable.blood_explosion_two // Explosion effect
+        TacticCardType.AREA_EFFECT -> R.drawable.big_kaboom // Explosion effect
         TacticCardType.BUFF -> R.drawable.buff_particles // Green magical glow
         TacticCardType.DEBUFF -> R.drawable.tactical_card_debuff // Purple energy swirl
         TacticCardType.SPECIAL -> R.drawable.buff_particles // Blue magical sparkles
@@ -103,10 +103,8 @@ fun TacticCardEffectAnimation(
 
         // Trigger completion after animation duration
         LaunchedEffect(isVisible) {
-            if (isVisible) {
                 delay(1200) // Animation duration - slightly longer than GIFs
                 onAnimationComplete()
-            }
         }
     }
 }

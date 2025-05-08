@@ -35,6 +35,7 @@ import com.example.cardgame.R
 import com.example.cardgame.data.enum.UnitEra
 import com.example.cardgame.data.enum.UnitType
 import com.example.cardgame.data.model.card.UnitCard
+import com.example.cardgame.ui.theme.EnemyColor
 import com.example.cardgame.ui.theme.kiteShieldShape
 import com.example.cardgame.ui.theme.thickSwordShape
 
@@ -104,7 +105,7 @@ fun UnitSlot(
                 .clickable(enabled = unit != null) { onClick() },
             shape = GenericShape { size, _ ->
                 addOval(Rect(0f, 0f, size.width, size.height))
-            }, colors = CardDefaults.cardColors(containerColor = cardColor)
+            }, colors = CardDefaults.cardColors(containerColor = if(isPlayerUnit) cardColor else EnemyColor)
         ) {
             if (unit != null) {
                 // Card with unit
@@ -225,7 +226,7 @@ fun UnitSlot(
                     )
                 }
             }
-            if (isSelected && unit?.unitType == UnitType.MUSKET && isPlayerUnit && (canMove || canAttack)) {
+            if (isSelected && unit.unitType == UnitType.MUSKET && isPlayerUnit && (canMove || canAttack)) {
                 // Bayonet button in top-end corner
                 Box(
                     modifier = Modifier

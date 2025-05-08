@@ -40,7 +40,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -50,7 +49,6 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -81,7 +79,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.cardgame.R
-import com.example.cardgame.data.enum.UnitEra
 import com.example.cardgame.data.model.card.Card
 import com.example.cardgame.data.model.card.FortificationCard
 import com.example.cardgame.data.model.card.TacticCard
@@ -105,7 +102,6 @@ fun DeckEditorScreen(
     val availableCards by viewModel.filteredCards
     val currentDeckCards = viewModel.currentDeckCards
     val searchQuery by viewModel.searchQuery
-    val statusMessage by viewModel.statusMessage.collectAsState(initial = null)
 
     // Selected card for detail view
     var selectedCard by remember { mutableStateOf<Card?>(null) }
@@ -334,7 +330,7 @@ fun DeckEditorScreen(
 
             DeckCards(
                 cards = currentDeckCards,
-                onCardClick = { card, index ->
+                onCardClick = { _, index ->
                     // When clicking an added card, remove it
                     viewModel.removeCardFromDeck(index)
                 },
@@ -473,20 +469,7 @@ fun CompactCardItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val cardColor = when (card) {
-        is UnitCard -> {
-            when (card.unitEra) {
-                UnitEra.ANCIENT -> Color(0xFF8D6E63)
-                UnitEra.ROMAN -> Color(0xFFB71C1C)
-                UnitEra.MEDIEVAL -> Color(0xFF1A237E)
-                UnitEra.NAPOLEONIC -> Color(0xFF4A148C)
-            }
-        }
 
-        is TacticCard -> Color(0xFF00695C)
-        is FortificationCard -> Color(0xFF4E342E)
-        else -> Color(0xFF424242)
-    }
     Box(
         modifier = modifier
             .shadow(
@@ -612,7 +595,7 @@ fun DeckCards(
                         .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    uniqueCards.forEachIndexed { index, card ->
+                    uniqueCards.forEachIndexed { _, card ->
                         val count = cardGroups[card.id] ?: 0
 
                         // Find the index of the first occurrence of this card
@@ -637,20 +620,7 @@ fun DeckCardWithCount(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val cardColors = when (card) {
-        is UnitCard -> {
-            when (card.unitEra) {
-                UnitEra.ANCIENT -> Color(0xFF8D6E63)
-                UnitEra.ROMAN -> Color(0xFFB71C1C)
-                UnitEra.MEDIEVAL -> Color(0xFF1A237E)
-                UnitEra.NAPOLEONIC -> Color(0xFF4A148C)
-            }
-        }
 
-        else -> {
-            Color(0xFF00695C)
-        }
-    }
     Box(
         modifier = modifier
             .width(70.dp)

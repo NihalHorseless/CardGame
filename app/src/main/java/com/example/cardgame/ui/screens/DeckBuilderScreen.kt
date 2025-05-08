@@ -3,7 +3,6 @@ package com.example.cardgame.ui.screens
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,20 +21,16 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -59,10 +54,9 @@ fun DeckBuilderScreen(
     onNavigateToEditor: (String?) -> Unit // null for new deck, deckId for edit
 ) {
     val playerDecks by viewModel.playerDecks
-    val statusMessage by viewModel.statusMessage.collectAsState(initial = null)
 
     // Keep track of current deck index for browsing
-    var currentDeckIndex by remember { mutableStateOf(0) }
+    var currentDeckIndex by remember { mutableIntStateOf(0) }
 
     // Get current deck or null if no decks
     val currentDeck = playerDecks.getOrNull(currentDeckIndex)
@@ -354,11 +348,10 @@ fun EmptyDeckState(onCreateDeck: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Icon(
-            imageVector = Icons.Default.Face,
+        Image(
+            painter = painterResource(R.drawable.marshal_baton),
             contentDescription = null,
-            tint = Color.White.copy(alpha = 0.7f),
-            modifier = Modifier.size(80.dp)
+            modifier = Modifier.size(120.dp)
         )
 
         Spacer(modifier = Modifier.height(16.dp))

@@ -48,7 +48,7 @@ class GameViewModel(
     val playerContext: PlayerContext get() = _playerContext
 
     private val _opponentContext get() = _gameManager.getPlayerContextById(1)
-    val opponentContext: PlayerContext get() = _opponentContext
+    private val opponentContext: PlayerContext get() = _opponentContext
 
     // Available decks
     private val _availableDecks = mutableStateOf<List<String>>(emptyList())
@@ -205,7 +205,7 @@ class GameViewModel(
     private val _availableDeckNames = mutableStateOf<List<String>>(emptyList())
     val availableDeckNames: State<List<String>> = _availableDeckNames
 
-    fun loadAvailableDeckNames() {
+    private fun loadAvailableDeckNames() {
         viewModelScope.launch {
             val deckNames = cardRepository.getAllAvailableDeckNames()
             _availableDeckNames.value = deckNames
@@ -346,7 +346,7 @@ class GameViewModel(
         Log.d("LevelConfig", opponentDeck.toString())
 
         // Set player and opponent health
-        _gameManager.players[0].health = level.startingHealth ?: 30
+        _gameManager.players[0].health = level.startingHealth
         _gameManager.players[1].health = when (level.difficulty) {
             Difficulty.EASY -> 30
             Difficulty.MEDIUM -> 40
@@ -356,8 +356,8 @@ class GameViewModel(
         _opponentHealth.intValue = _gameManager.players[1].health
         Log.d("LevelConfig", "${_gameManager.players[1].health}  $opponentHealth")
         // Set starting mana
-        _gameManager.players[0].currentMana = level.startingMana ?: 1
-        _gameManager.players[1].currentMana = level.startingMana ?: 1
+        _gameManager.players[0].currentMana = level.startingMana
+        _gameManager.players[1].currentMana = level.startingMana
 
         // Apply special rules
         applySpecialRules(level.specialRules)
@@ -570,7 +570,7 @@ Log.d("StartGame",playerDeck.toString())
      * Player 0 can deploy in the bottom two rows (3-4 in a 5x5 board)
      * Player 1 can deploy in the top two rows (0-1 in a 5x5 board)
      */
-    fun getValidDeploymentPositions(playerId: Int): List<Pair<Int, Int>> {
+    private fun getValidDeploymentPositions(playerId: Int): List<Pair<Int, Int>> {
         val validPositions = mutableListOf<Pair<Int, Int>>()
 
         // Define row ranges based on player ID
@@ -858,13 +858,13 @@ Log.d("StartGame",playerDeck.toString())
 
         // Update board
         updateBoardState()
-        Log.d("LevelConfigD", _opponentHealth.value.toString())
+        Log.d("LevelConfigD", _opponentHealth.intValue.toString())
         // Update player stats
         _playerMana.intValue = _gameManager.players[0].currentMana
         _playerMaxMana.intValue = _gameManager.players[0].maxMana
         _playerHealth.intValue = _gameManager.players[0].health
         _opponentHealth.intValue = _gameManager.players[1].health
-        Log.d("LevelConfigD", _opponentHealth.value.toString())
+        Log.d("LevelConfigD", _opponentHealth.intValue.toString())
 
         // Update opponent stats
         _opponentHandSize.intValue = _gameManager.players[1].hand.size
@@ -1361,7 +1361,7 @@ Log.d("StartGame",playerDeck.toString())
     /**
      * Play a card from the player's hand to a specific position on the board
      */
-    fun playCard(cardIndex: Int, targetRow: Int, targetCol: Int) {
+    private fun playCard(cardIndex: Int, targetRow: Int, targetCol: Int) {
         if (!_isPlayerTurn.value) return
 
         // Check if card can be played
@@ -1432,7 +1432,7 @@ Log.d("StartGame",playerDeck.toString())
      * Convenience method to play a card without specifying a target
      * It will find the first available position in the player's deployment zone
      */
-    fun playCard(cardIndex: Int) {
+    private fun playCard(cardIndex: Int) {
         if (!_isPlayerTurn.value) return
 
         // Check if card can be played
@@ -1519,7 +1519,7 @@ Log.d("StartGame",playerDeck.toString())
                             bestMove.second,
                             context = opponentContext
                         )
-                        Log.d("AIMove", "Position : ${position} Best Move: ${bestMove} ")
+                        Log.d("AIMove", "Position : $position Best Move: $bestMove ")
                         updateAllGameStates()
                         delay(300)
                     }
@@ -1761,7 +1761,7 @@ Log.d("StartGame",playerDeck.toString())
     private val _visualHealthMap = mutableStateOf<Map<Card, Int>>(emptyMap())
     val visualHealthMap: State<Map<Card, Int>> = _visualHealthMap
 
-    fun animateHealthDecrease(unit: Card, damageAmount: Int, completion: () -> Unit) {
+    private fun animateHealthDecrease(unit: Card, damageAmount: Int, completion: () -> Unit) {
 
         val startHealth = when(unit) {
             is FortificationCard -> unit.health
@@ -1823,7 +1823,7 @@ Log.d("StartGame",playerDeck.toString())
     val opponentVisualHealth: State<Int?> = _opponentVisualHealth
 
     // Animation method for player health decreases
-    fun animatePlayerHealthDecrease(isPlayer: Boolean, damageAmount: Int, completion: () -> Unit) {
+    private fun animatePlayerHealthDecrease(isPlayer: Boolean, damageAmount: Int, completion: () -> Unit) {
         val player = if (isPlayer) _gameManager.players[0] else _gameManager.players[1]
         val startHealth = player.health
         var remainingDamage = damageAmount
@@ -2008,7 +2008,7 @@ Log.d("StartGame",playerDeck.toString())
     }
 
 
-    fun checkGameOver() {
+    private fun checkGameOver() {
         // Original implementation to check if any player's health is 0
         val playerIsDead = _gameManager.players[0].health <= 0
         val opponentIsDead = _gameManager.players[1].health <= 0

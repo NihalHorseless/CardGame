@@ -28,7 +28,7 @@ class CardRepository(
     /**
      * Get a list of all available predefined player deck names
      */
-    fun getAvailablePlayerDeckNames(): List<String> {
+    private fun getAvailablePlayerDeckNames(): List<String> {
         return cardLoader.getAvailableDeckNames()
     }
 
@@ -75,7 +75,7 @@ class CardRepository(
 
     suspend fun getAllAvailableDeckNames(): List<String> {
         // Get predefined deck names
-        val predefinedDecks = getAvailablePlayerDeckNames().map {
+        val predefinedDecks = getAvailablePlayerDeckNames().map { it ->
             it.replace("_", " ").split(" ").joinToString(" ") { word -> word.replaceFirstChar {
                 if (it.isLowerCase()) it.titlecase(
                     Locale.ROOT

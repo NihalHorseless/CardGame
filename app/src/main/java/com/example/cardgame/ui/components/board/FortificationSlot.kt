@@ -26,6 +26,7 @@ import androidx.compose.ui.zIndex
 import com.example.cardgame.R
 import com.example.cardgame.data.enum.FortificationType
 import com.example.cardgame.data.model.card.FortificationCard
+import com.example.cardgame.ui.theme.EnemyColor
 import com.example.cardgame.ui.theme.kiteShieldShape
 import com.example.cardgame.ui.theme.thickSwordShape
 
@@ -34,7 +35,6 @@ fun FortificationSlot(
     fortification: FortificationCard,
     isSelected: Boolean,
     isPlayerFortification: Boolean,
-    canAttack: Boolean = false,
     visualHealth: Int? = null,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -51,20 +51,20 @@ fun FortificationSlot(
 
     Box(
         modifier = modifier
-            .size(65.dp,80.dp) // Adjust size to fit the shield shape
+            .size(65.dp, 80.dp) // Adjust size to fit the shield shape
             .padding(2.dp),
         contentAlignment = Alignment.Center
     ) {
         // Main fortification with shield shape
         Box(
             modifier = Modifier
-                .size(65.dp,80.dp)
+                .size(65.dp, 80.dp)
                 .shadow(
                     elevation = if (isSelected) 8.dp else 2.dp,
                     shape = RectangleShape
                 )
                 .clip(RectangleShape)
-                .background(backgroundColor)
+                .background(color = if (isPlayerFortification) backgroundColor else EnemyColor)
                 .border(
                     width = if (isSelected) 2.dp else 1.dp,
                     color = if (isSelected) Color.Yellow else borderColor,

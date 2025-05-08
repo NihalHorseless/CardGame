@@ -31,7 +31,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
-import com.example.cardgame.data.enum.FortificationType
 import com.example.cardgame.data.enum.InteractionMode
 import com.example.cardgame.data.enum.TacticCardType
 import com.example.cardgame.data.model.card.Card
@@ -133,10 +132,10 @@ fun GameBoard(
                             interactionMode == InteractionMode.CARD_TARGETING
 
                     // Determine the target indicator color based on the targeting type
-                    val targetIndicatorColor = when {
-                        targetingType == TacticCardType.BUFF -> Color(0xFF4CAF50) // Green for buffs
-                        targetingType == TacticCardType.DIRECT_DAMAGE -> Color(0xFFF44336) // Red for direct damage
-                        targetingType == TacticCardType.AREA_EFFECT -> Color(0xFFFF9800) // Orange for area effects
+                    val targetIndicatorColor = when (targetingType) {
+                        TacticCardType.BUFF -> Color(0xFF4CAF50) // Green for buffs
+                        TacticCardType.DIRECT_DAMAGE -> Color(0xFFF44336) // Red for direct damage
+                        TacticCardType.AREA_EFFECT -> Color(0xFFFF9800) // Orange for area effects
                         else -> Color(0xFFF44336) // Default red
                     }
 
@@ -149,11 +148,6 @@ fun GameBoard(
                         unit.canAttackThisTurn
                     } else false
 
-                    // Determine if fortification (tower) can attack
-                    val canFortificationAttack =
-                        if (fortification != null && isPlayerFortification) {
-                            fortification.fortType == FortificationType.TOWER && fortification.canAttackThisTurn
-                        } else false
 
                     // Wrap with position tracker
                     CellPositionTracker(
@@ -187,7 +181,6 @@ fun GameBoard(
                             pulseAlpha = pulseAlpha,
                             canMove = canMove,
                             canAttack = canAttack,
-                            canFortificationAttack = canFortificationAttack,
                             onAttachBayonet = { onAttachBayonet(row, col) },
                             onClick = { onCellClick(row, col) },
                             modifier = Modifier.fillMaxSize()
@@ -203,10 +196,10 @@ fun GameBoard(
 @Composable
 fun UnifiedBoardCell(
     unit: UnitCard?,
-    fortification: FortificationCard?, // Add this parameter
+    fortification: FortificationCard?,
     isSelected: Boolean,
     isPlayerUnit: Boolean,
-    isPlayerFortification: Boolean = false, // Add this parameter
+    isPlayerFortification: Boolean = false,
     isNeutralZone: Boolean,
     isDeploymentZone: Boolean,
     isDeploymentPosition: Boolean = false,
@@ -219,7 +212,6 @@ fun UnifiedBoardCell(
     canAttack: Boolean = false,
     onAttachBayonet: (() -> Unit)? = null,
     visualHealthMap: Map<Card, Int> = emptyMap(),
-    canFortificationAttack: Boolean = false, // Add this parameter
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -284,7 +276,6 @@ fun UnifiedBoardCell(
                     fortification = fortification,
                     isSelected = isSelected,
                     isPlayerFortification = isPlayerFortification,
-                    canAttack = canFortificationAttack,
                     onClick = onClick,
                     visualHealth = visualHealthMap[fortification],
                     modifier = Modifier.fillMaxSize(0.9f)
