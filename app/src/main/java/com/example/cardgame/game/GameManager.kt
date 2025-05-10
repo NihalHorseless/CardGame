@@ -8,12 +8,9 @@ import com.example.cardgame.data.model.abilities.BayonetAbility
 import com.example.cardgame.data.model.abilities.TauntManager
 import com.example.cardgame.data.model.campaign.CampaignLevel
 import com.example.cardgame.data.model.campaign.Difficulty
+import com.example.cardgame.data.model.card.Card
 import com.example.cardgame.data.model.card.FortificationCard
 import com.example.cardgame.data.model.card.UnitCard
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 class GameManager {
@@ -25,6 +22,10 @@ class GameManager {
 
     // Create player contexts
     private val playerContexts = players.associateWith { PlayerContext(it, gameBoard) }
+
+    private var entityDestructionCallback: ((Card, Pair<Int, Int>) -> Unit)? = null
+
+    private val entitiesBeingAnimated = mutableSetOf<Card>()
 
     var gameState: GameState = GameState.NOT_STARTED
     private var winner: Player? = null
@@ -115,35 +116,60 @@ class GameManager {
         repeat(3) { player.drawCard() }
     }
 
-     fun checkForDestroyedUnits() {
+    fun setEntityDestructionCallback(callback: (Card, Pair<Int, Int>) -> Unit) {
+        entityDestructionCallback = callback
+    }
+
+    fun markEntityForAnimation(entity: Card) {
+        entitiesBeingAnimated.add(entity)
+    }
+
+    // Method to unmark an entity (called after animation and removal)
+    fun unmarkEntityForAnimation(entity: Card) {
+        entitiesBeingAnimated.remove(entity)
+    }
+
+    // Modify checkForDestroyedUnits
+    fun checkForDestroyedUnits() {
         val destroyedUnits = mutableListOf<UnitCard>()
 
         // Find dead units
         for (row in 0 until gameBoard.rows) {
             for (col in 0 until gameBoard.columns) {
                 val unit = gameBoard.getUnitAt(row, col)
-                if (unit != null && unit.isDead()) {
+                if (unit != null && unit.isDead() && unit !in entitiesBeingAnimated) {
                     destroyedUnits.add(unit)
+
+                    // Notify our callback about this destroyed unit
+                    entityDestructionCallback?.invoke(unit, Pair(row, col))
+
+                    // Mark as being animated to prevent duplicate processing
+                    markEntityForAnimation(unit)
                 }
             }
         }
-        CoroutineScope(Dispatchers.Main).launch {
-            delay(700)
-            // Remove dead units
-            destroyedUnits.forEach { unit ->
-                val position = gameBoard.getUnitPosition(unit)
-                if (position != null) {
-                    gameBoard.removeUnit(position.first, position.second)
-                }
-            }
-        }
-
-
-        // Also check for destroyed fortifications
-        checkForDestroyedFortifications()
 
         // Check win condition
         checkWinCondition()
+    }
+
+    fun checkForDestroyedFortifications() {
+        val destroyedFortifications = mutableListOf<Pair<FortificationCard, Pair<Int, Int>>>()
+
+        // Find destroyed fortifications
+        for (row in 0 until gameBoard.rows) {
+            for (col in 0 until gameBoard.columns) {
+                val fort = gameBoard.getFortificationAt(row, col)
+                if (fort != null && fort.isDestroyed()) {
+                    destroyedFortifications.add(Pair(fort, Pair(row, col)))
+                }
+            }
+        }
+
+        // Notify callback for each fortification
+        destroyedFortifications.forEach { (fort, position) ->
+            entityDestructionCallback?.invoke(fort, position)
+        }
     }
 
     fun getOpponentOf(player: Player?): Player? {
@@ -456,27 +482,6 @@ class GameManager {
         return true
     }
 
-    fun checkForDestroyedFortifications() {
-        // Find destroyed fortifications
-        val destroyedFortifications = mutableListOf<FortificationCard>()
-
-        for (row in 0 until gameBoard.rows) {
-            for (col in 0 until gameBoard.columns) {
-                val fortification = gameBoard.getFortificationAt(row, col)
-                if (fortification != null && fortification.isDestroyed()) {
-                    destroyedFortifications.add(fortification)
-                }
-            }
-        }
-
-        // Remove destroyed fortifications
-        destroyedFortifications.forEach { fortification ->
-            val position = gameBoard.getFortificationPosition(fortification)
-            if (position != null) {
-                gameBoard.removeFortification(position.first, position.second)
-            }
-        }
-    }
 
     /**
      * Gets valid deployment positions for a player based on their ID.

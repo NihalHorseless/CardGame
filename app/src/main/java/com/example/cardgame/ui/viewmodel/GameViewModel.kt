@@ -190,6 +190,9 @@ class GameViewModel(
     init {
         // Load available decks when ViewModel is created
         loadAvailableDecks()
+        _gameManager.setEntityDestructionCallback { entity, position ->
+            playDeathAnimation(entity, position)
+        }
     }
 
     /**
@@ -1150,6 +1153,9 @@ Log.d("StartGame",playerDeck.toString())
                 // Store original health before attack for animation
                 val originalHealth = targetUnit.health
 
+                // Check if this attack will kill the target
+                val willKillTarget = targetUnit.health <= damage
+
                 // Perform the actual attack using contexts
                 val attackResult = _gameManager.executeAttackWithContext(
                     context,
@@ -1160,24 +1166,32 @@ Log.d("StartGame",playerDeck.toString())
                 )
 
                 if (attackResult) {
+                    // If the attack killed the target unit, trigger death animation
+                    if (willKillTarget) {
+                        // Add this position to entities in death animation
+                        _entitiesInDeathAnimation.value = _entitiesInDeathAnimation.value + Pair(targetRow, targetCol)
 
-                    // Animate health decrease
-                    val actualDamage = originalHealth - targetUnit.health
+                        // Play death animation
+                        playDeathAnimation(targetUnit, Pair(targetRow, targetCol))
+                    } else {
+                        // If not killed, just animate the health decrease
+                        val actualDamage = originalHealth - targetUnit.health
 
-                    // Restore health temporarily for animation
-                    val tempHealth = targetUnit.health
-                    targetUnit.health = originalHealth
+                        // Restore health temporarily for animation
+                        val tempHealth = targetUnit.health
+                        targetUnit.health = originalHealth
 
-                    // Animate health decrease
-                    animateHealthDecrease(targetUnit, actualDamage) {
-                        // Restore the actual health once animation completes
-                        targetUnit.health = tempHealth
+                        // Animate health decrease
+                        animateHealthDecrease(targetUnit, actualDamage) {
+                            // Restore the actual health once animation completes
+                            targetUnit.health = tempHealth
 
-                        Log.d("AnimateHealth", "ViewModel")
-                        // Reset counter state
-                        _isCounterBonus.value = false
+                            Log.d("AnimateHealth", "ViewModel")
+                            // Reset counter state
+                            _isCounterBonus.value = false
 
-                        updateAllGameStates()
+                            updateAllGameStates()
+                        }
                     }
                 } else {
                     _statusMessage.value = "Cannot attack with this unit"
@@ -1197,6 +1211,11 @@ Log.d("StartGame",playerDeck.toString())
             )
 
             if (attackResult) {
+                // Check if this attack killed the target
+                if (targetUnit.isDead()) {
+                    // Play death animation
+                    playDeathAnimation(targetUnit, Pair(targetRow, targetCol))
+                }
 
                 // Reset states...
                 resetSelectionStates()
@@ -1261,8 +1280,6 @@ Log.d("StartGame",playerDeck.toString())
                 // Wait for damage
                 delay(300)
 
-                if (targetFortHealth <= damage)
-                    soundManager.playSound(SoundType.FORTIFICATION_DESTROY)
                 // Perform the actual attack
                 val attackResult = _gameManager.executeUnitAttackFortification(
                     attackerUnit,
@@ -1883,6 +1900,128 @@ Log.d("StartGame",playerDeck.toString())
             completion()
         }
     }
+    // Death animation states and functions
+    private val _isDeathAnimationVisible = mutableStateOf(false)
+    val isDeathAnimationVisible: State<Boolean> = _isDeathAnimationVisible
+
+    private val _deathEntityType = mutableStateOf<Any>(UnitType.INFANTRY)
+    val deathEntityType: State<Any> = _deathEntityType
+
+    private val _deathAnimationPosition = mutableStateOf(Pair(0f, 0f))
+    val deathAnimationPosition: State<Pair<Float, Float>> = _deathAnimationPosition
+
+    // Track entities that are visually being destroyed but not yet removed from the game state
+    private val entitiesBeingDestroyed = mutableSetOf<Card>()
+
+    private val _entitiesInDeathAnimation = mutableStateOf<Set<Pair<Int, Int>>>(emptySet())
+    val entitiesInDeathAnimation: State<Set<Pair<Int, Int>>> = _entitiesInDeathAnimation
+
+    // Method to trigger death animation
+    fun playDeathAnimation(entity: Card, position: Pair<Int, Int>) {
+        val cellPos = cellPositions[position] ?: return
+
+        // If this entity is already in death animation, don't trigger again
+        if (position in _entitiesInDeathAnimation.value) return
+
+        // Add position to tracked positions
+        _entitiesInDeathAnimation.value = _entitiesInDeathAnimation.value + position
+
+        when (entity) {
+            is UnitCard -> {
+                _deathEntityType.value = entity.unitType
+                // Play appropriate death sound
+                soundManager.playSound(SoundType.UNIT_DEATH)
+            }
+            is FortificationCard -> {
+                _deathEntityType.value = entity.fortType
+                soundManager.playSound(SoundType.FORTIFICATION_DESTROY)
+            }
+            else -> return
+        }
+
+        // Set animation position and make it visible
+        _deathAnimationPosition.value = cellPos
+        _isDeathAnimationVisible.value = true
+
+        // Schedule removal from tracking set and game state after animation completes
+        viewModelScope.launch {
+            // Determine animation duration based on entity type
+            val animationDuration = 2000L
+
+            // Wait for full animation duration
+            delay(animationDuration)
+
+            // Hide the animation first
+            _isDeathAnimationVisible.value = false
+
+            // Now we can safely remove the entity from the game
+            when (entity) {
+                is UnitCard -> {
+                    val unitPos = _gameManager.gameBoard.getUnitPosition(entity)
+                    if (unitPos != null) {
+                        _gameManager.gameBoard.removeUnit(unitPos.first, unitPos.second)
+                    }
+                }
+                is FortificationCard -> {
+                    val fortPos = _gameManager.gameBoard.getFortificationPosition(entity)
+                    if (fortPos != null) {
+                        _gameManager.gameBoard.removeFortification(fortPos.first, fortPos.second)
+                    }
+                }
+            }
+
+            // Now that entity is removed from game state, we can remove it from our tracking
+            _entitiesInDeathAnimation.value = _entitiesInDeathAnimation.value - position
+
+            // Update game state
+            updateAllGameStates()
+        }
+    }
+
+    // Method to handle finding and animating destroyed units
+    fun handleDestroyedEntities() {
+        // Find all recently destroyed units and fortifications that aren't already being animated
+        val destroyedUnits = mutableListOf<Pair<UnitCard, Pair<Int, Int>>>()
+        val destroyedForts = mutableListOf<Pair<FortificationCard, Pair<Int, Int>>>()
+
+        // Find recently dead units
+        for (row in 0 until _gameManager.gameBoard.rows) {
+            for (col in 0 until _gameManager.gameBoard.columns) {
+                // Check units
+                val unit = _gameManager.gameBoard.getUnitAt(row, col)
+                if (unit != null && unit.isDead() && unit !in entitiesBeingDestroyed) {
+                    destroyedUnits.add(Pair(unit, Pair(row, col)))
+                }
+
+                // Check fortifications
+                val fort = _gameManager.gameBoard.getFortificationAt(row, col)
+                if (fort != null && fort.isDestroyed() && fort !in entitiesBeingDestroyed) {
+                    destroyedForts.add(Pair(fort, Pair(row, col)))
+                }
+            }
+        }
+
+        // Process each destroyed entity sequentially
+        viewModelScope.launch {
+            // Process units first
+            for ((unit, position) in destroyedUnits) {
+                playDeathAnimation(unit, position)
+                delay(700) // Wait between multiple animations
+            }
+
+            // Then process fortifications
+            for ((fort, position) in destroyedForts) {
+                playDeathAnimation(fort, position)
+                delay(700) // Wait between multiple animations
+            }
+        }
+    }
+
+    // Called when animation completes
+    fun onDeathAnimationComplete() {
+        _isDeathAnimationVisible.value = false
+    }
+
     // Add this method to your GameViewModel class
     fun attachBayonet(row: Int, col: Int) {
         // Get the unit at the specified position

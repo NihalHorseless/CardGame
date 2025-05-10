@@ -422,7 +422,7 @@ fun LevelDetailsCard(
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = libreFont,
-            color = Color.White.copy(0.9f)
+            color = Color(0xFF804D15)
         )
 
 
@@ -430,7 +430,7 @@ fun LevelDetailsCard(
 
         Text(
             text = if (isLocked) "Complete the previous level to unlock" else level.description,
-            fontSize = 16.sp,
+            fontSize = 12.sp,
             fontFamily = libreFont,
             color = Color.White.copy(alpha = 0.8f),
             modifier = Modifier.padding(bottom = 8.dp)

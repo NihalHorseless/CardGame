@@ -24,7 +24,7 @@ class MusicManager(private val context: Context) {
     private val musicResources = mapOf(
         MusicTrack.MAIN_MENU to R.raw.purcel_cut,
         MusicTrack.LEVEL_SELECTION to R.raw.handel_cut,
-        MusicTrack.DECK_EDITOR to R.raw.ravel_cut
+        MusicTrack.DECK_EDITOR to R.raw.strauss_guitar
         // You can add more tracks here
     )
 

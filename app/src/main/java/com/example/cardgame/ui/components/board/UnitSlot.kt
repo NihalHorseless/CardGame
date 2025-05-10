@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Rect
@@ -45,6 +46,7 @@ fun UnitSlot(
     visualHealth: Int? = null,
     isSelected: Boolean,
     isPlayerUnit: Boolean,
+    isDying: Boolean = false,
     onAttachBayonet: (() -> Unit)? = null,
     canAttack: Boolean = false,
     canMove: Boolean = false,
@@ -70,6 +72,12 @@ fun UnitSlot(
         animationSpec = tween(200)
     )
 
+    // Fade-out animation for dying units
+    val alpha by animateFloatAsState(
+        targetValue = if (isDying) 0f else 1f,
+        animationSpec = tween(300)  // Fast fade-out
+    )
+
     // Card color based on era
     val cardColor = when (unit?.unitEra) {
         UnitEra.ANCIENT -> Color(0xFF8D6E63)    // Brown
@@ -84,6 +92,7 @@ fun UnitSlot(
         modifier = modifier
             .size(65.dp, 80.dp)
             .scale(scale)
+            .alpha(alpha)
     ) {
         // The main card with oval shape
         Card(
@@ -111,12 +120,15 @@ fun UnitSlot(
                 // Card with unit
                 Box(modifier = Modifier.fillMaxSize()) {
                     // Unit Type Icon
-                    UnitTypeIcon(
-                        unitType = unit.unitType,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .align(Alignment.Center)
-                    )
+                    if(!isDying){
+                        UnitTypeIcon(
+                            unitType = unit.unitType,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .align(Alignment.Center)
+                        )
+                    }
+
 
                 }
             } else {

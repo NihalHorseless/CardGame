@@ -26,6 +26,7 @@ import com.example.cardgame.ui.components.board.GameStatusBar
 import com.example.cardgame.ui.components.board.PlayerPortrait
 import com.example.cardgame.ui.components.effects.CardSlotAnimation
 import com.example.cardgame.ui.components.effects.GifAttackAnimation
+import com.example.cardgame.ui.components.effects.GifDeathAnimation
 import com.example.cardgame.ui.components.effects.TacticCardEffectAnimation
 import com.example.cardgame.ui.components.player.OpponentHand
 import com.example.cardgame.ui.components.player.PlayerHand
@@ -67,8 +68,10 @@ fun GameScreen(
     val isTacticEffectVisible by viewModel.isTacticEffectVisible
     val tacticEffectType by viewModel.tacticEffectType
     val tacticEffectPosition by viewModel.tacticEffectPosition
-
-
+    val isDeathAnimationVisible by viewModel.isDeathAnimationVisible
+    val deathEntityType by viewModel.deathEntityType
+    val deathAnimationPosition by viewModel.deathAnimationPosition
+    val entitiesInDeathAnimation by viewModel.entitiesInDeathAnimation
     // Deployment system states
     val selectedCardIndex by viewModel.selectedCardIndex
     val validDeploymentPositions by viewModel.validDeploymentPositions
@@ -167,6 +170,7 @@ fun GameScreen(
                             cellPositionsMap[Pair(row, col)] = Pair(x, y)
                         },
                         visualHealthMap = visualHealthMap,
+                        entitiesInDeathAnimation = entitiesInDeathAnimation,
                         modifier = Modifier.fillMaxSize()
                     )
 
@@ -228,6 +232,17 @@ fun GameScreen(
                     // Add later
                 },
                 modifier = Modifier.zIndex(10f)
+            )
+        }
+        // Death animation layer
+        if (isDeathAnimationVisible) {
+            GifDeathAnimation(
+                entityType = deathEntityType,
+                isVisible = true,
+                targetX = deathAnimationPosition.first,
+                targetY = deathAnimationPosition.second,
+                onAnimationComplete = { viewModel.onDeathAnimationComplete() },
+                modifier = Modifier.fillMaxSize().zIndex(15f) // Higher zIndex to appear on top
             )
         }
         if (isTacticEffectVisible) {

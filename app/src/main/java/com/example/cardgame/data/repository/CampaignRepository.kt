@@ -96,7 +96,8 @@ class CampaignRepository(private val context: Context) {
      * Get completed levels for a campaign
      */
     private fun getCompletedLevels(campaignId: String): List<String> {
-        val json = prefs.getString("${COMPLETED_LEVELS_KEY}_$campaignId", null) ?: return emptyList()
+        val json =
+            prefs.getString("${COMPLETED_LEVELS_KEY}_$campaignId", null) ?: return emptyList()
 
         return try {
             gson.fromJson(json, Array<String>::class.java).toList()
@@ -107,7 +108,7 @@ class CampaignRepository(private val context: Context) {
     }
 
     /**
-     * Create the Napoleon campaign
+     * Creates the Napoleon campaign
      */
     private fun createNapoleonCampaign(): Campaign {
         return Campaign(
@@ -117,33 +118,71 @@ class CampaignRepository(private val context: Context) {
             levels = listOf(
                 CampaignLevel(
                     id = "level_1",
-                    name = "Marshal Ponitowski",
-                    description = "Face Josef Ponitowski, Napoleon's trusted brave Polish prince and cavalry commander.",
+                    name = "Marshal Poniatowski, the Prince who never became the King",
+                    description = "Józef Antoni Poniatowski was born in Vienna 7 May 1763 " +
+                            "He was the nephew of the last remaining king of Poland " +
+                            "Despite his Polish heritage, he was raised in Vienna where he pursued a military career " +
+                            "During his early years he had fought for the Austrian army gaining experience at the war against the Ottomans " +
+                            "His uncle called him for his services for the war against the Russians which saw the partition of Poland ending dynasty " +
+                            "Eventually he was exiled which led their paths cross with Napoleon, since Napoleon was a supporter of independent Poland ",
                     opponentName = "Marshal Ponitowski",
                     opponentDeckId = "ponitowski_deck",  // A deck heavy on cavalry units
                     difficulty = Difficulty.EASY,
                     specialRules = listOf(
-                        SpecialRule.StartingBoard(listOf(
-                            BoardSetup(unitId = 101, row = 1, col = 1, isPlayerUnit = false),  // Enemy cavalry
-                            BoardSetup(unitId = 102, row = 1, col = 3, isPlayerUnit = false)   // Enemy cavalry
-                        ))
+                        SpecialRule.StartingBoard(
+                            listOf(
+                                BoardSetup(
+                                    unitId = 101,
+                                    row = 1,
+                                    col = 1,
+                                    isPlayerUnit = false
+                                ),  // Enemy cavalry
+                                BoardSetup(
+                                    unitId = 102,
+                                    row = 1,
+                                    col = 3,
+                                    isPlayerUnit = false
+                                )   // Enemy cavalry
+                            )
+                        )
                     ),
                     reward = "infantry_reinforcement_card"
                 ),
 
                 CampaignLevel(
                     id = "level_2",
-                    name = "Marshal Marmont's Defense",
-                    description = "Challenge Auguste de Marmont, Napoleon's most trusted marshal and defensive master.",
+                    name = "Marshal Marmont, the Brutus of Napoleon",
+                    description = "Auguste de Marmont was born in Châtillon-sur-Seine 20 July 1774 " +
+                            "He was the son of a ex-officer in the army who belonged to the petite noblesse " +
+                            "Just like his father he pursued a military career with the supervision of him in Dijon where he met Napoleon" +
+                            "Their paths crossed again in the Siege of Toulon (1793) which led to their mutual friendship as he became Napoleon's aide-de-camp " +
+                            "Marmont followed Napoleon for the upcoming campaigns of Italy,Egypt and Dalmatia where he proved himself many times leading to his promotion to marshall ",
                     opponentName = "Marshal Marmont",
                     opponentDeckId = "marmont_deck",  // A defense-focused deck with fortifications
                     difficulty = Difficulty.MEDIUM,
                     specialRules = listOf(
-                        SpecialRule.StartingBoard(listOf(
-                            BoardSetup(unitId = 201, row = 1, col = 2, isPlayerUnit = false),  // Enemy wall
-                            BoardSetup(unitId = 202, row = 1, col = 1, isPlayerUnit = false)   // Enemy tower
-                        )),
-                        SpecialRule.AdditionalCards(listOf(303, 304))  // Give player some siege cards
+                        SpecialRule.StartingBoard(
+                            listOf(
+                                BoardSetup(
+                                    unitId = 201,
+                                    row = 1,
+                                    col = 2,
+                                    isPlayerUnit = false
+                                ),  // Enemy wall
+                                BoardSetup(
+                                    unitId = 202,
+                                    row = 1,
+                                    col = 1,
+                                    isPlayerUnit = false
+                                )   // Enemy tower
+                            )
+                        ),
+                        SpecialRule.AdditionalCards(
+                            listOf(
+                                303,
+                                304
+                            )
+                        )  // Give player some siege cards
                     ),
                     reward = "artillery_card"
                 ),
@@ -155,12 +194,34 @@ class CampaignRepository(private val context: Context) {
                     opponentDeckId = "soult_deck",  // Aggressive, infantry-heavy deck
                     difficulty = Difficulty.MEDIUM,
                     specialRules = listOf(
-                        SpecialRule.StartingBoard(listOf(
-                            BoardSetup(unitId = 301, row = 2, col = 0, isPlayerUnit = false),  // Enemy infantry
-                            BoardSetup(unitId = 302, row = 2, col = 1, isPlayerUnit = false),  // Enemy infantry
-                            BoardSetup(unitId = 303, row = 2, col = 2, isPlayerUnit = false),  // Enemy infantry
-                            BoardSetup(unitId = 401, row = 4, col = 2, isPlayerUnit = true)    // Player's fortification
-                        )),
+                        SpecialRule.StartingBoard(
+                            listOf(
+                                BoardSetup(
+                                    unitId = 301,
+                                    row = 2,
+                                    col = 0,
+                                    isPlayerUnit = false
+                                ),  // Enemy infantry
+                                BoardSetup(
+                                    unitId = 302,
+                                    row = 2,
+                                    col = 1,
+                                    isPlayerUnit = false
+                                ),  // Enemy infantry
+                                BoardSetup(
+                                    unitId = 303,
+                                    row = 2,
+                                    col = 2,
+                                    isPlayerUnit = false
+                                ),  // Enemy infantry
+                                BoardSetup(
+                                    unitId = 401,
+                                    row = 4,
+                                    col = 2,
+                                    isPlayerUnit = true
+                                )    // Player's fortification
+                            )
+                        ),
                         SpecialRule.ModifiedMana(1)  // Player gets +1 max mana
                     ),
                     reward = "taunt_tactic_card"
@@ -174,12 +235,34 @@ class CampaignRepository(private val context: Context) {
                     opponentDeckId = "ney_deck",  // Aggressive, infantry-heavy deck
                     difficulty = Difficulty.MEDIUM,
                     specialRules = listOf(
-                        SpecialRule.StartingBoard(listOf(
-                            BoardSetup(unitId = 301, row = 2, col = 0, isPlayerUnit = false),  // Enemy infantry
-                            BoardSetup(unitId = 302, row = 2, col = 1, isPlayerUnit = false),  // Enemy infantry
-                            BoardSetup(unitId = 303, row = 2, col = 2, isPlayerUnit = false),  // Enemy infantry
-                            BoardSetup(unitId = 401, row = 4, col = 2, isPlayerUnit = true)    // Player's fortification
-                        )),
+                        SpecialRule.StartingBoard(
+                            listOf(
+                                BoardSetup(
+                                    unitId = 301,
+                                    row = 2,
+                                    col = 0,
+                                    isPlayerUnit = false
+                                ),  // Enemy infantry
+                                BoardSetup(
+                                    unitId = 302,
+                                    row = 2,
+                                    col = 1,
+                                    isPlayerUnit = false
+                                ),  // Enemy infantry
+                                BoardSetup(
+                                    unitId = 303,
+                                    row = 2,
+                                    col = 2,
+                                    isPlayerUnit = false
+                                ),  // Enemy infantry
+                                BoardSetup(
+                                    unitId = 401,
+                                    row = 4,
+                                    col = 2,
+                                    isPlayerUnit = true
+                                )    // Player's fortification
+                            )
+                        ),
                         SpecialRule.ModifiedMana(1)  // Player gets +1 max mana
                     ),
                     reward = "taunt_tactic_card"
@@ -231,12 +314,29 @@ class CampaignRepository(private val context: Context) {
                     difficulty = Difficulty.LEGENDARY,
                     specialRules = listOf(
                         SpecialRule.ModifiedMana(2),  // Player gets +2 max mana to have a chance
-                        SpecialRule.StartingBoard(listOf(
-                            // Napoleon's Imperial Guard
-                            BoardSetup(unitId = 501, row = 1, col = 1, isPlayerUnit = false),  // Old Guard infantry
-                            BoardSetup(unitId = 502, row = 1, col = 3, isPlayerUnit = false),  // Imperial Guard cavalry
-                            BoardSetup(unitId = 503, row = 0, col = 2, isPlayerUnit = false)   // Guard artillery
-                        ))
+                        SpecialRule.StartingBoard(
+                            listOf(
+                                // Napoleon's Imperial Guard
+                                BoardSetup(
+                                    unitId = 501,
+                                    row = 1,
+                                    col = 1,
+                                    isPlayerUnit = false
+                                ),  // Old Guard infantry
+                                BoardSetup(
+                                    unitId = 502,
+                                    row = 1,
+                                    col = 3,
+                                    isPlayerUnit = false
+                                ),  // Imperial Guard cavalry
+                                BoardSetup(
+                                    unitId = 503,
+                                    row = 0,
+                                    col = 2,
+                                    isPlayerUnit = false
+                                )   // Guard artillery
+                            )
+                        )
                     ),
                     reward = "napoleon_strategy_deck"  // A special deck as final reward
                 )

@@ -67,6 +67,7 @@ class SoundManager(private val context: Context) {
             soundMap[SoundType.PLAYER_HIT] = soundPool.load(context, R.raw.attack_on_player, 1)
             soundMap[SoundType.DAMAGE_TAP] = soundPool.load(context, R.raw.damage_tick, 1)
             soundMap[SoundType.BAYONET_SHEATHE] = soundPool.load(context, R.raw.bayonet_sheathe, 1)
+            soundMap[SoundType.UNIT_DEATH] = soundPool.load(context, R.raw.unit_death_sound, 1)
 
 
             // Game state sounds

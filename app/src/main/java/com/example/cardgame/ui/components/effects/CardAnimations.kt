@@ -23,6 +23,7 @@ import coil3.compose.AsyncImage
 import coil3.gif.GifDecoder
 import coil3.request.ImageRequest
 import com.example.cardgame.R
+import com.example.cardgame.data.enum.FortificationType
 import com.example.cardgame.data.enum.UnitType
 import kotlinx.coroutines.delay
 
@@ -133,6 +134,81 @@ fun GifAttackAnimation(
         // Auto-dismiss animation after its estimated duration (adjust based on your GIFs)
         LaunchedEffect(isVisible) {
             delay(1000) // Adjust this duration to match your GIF length
+            onAnimationComplete()
+        }
+    }
+}
+
+@Composable
+fun GifDeathAnimation(
+    entityType: Any, // UnitType or FortificationType
+    isVisible: Boolean,
+    targetX: Float,
+    targetY: Float,
+    onAnimationComplete: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (!isVisible) return
+
+    // Setup Coil's ImageLoader with GIF decoder
+    val context = LocalContext.current
+    val imageLoader = remember {
+        ImageLoader.Builder(context)
+            .components {
+                add(GifDecoder.Factory())
+            }
+            .build()
+    }
+
+    // Select appropriate GIF based on entity type
+    val animationRes = when (entityType) {
+        // Unit types
+        UnitType.INFANTRY -> R.drawable.infantry_death
+        UnitType.CAVALRY -> R.drawable.cavalry_death
+        UnitType.ARTILLERY -> R.drawable.artillery_death
+        UnitType.MISSILE -> R.drawable.musket_death
+        UnitType.MUSKET -> R.drawable.musket_death
+
+        // Fortification types
+        FortificationType.WALL -> R.drawable.wall_fall
+        FortificationType.TOWER -> R.drawable.tower_fall
+
+        // Fallback
+        else -> R.drawable.musket_death
+    }
+
+    // Determine animation size based on entity type
+    val animSize = 40.dp
+    LaunchedEffect(isVisible) {
+        // INCREASE THIS VALUE to match or exceed the actual GIF duration
+        delay(1200) // Set to same or slightly longer than viewModel delay
+        onAnimationComplete()
+    }
+
+    Box(modifier = modifier.fillMaxSize()) {
+        // Convert to dp for proper Compose positioning
+        val targetXDp = with(LocalDensity.current) { targetX.toDp() }
+        val targetYDp = with(LocalDensity.current) { targetY.toDp() }
+
+        // Calculate offset to center animation on target
+        val offsetX = targetXDp - (animSize / 2)
+        val offsetY = targetYDp - (animSize / 2)
+
+        AsyncImage(
+            model = ImageRequest.Builder(context)
+                .data(animationRes)
+                .build(),
+            contentDescription = "Death Animation",
+            imageLoader = imageLoader,
+            modifier = Modifier
+                .size(animSize)
+                .offset(x = offsetX, y = offsetY)
+        )
+
+        // Auto-dismiss animation after its estimated duration
+        LaunchedEffect(isVisible) {
+            // GIF durations vary, adjust this based on your longest GIF
+            delay(1200)
             onAnimationComplete()
         }
     }

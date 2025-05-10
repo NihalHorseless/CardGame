@@ -58,6 +58,7 @@ fun GameBoard(
     onAttachBayonet: (row: Int, col: Int) -> Unit,
     visualHealthMap: Map<Card, Int> = emptyMap(),
     registerCellPosition: (row: Int, col: Int, x: Float, y: Float) -> Unit,
+    entitiesInDeathAnimation: Set<Pair<Int, Int>> = emptySet(),
     modifier: Modifier = Modifier
 ) {
     // Animation state for pulsing effect
@@ -104,6 +105,9 @@ fun GameBoard(
             ) {
                 // Create cells in this row
                 for (col in 0 until gameBoard.columns) {
+                    val currentPosition = Pair(row, col)
+                    val isInDeathAnimation = currentPosition in entitiesInDeathAnimation
+
                     val unit = gameBoard.getUnitAt(row, col)
                     val unitOwner = unit?.let { gameBoard.getUnitOwner(it) }
                     val isPlayerUnit = unitOwner == currentPlayerId
@@ -176,6 +180,7 @@ fun GameBoard(
                             isMoveDestination = isMoveDestination,
                             isAttackTarget = isAttackTarget ,
                             isTacticTarget = isTargetPosition,
+                            isInDeathAnimation = isInDeathAnimation,
                             targetIndicatorColor = if (isTargetPosition) targetIndicatorColor else null,
                             visualHealthMap = visualHealthMap,
                             pulseAlpha = pulseAlpha,
@@ -206,6 +211,7 @@ fun UnifiedBoardCell(
     isMoveDestination: Boolean = false,
     isAttackTarget: Boolean = false,
     isTacticTarget: Boolean = false,
+    isInDeathAnimation: Boolean = false,
     targetIndicatorColor: Color? = null,
     pulseAlpha: Float = 0.6f,
     canMove: Boolean = false,
@@ -219,6 +225,7 @@ fun UnifiedBoardCell(
     val cellBackground = when {
         isSelected -> Color(0xFFFFD700).copy(alpha = 0.3f) // Gold highlight for selected
         isDeploymentPosition -> Color(0x3300FF00) // Green highlight for deployment
+        isInDeathAnimation -> Color(0x22FF0000)
         isNeutralZone -> Color(0xFF7A6F9B).copy(alpha = 0.3f) // Purple tint for neutral zone
         isDeploymentZone -> if ((isPlayerUnit && unit != null) || (isPlayerFortification && fortification != null) || (unit == null && fortification == null))
             Color(0xFF1F3F77).copy(alpha = 0.3f) // Blue tint for player deployment zone
@@ -262,6 +269,7 @@ fun UnifiedBoardCell(
                     unit = unit,
                     isSelected = isSelected,
                     isPlayerUnit = isPlayerUnit,
+                    isDying = isInDeathAnimation,
                     canMove = canMove,
                     canAttack = canAttack,
                     onClick = onClick,
@@ -276,6 +284,7 @@ fun UnifiedBoardCell(
                     fortification = fortification,
                     isSelected = isSelected,
                     isPlayerFortification = isPlayerFortification,
+                    isFortFalling = isInDeathAnimation,
                     onClick = onClick,
                     visualHealth = visualHealthMap[fortification],
                     modifier = Modifier.fillMaxSize(0.9f)

@@ -1,5 +1,7 @@
 package com.example.cardgame.ui.components.board
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -11,8 +13,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -35,6 +39,7 @@ fun FortificationSlot(
     fortification: FortificationCard,
     isSelected: Boolean,
     isPlayerFortification: Boolean,
+    isFortFalling: Boolean = false,
     visualHealth: Int? = null,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -49,10 +54,16 @@ fun FortificationSlot(
     val borderColor = if (isPlayerFortification) Color(0xFF4CAF50) else Color(0xFFE57373)
     val displayHealth = visualHealth ?: fortification.health
 
+    val alpha by animateFloatAsState(
+        targetValue = if (isFortFalling) 0f else 1f,
+        animationSpec = tween(300)  // Fast fade-out
+    )
+
     Box(
         modifier = modifier
             .size(65.dp, 80.dp) // Adjust size to fit the shield shape
-            .padding(2.dp),
+            .padding(2.dp)
+            .alpha(alpha),
         contentAlignment = Alignment.Center
     ) {
         // Main fortification with shield shape
@@ -73,12 +84,13 @@ fun FortificationSlot(
                 .clickable(onClick = onClick),
             contentAlignment = Alignment.Center
         ) {
-            // Fortification icon
-            FortificationTypeIcon(
-                fortType = fortification.fortType,
-                modifier = Modifier.size(40.dp)
-            )
-
+            if(!isFortFalling) {
+                // Fortification icon
+                FortificationTypeIcon(
+                    fortType = fortification.fortType,
+                    modifier = Modifier.size(40.dp)
+                )
+            }
         }
 
         // Attack value for towers (outside the shield)
