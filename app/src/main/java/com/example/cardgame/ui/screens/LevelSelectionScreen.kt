@@ -183,7 +183,7 @@ fun LevelSelectionScreen(
                         modifier = Modifier.size(180.dp)
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     // Level details
                     LevelDetailsCard(
@@ -547,6 +547,6 @@ fun getOpponentPortrait(opponentName: String): Int {
         "Marshal Lannes" -> R.drawable.lannes_avatar
         "Marshal Soult" -> R.drawable.marshall_soult
         "Player " -> R.drawable.player_avatar
-        else -> R.drawable.player_avatar // Fallback
+        else -> R.drawable.player_avatar
     }
 }
