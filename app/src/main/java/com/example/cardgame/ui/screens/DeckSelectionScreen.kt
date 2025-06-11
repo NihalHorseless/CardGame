@@ -1,6 +1,5 @@
 package com.example.cardgame.ui.screens
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -8,19 +7,30 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,6 +40,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.cardgame.ui.theme.bloodDropShape
+import com.example.cardgame.ui.theme.kiteShieldShape
+import com.example.cardgame.ui.theme.scallopedCircleShape
+import com.example.cardgame.ui.theme.slenderSwordShape
+import com.example.cardgame.ui.theme.thickSwordShape
 import com.example.cardgame.ui.viewmodel.GameViewModel
 
 @Composable
@@ -41,6 +56,9 @@ fun DeckSelectionScreen(
     val availableDeckIds by viewModel.availableDecks
     val selectedPlayerDeck by viewModel.selectedPlayerDeck
     val selectedOpponentDeck by viewModel.selectedOpponentDeck
+
+    // State to track which player's deck we're currently selecting
+    var currentSelectedPlayer by remember { mutableStateOf(0) } // 0 for Player 1, 1 for Player 2
 
     LaunchedEffect(Unit) {
         viewModel.loadAvailableDecks()
@@ -65,38 +83,97 @@ fun DeckSelectionScreen(
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             color = Color.White,
-            modifier = Modifier.padding(vertical = 24.dp)
+            modifier = Modifier.padding(vertical = 16.dp)
         )
 
-        // Main selection area
+
+        // Deck grid
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(availableDeckIds.zip(availableDeckNames)) { (deckId, deckName) ->
+                DeckGridItem(
+                    deckName = deckName,
+                    isPlayerSelected = deckId == selectedPlayerDeck,
+                    isOpponentSelected = deckId == selectedOpponentDeck,
+                    onClick = {
+                        if (currentSelectedPlayer == 0) {
+                            viewModel.setPlayerDeck(deckId)
+                        } else {
+                            viewModel.setOpponentDeck(deckId)
+                        }
+                    }
+                )
+            }
+        }
+        // Player selection filter chips
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(bottom = 16.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Player deck selection
-            DeckSelectionColumn(
-                title = "YOUR DECK",
-                deckNames = availableDeckNames,
-                deckIds = availableDeckIds,
-                selectedDeck = selectedPlayerDeck,
-                onDeckSelected = { viewModel.setPlayerDeck(it) },
-                modifier = Modifier.weight(1f),
-                highlightColor = Color(0xFF5271FF)
+            val playerColor = Color(0xFF5271FF)
+            val opponentColor = Color(0xFFFF5252)
+
+            // Player 1 chip
+            FilterChip(
+                selected = currentSelectedPlayer == 0,
+                onClick = { currentSelectedPlayer = 0 },
+                label = { Text("Player 1", textAlign = TextAlign.Center) },
+                colors = FilterChipDefaults.filterChipColors(
+                    containerColor = Color(0xFF2A2D42),
+                    labelColor = Color.White,
+                    selectedContainerColor = playerColor,
+                    selectedLabelColor = Color.White
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    borderColor = playerColor,
+                    selectedBorderColor = playerColor,
+                    borderWidth = 1.dp,
+                    selectedBorderWidth = 2.dp,
+                    selected = currentSelectedPlayer == 0,
+                    enabled = true
+                ),
+                shape = scallopedCircleShape,
+                modifier = Modifier.padding(end = 8.dp)
+                    .size(80.dp)
             )
 
-            // Opponent deck selection
-            DeckSelectionColumn(
-                title = "OPPONENT",
-                deckNames = availableDeckNames,
-                deckIds = availableDeckIds,
-                selectedDeck = selectedOpponentDeck,
-                onDeckSelected = { viewModel.setOpponentDeck(it) },
-                modifier = Modifier.weight(1f),
-                highlightColor = Color(0xFFFF5252)
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Player 2 chip
+            FilterChip(
+                selected = currentSelectedPlayer == 1,
+                onClick = { currentSelectedPlayer = 1 },
+                label = { Text("Player 2", textAlign = TextAlign.Center) },
+                colors = FilterChipDefaults.filterChipColors(
+                    containerColor = Color(0xFF2A2D42),
+                    labelColor = Color.White,
+                    selectedContainerColor = opponentColor,
+                    selectedLabelColor = Color.White
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    borderColor = opponentColor,
+                    selectedBorderColor = opponentColor,
+                    borderWidth = 1.dp,
+                    selectedBorderWidth = 2.dp,
+                    selected = currentSelectedPlayer == 1,
+                    enabled = true
+                ),
+                shape = scallopedCircleShape,
+                modifier = Modifier.padding(end = 8.dp)
+                    .size(80.dp)
             )
         }
+        Spacer(modifier = Modifier.size(48.dp))
 
         // Start button
         Button(
@@ -108,7 +185,11 @@ fun DeckSelectionScreen(
             modifier = Modifier
                 .fillMaxWidth(0.5f)
                 .height(56.dp)
-                .padding(vertical = 8.dp)
+                .padding(vertical = 8.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF5271FF),
+                disabledContainerColor = Color(0xFF5271FF).copy(alpha = 0.5f)
+            )
         ) {
             Text(
                 text = "START GAME",
@@ -120,97 +201,86 @@ fun DeckSelectionScreen(
 }
 
 @Composable
-fun DeckSelectionColumn(
-    title: String,
-    deckNames: List<String>,
-    deckIds: List<String>,
-    selectedDeck: String?,
-    onDeckSelected: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    highlightColor: Color
+fun DeckGridItem(
+    deckName: String,
+    isPlayerSelected: Boolean,
+    isOpponentSelected: Boolean,
+    onClick: () -> Unit
 ) {
-    Column(
-        modifier = modifier
-            .background(
-                Color(0xFF1A1C2A),
-                RoundedCornerShape(8.dp)
-            )
+    val playerHighlightColor = Color(0xFF5271FF)
+    val opponentHighlightColor = Color(0xFFFF5252)
+
+    Box(
+        modifier = Modifier
+            .size(120.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color(0xFF2A2D42))
             .border(
-                width = 1.dp,
-                color = Color(0xFF3D4160),
+                width = 2.dp,
+                color = when {
+                    isPlayerSelected && isOpponentSelected -> Color(0xFFFFD700) // Gold when both selected
+                    isPlayerSelected -> playerHighlightColor
+                    isOpponentSelected -> opponentHighlightColor
+                    else -> Color(0xFF3D4160)
+                },
                 shape = RoundedCornerShape(8.dp)
             )
-            .padding(16.dp)
+            .clickable(onClick = onClick)
+            .padding(8.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = title,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = highlightColor,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            textAlign = TextAlign.Center
-        )
-
-        HorizontalDivider(color = Color(0xFF3D4160))
-
-
-        Log.d("SelectedDeck",selectedDeck.toString())
-
-        Text(
-            text = "Available Decks",
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Medium,
-            color = Color.White,
-            modifier = Modifier.padding(vertical = 8.dp)
-        )
-
-        // Deck list
-        LazyColumn(
-            modifier = Modifier.weight(1f)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            itemsIndexed(deckIds) { index, deckId ->
-                val deckTitleName = deckNames.getOrNull(index) ?: "Default Deck Name"
-                DeckListItem(
-                    deckName = deckTitleName,
-                    isSelected = deckId == selectedDeck,
-                    onClick = { onDeckSelected(deckId) },
-                    highlightColor = highlightColor
+            Text(
+                text = deckName,
+                color = Color.White,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            // Player indicators
+            if (isPlayerSelected || isOpponentSelected) {
+                HorizontalDivider(
+                    color = Color.White.copy(alpha = 0.3f),
+                    modifier = Modifier.padding(vertical = 4.dp)
                 )
+
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (isPlayerSelected) {
+                        PlayerTag("P1", playerHighlightColor)
+                    }
+
+                    Spacer(modifier = Modifier.size(8.dp))
+
+                    if (isOpponentSelected) {
+                        PlayerTag("P2", opponentHighlightColor)
+                    }
+                }
             }
         }
     }
 }
 
-
 @Composable
-fun DeckListItem(
-    deckName: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    highlightColor: Color
-) {
+fun PlayerTag(text: String, color: Color) {
     Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .clip(RoundedCornerShape(4.dp))
-            .background(
-                if (isSelected) highlightColor.copy(alpha = 0.2f) else Color.Transparent
-            )
-            .border(
-                width = 1.dp,
-                color = if (isSelected) highlightColor else Color(0xFF3D4160),
-                shape = RoundedCornerShape(4.dp)
-            )
-            .clickable { onClick() }
-            .padding(8.dp)
+            .size(32.dp)
+            .background(color, slenderSwordShape)
+            .border(0.5.dp, Color.White.copy(alpha = 0.5f), slenderSwordShape),
+        contentAlignment = Alignment.Center
     ) {
         Text(
-            text = deckName,
-            fontSize = 16.sp,
-            color = if (isSelected) highlightColor else Color.White
+            text = text,
+            color = Color.White,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
         )
     }
 }

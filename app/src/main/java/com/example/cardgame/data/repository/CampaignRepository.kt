@@ -235,7 +235,7 @@ class CampaignRepository(private val context: Context) {
                     name = "The Bravest of the Brave",
                     description = "Michel Ney was born in the small town of Sarrelouis 10 January 1769. " +
                             "Son of a retired veteran, Ney had occupied himself with various civil duties. " +
-                            "Eventually he realized that he wanted do different things in life and joined Hussar Regiment, where he rose through the ranks rapidly during France's revolutionary wars. " +
+                            "Eventually he realized that he wanted pursue different things in life and joined Hussar Regiment, where he rose through the ranks rapidly during France's revolutionary wars. " +
                             "His bold and brave actions caught the attention of the Emperor himself which led to his promotion to marshal on 19 May 1804 ",
                     opponentName = "Marshal Ney",
                     opponentDeckId = "ney_deck",  // Aggressive, infantry-heavy deck

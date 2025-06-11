@@ -19,8 +19,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -151,14 +153,6 @@ fun LevelSelectionScreen(
                         tint = Color.White
                     )
                 }
-
-                Text(
-                    text = campaign.name.uppercase(),
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = libreFont,
-                    color = Color.White
-                )
 
                 // Empty box for alignment
                 Box(modifier = Modifier.size(48.dp))
@@ -408,6 +402,8 @@ fun LevelDetailsCard(
     isLocked: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val scrollState = rememberScrollState()
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -416,6 +412,8 @@ fun LevelDetailsCard(
                 shape = RoundedCornerShape(8.dp)
             )
             .padding(16.dp)
+            .verticalScroll(scrollState)
+
     ) {
         Text(
             text = level.name,
