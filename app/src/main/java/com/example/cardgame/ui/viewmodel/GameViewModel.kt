@@ -27,6 +27,7 @@ import com.example.cardgame.data.model.card.TacticCard
 import com.example.cardgame.data.model.card.UnitCard
 import com.example.cardgame.data.repository.CampaignRepository
 import com.example.cardgame.data.repository.CardRepository
+import com.example.cardgame.game.Board
 import com.example.cardgame.game.GameManager
 import com.example.cardgame.game.PlayerContext
 import kotlinx.coroutines.delay
@@ -1487,114 +1488,501 @@ Log.d("StartGame",playerDeck.toString())
             simulateAITurn()
         }
     }
+    private suspend fun deployCardForAI() {
+        for (i in opponentContext.player.hand.indices) {
+            val card = opponentContext.player.hand[i]
+            if (card.manaCost <= opponentContext.player.currentMana) {
+                val position = opponentContext.getFirstEmptyPosition()
+                if (position != null) {
+                    val isCardPlayed = opponentContext.playCard(i, _gameManager, position)
+                    if (isCardPlayed) {
+                        updateAllGameStates()
+                        delay(500) // Animation delay
+                        deployCardForAI()
+                        break
+                    }
+                }
+            }
+        }
+    }
+    private suspend fun playCardsRandomly(context: PlayerContext) {
+        val player = context.player
 
+        // Keep trying to play cards until we can't
+        var cardPlayed = true
+        while (cardPlayed && player.hand.isNotEmpty()) {
+            cardPlayed = false
+
+            // Shuffle hand to play randomly
+            val shuffledIndices = player.hand.indices.shuffled()
+
+            for (cardIndex in shuffledIndices) {
+                if (cardIndex >= player.hand.size) continue
+
+                val card = player.hand[cardIndex]
+                if (card.manaCost > player.currentMana) continue
+
+                when (card) {
+                    is UnitCard -> {
+                        // Deploy based on unit type
+                        val targetRow = when (card.unitType) {
+                            UnitType.CAVALRY, UnitType.INFANTRY -> 1 // Front row for melee
+                            UnitType.ARTILLERY, UnitType.MISSILE, UnitType.MUSKET -> 0 // Back row for ranged
+                        }
+
+                        val deployed = deployUnitEasy(context, cardIndex, targetRow)
+                        if (deployed) {
+                            cardPlayed = true
+                            break
+                        }
+                    }
+                    is FortificationCard -> {
+                        // Deploy fortifications on first row (row 0 for AI) with ranged units
+                        val deployed = deployFortificationEasy(context, cardIndex, targetRow = 0)
+                        if (deployed) {
+                            cardPlayed = true
+                            break
+                        }
+                    }
+                    is TacticCard -> {
+                        // Play tactic cards with random valid targets
+                        break // Implement later
+                        val played = playTacticCardEasy(context, cardIndex, card)
+                        if (played) {
+                            cardPlayed = true
+                            break
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Deploy unit randomly on specified row, with smart fallback
+     */
+    private suspend fun deployUnitEasy(context: PlayerContext, cardIndex: Int, targetRow: Int): Boolean {
+        val card = context.player.hand[cardIndex] as? UnitCard ?: return false
+
+        // First, try to deploy on the preferred row
+        val availableColumns = (0 until gameManager.gameBoard.columns)
+            .filter { col ->
+                gameManager.gameBoard.isPositionCompletelyEmpty(targetRow, col)
+            }
+            .shuffled() // Randomize deployment within the row
+
+        for (col in availableColumns) {
+            val deployed = context.playCard(cardIndex, gameManager, Pair(targetRow, col))
+            if (deployed) {
+                updateAllGameStates()
+                delay(500) // Animation delay
+                return true
+            }
+        }
+
+        // If preferred row is full, try the other row based on unit type
+        val alternateRow = if (targetRow == 0) 1 else 0
+        val alternateColumns = (0 until gameManager.gameBoard.columns)
+            .filter { col ->
+                gameManager.gameBoard.isPositionCompletelyEmpty(alternateRow, col)
+            }
+            .shuffled()
+
+        for (col in alternateColumns) {
+            val deployed = context.playCard(cardIndex, gameManager, Pair(alternateRow, col))
+            if (deployed) {
+                updateAllGameStates()
+                delay(500) // Animation delay
+                return true
+            }
+        }
+
+        // If both rows have no space, try any valid deployment position
+        val allValidPositions = gameManager.getValidDeploymentPositions(context.player.id).shuffled()
+        for (pos in allValidPositions) {
+            val deployed = context.playCard(cardIndex, gameManager, pos)
+            if (deployed) {
+                updateAllGameStates()
+                delay(500) // Animation delay
+                return true
+            }
+        }
+
+        return false
+    }
+
+    /**
+     * Deploy fortification on first row with ranged units
+     */
+    private suspend fun deployFortificationEasy(context: PlayerContext, cardIndex: Int, targetRow: Int): Boolean {
+        val card = context.player.hand[cardIndex] as? FortificationCard ?: return false
+
+        // Fortifications go on row 0 with ranged units
+        val availableColumns = (0 until gameManager.gameBoard.columns)
+            .filter { col ->
+                gameManager.gameBoard.isPositionCompletelyEmpty(targetRow, col)
+            }
+            .shuffled()
+
+        // Try to place fortifications spread out
+        for (col in availableColumns) {
+            val deployed = context.playCard(cardIndex, gameManager, Pair(targetRow, col))
+            if (deployed) {
+                updateAllGameStates()
+                delay(500) // Animation delay
+                return true
+            }
+        }
+
+        // If first row is full, try second row
+        val alternateRow = 1
+        val alternateColumns = (0 until gameManager.gameBoard.columns)
+            .filter { col ->
+                gameManager.gameBoard.isPositionCompletelyEmpty(alternateRow, col)
+            }
+            .shuffled()
+
+        for (col in alternateColumns) {
+            val deployed = context.playCard(cardIndex, gameManager, Pair(alternateRow, col))
+            if (deployed) {
+                updateAllGameStates()
+                delay(500) // Animation delay
+                return true
+            }
+        }
+
+        // Final fallback: any valid position
+        val allValidPositions = gameManager.getValidDeploymentPositions(context.player.id).shuffled()
+        for (pos in allValidPositions) {
+            val deployed = context.playCard(cardIndex, gameManager, pos)
+            if (deployed) {
+                updateAllGameStates()
+                delay(500) // Animation delay
+                return true
+            }
+        }
+
+        return false
+    }
+
+    /**
+     * Play tactic cards with random targets
+     */
+    private fun playTacticCardEasy(context: PlayerContext, cardIndex: Int, card: TacticCard): Boolean {
+        when (card.targetType) {
+            TargetType.NONE -> {
+                // Cards like "Draw 2" that don't need targets
+                return card.play(context.player, gameManager, null)
+            }
+            TargetType.ENEMY -> {
+                // Find random enemy unit
+                val enemyTargets = getEnemyTargets().shuffled()
+                for (target in enemyTargets) {
+                    val linearPos = target.first * gameManager.gameBoard.columns + target.second
+                    if (card.play(context.player, gameManager, linearPos)) {
+                        return true
+                    }
+                }
+            }
+            TargetType.FRIENDLY -> {
+                // Find random friendly unit
+                val friendlyTargets = getFriendlyTargets().shuffled()
+                for (target in friendlyTargets) {
+                    val linearPos = target.first * gameManager.gameBoard.columns + target.second
+                    if (card.play(context.player, gameManager, linearPos)) {
+                        return true
+                    }
+                }
+            }
+            TargetType.BOARD, TargetType.ANY -> {
+                // Random board position
+                val allPositions = mutableListOf<Pair<Int, Int>>()
+                for (row in 0 until gameManager.gameBoard.rows) {
+                    for (col in 0 until gameManager.gameBoard.columns) {
+                        allPositions.add(Pair(row, col))
+                    }
+                }
+
+                for (pos in allPositions.shuffled()) {
+                    val linearPos = pos.first * gameManager.gameBoard.columns + pos.second
+                    if (card.play(context.player, gameManager, linearPos)) {
+                        return true
+                    }
+                }
+            }
+        }
+        return false
+    }
+    private suspend fun moveUnitsAggressively(context: PlayerContext, board: Board) {
+        val movableUnits = context.getMovableUnits(gameManager)
+
+        // Sort units by column to ensure spreading
+        val sortedUnits = movableUnits.sortedBy { unit ->
+            board.getUnitPosition(unit)?.second ?: 0
+        }
+
+        // Track occupied columns to maintain spread
+        val occupiedColumns = mutableSetOf<Int>()
+
+        for (unit in sortedUnits) {
+            val currentPos = board.getUnitPosition(unit) ?: continue
+            val validMoves = gameManager.getValidMoveDestinations(unit)
+
+            if (validMoves.isEmpty()) continue
+
+            // Find the most aggressive move (lowest row for AI) that maintains spread
+            val bestMove = validMoves
+                .filter { move ->
+                    // Prefer moves to unoccupied columns for spreading
+                    !occupiedColumns.contains(move.second) ||
+                            occupiedColumns.size >= board.columns - 1
+                }
+                .minByOrNull { move ->
+                    // Priority: 1) Move down (toward player), 2) Maintain spread
+                    move.first * 10 + if (occupiedColumns.contains(move.second)) 5 else 0
+                }
+                ?: validMoves.minByOrNull { it.first } // Fallback: just move down
+
+            bestMove?.let { targetPos ->
+                // Execute move
+                executeMove(
+                    currentPos.first,
+                    currentPos.second,
+                    targetPos.first,
+                    targetPos.second,
+                    context
+                )
+                occupiedColumns.add(targetPos.second)
+                Log.d("AIMove", "Best Move: $bestMove ")
+                updateAllGameStates()
+                delay(600)
+
+            }
+        }
+    }
+    private suspend fun moveAIUnitsAggressively(context: PlayerContext, board: Board) {
+        val movableUnits = context.getMovableUnits(gameManager)
+
+        // Separate units by type
+        val meleeUnits = movableUnits.filter { unit ->
+            unit.unitType == UnitType.CAVALRY || unit.unitType == UnitType.INFANTRY
+        }
+        val rangedUnits = movableUnits.filter { unit ->
+            unit.unitType == UnitType.ARTILLERY || unit.unitType == UnitType.MISSILE || unit.unitType == UnitType.MUSKET
+        }
+
+        // Move ranged units first to ensure they stay back
+        moveRangedUnitsToBack(rangedUnits, board, context)
+
+        // Then move melee units to front positions
+        moveMeleeUnitsToFront(meleeUnits, board, context)
+    }
+
+    /**
+     * Move ranged units to back positions (higher rows for AI)
+     */
+    private suspend fun moveRangedUnitsToBack(rangedUnits: List<UnitCard>, board: Board, context: PlayerContext) {
+        // Sort by column for spreading
+        val sortedUnits = rangedUnits.sortedBy { unit ->
+            board.getUnitPosition(unit)?.second ?: 0
+        }
+
+        for (unit in sortedUnits) {
+            val currentPos = board.getUnitPosition(unit) ?: continue
+            val validMoves = gameManager.getValidMoveDestinations(unit)
+
+            if (validMoves.isEmpty()) continue
+
+            // Find best position: prefer back rows (row 1 for AI) and spread columns
+            val idealRow = 1 // Second row for AI (their "back")
+
+            val bestMove = validMoves
+                .sortedBy { move ->
+                    // Priority calculation:
+                    // 1. Distance from ideal row (lower is better)
+                    // 2. Prefer spreading across columns
+                    val rowScore = abs(move.first - idealRow) * 100
+
+                    // Check if column is occupied by another ranged unit
+                    val columnOccupied = rangedUnits.any { otherUnit ->
+                        if (otherUnit == unit) false
+                        else {
+                            val otherPos = board.getUnitPosition(otherUnit)
+                            otherPos?.second == move.second && otherPos.first == idealRow
+                        }
+                    }
+                    val columnScore = if (columnOccupied) 50 else 0
+
+                    rowScore + columnScore
+                }
+                .firstOrNull()
+
+            bestMove?.let { targetPos ->
+                executeMove(
+                    currentPos.first,
+                    currentPos.second,
+                    targetPos.first,
+                    targetPos.second,
+                    context
+                )
+                Log.d("AIMove", "Best Move: $bestMove ")
+                updateAllGameStates()
+                delay(600)
+            }
+        }
+    }
+
+    /**
+     * Move melee units to front positions to protect ranged units
+     */
+    private suspend fun moveMeleeUnitsToFront(meleeUnits: List<UnitCard>, board: Board, context: PlayerContext) {
+        // Track where ranged units are to protect them
+        val rangedPositions = mutableListOf<Pair<Int, Int>>()
+        for (row in 0 until board.rows) {
+            for (col in 0 until board.columns) {
+                val unit = board.getUnitAt(row, col)
+                if (unit != null && board.getUnitOwner(unit) == context.player.id) {
+                    if (unit.unitType in listOf(UnitType.ARTILLERY, UnitType.MISSILE, UnitType.MUSKET)) {
+                        rangedPositions.add(Pair(row, col))
+                    }
+                }
+            }
+        }
+
+        // Sort melee units for spreading
+        val sortedUnits = meleeUnits.sortedBy { unit ->
+            board.getUnitPosition(unit)?.second ?: 0
+        }
+
+        for (unit in sortedUnits) {
+            val currentPos = board.getUnitPosition(unit) ?: continue
+            val validMoves = gameManager.getValidMoveDestinations(unit)
+
+            if (validMoves.isEmpty()) continue
+
+            val bestMove = validMoves
+                .sortedBy { move ->
+                    var score = 0
+
+                    // Priority 1: Move toward player (lower rows for AI)
+                    score += move.first * 100
+
+                    // Priority 2: Position in front of ranged units
+                    val protectsRanged = rangedPositions.any { rangedPos ->
+                        // Check if this position would be in front of a ranged unit
+                        move.first < rangedPos.first && // In front (lower row)
+                                abs(move.second - rangedPos.second) <= 1 // Same or adjacent column
+                    }
+                    if (protectsRanged) score -= 200 // Bonus for protecting
+
+                    // Priority 3: Spread across columns
+                    val columnOccupied = meleeUnits.any { otherUnit ->
+                        if (otherUnit == unit) false
+                        else {
+                            val otherPos = board.getUnitPosition(otherUnit)
+                            otherPos?.second == move.second && otherPos.first == move.first
+                        }
+                    }
+                    if (columnOccupied) score += 50
+
+                    // Priority 4: Cavalry prefers flanks for potential flanking
+                    if (unit.unitType == UnitType.CAVALRY) {
+                        val flankBonus = when (move.second) {
+                            0, board.columns - 1 -> -30 // Bonus for being on flanks
+                            else -> 0
+                        }
+                        score += flankBonus
+                    }
+
+                    score
+                }
+                .firstOrNull()
+
+            bestMove?.let { targetPos ->
+                executeMove(
+                    currentPos.first,
+                    currentPos.second,
+                    targetPos.first,
+                    targetPos.second,
+                    context
+                )
+                Log.d("AIMove", "Best Move: $bestMove ")
+                updateAllGameStates()
+                delay(600)
+            }
+        }
+    }
+    private suspend fun simulateAIAttack() {
+        // Get all AI units
+        val aiUnits = opponentContext.units
+
+        // Try to attack with each unit
+        for (aiUnit in aiUnits.filter { it.canAttackThisTurn }) {
+            // Find the unit's position
+            val aiUnitPos = _gameManager.gameBoard.getUnitPosition(aiUnit) ?: continue
+
+            // Find a target (simple AI just attacks the first valid target it finds)
+            val validTargets = opponentContext.getValidAttackTargets(
+                aiUnitPos.first,
+                aiUnitPos.second,
+                _gameManager
+            )
+
+            if (validTargets.isNotEmpty()) {
+                val target = validTargets.first()
+
+
+                // Execute attack
+                executeAttack(
+                    aiUnitPos.first,
+                    aiUnitPos.second,
+                    target.first,
+                    target.second,
+                    opponentContext
+                )
+                updateAllGameStates()
+                delay(1000)
+
+            } else if (opponentContext.canAttackOpponentDirectly(
+                    aiUnitPos.first,
+                    aiUnitPos.second,
+                    _gameManager
+                )
+            ) {
+                // Direct attack on player
+                val damageAmount = aiUnit.attack
+                viewModelScope.launch {
+                    // Animate player health decrease
+                    animatePlayerHealthDecrease(isPlayer = true, damageAmount = damageAmount) {
+                        // After animation, execute the actual attack
+                        _gameManager.executeDirectAttack(aiUnit, 0)
+                        updateAllGameStates()
+                    }
+                    delay(1000)
+                }
+
+            }
+        }
+
+    }
     private fun simulateAITurn() {
         viewModelScope.launch {
             // AI plays cards
             delay(500) // Think time
 
             // Try to play a card
-            for (i in opponentContext.player.hand.indices) {
-                val card = opponentContext.player.hand[i]
-                if (card.manaCost <= opponentContext.player.currentMana) {
-                    val position = opponentContext.getFirstEmptyPosition()
-                    if (position != null) {
-                        val isCardPlayed = opponentContext.playCard(i, _gameManager, position)
-                        if (isCardPlayed) {
-                            updateAllGameStates()
-                            delay(500) // Animation delay
-                            break // Play one card per turn for simplicity
-                        }
-                    }
-                }
-            }
+            playCardsRandomly(opponentContext)
 
             // AI moves units
             delay(500)
 
             // Get movable units
-            val movableUnits = opponentContext.getMovableUnits(_gameManager)
-
-            for (unit in movableUnits) {
-                val position = _gameManager.gameBoard.getUnitPosition(unit) ?: continue
-                val validMoves = _gameManager.getValidMoveDestinations(unit)
-
-                if (validMoves.isNotEmpty()) {
-                    // Simple AI strategy: move toward player's side
-                    val bestMove =
-                        validMoves.minByOrNull { it.first } // Move to lowest row (toward player)
-
-                    if (bestMove != null) {
-
-                        delay(500) // Animation duration
-
-                        // Execute the move
-                        executeMove(
-                            position.first,
-                            position.second,
-                            bestMove.first,
-                            bestMove.second,
-                            context = opponentContext
-                        )
-                        Log.d("AIMove", "Position : $position Best Move: $bestMove ")
-                        updateAllGameStates()
-                        delay(300)
-                    }
-                }
-            }
+            moveAIUnitsAggressively(opponentContext,_gameManager.gameBoard)
 
             // AI attacks
             delay(500)
 
-            // Get all AI units
-            val aiUnits = opponentContext.units
-
-            // Try to attack with each unit
-            for (aiUnit in aiUnits.filter { it.canAttackThisTurn }) {
-                // Find the unit's position
-                val aiUnitPos = _gameManager.gameBoard.getUnitPosition(aiUnit) ?: continue
-
-                // Find a target (simple AI just attacks the first valid target it finds)
-                val validTargets = opponentContext.getValidAttackTargets(
-                    aiUnitPos.first,
-                    aiUnitPos.second,
-                    _gameManager
-                )
-
-                if (validTargets.isNotEmpty()) {
-                    val target = validTargets.first()
-
-
-                    // Execute attack
-                    executeAttack(
-                        aiUnitPos.first,
-                        aiUnitPos.second,
-                        target.first,
-                        target.second,
-                        opponentContext
-                    )
-                    updateAllGameStates()
-                    delay(800)
-                } else if (opponentContext.canAttackOpponentDirectly(
-                        aiUnitPos.first,
-                        aiUnitPos.second,
-                        _gameManager
-                    )
-                ) {
-                    // Direct attack on player
-                    val damageAmount = aiUnit.attack
-                    viewModelScope.launch {
-                        // Animate player health decrease
-                        animatePlayerHealthDecrease(isPlayer = true, damageAmount = damageAmount) {
-                            // After animation, execute the actual attack
-                            _gameManager.executeDirectAttack(aiUnit, 0)
-                            updateAllGameStates()
-                        }
-                        delay(500)
-                    }
-                }
-            }
-
+            simulateAIAttack()
             // End AI turn
             delay(500)
             _gameManager.turnManager.endTurn()

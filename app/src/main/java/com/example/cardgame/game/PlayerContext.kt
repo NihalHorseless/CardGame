@@ -71,7 +71,6 @@ class PlayerContext(val player: Player, val gameBoard: Board) {
     fun getFirstEmptyPosition(): Pair<Int, Int>? {
         return gameBoard.getFirstEmptyPositionInDeploymentZone(player.id)
     }
-
     /**
      * Converts a linear position index to a 2D board position.
      * This is useful for backward compatibility with code that uses linear positions.

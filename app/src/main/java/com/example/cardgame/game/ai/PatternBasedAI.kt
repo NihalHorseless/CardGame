@@ -2,6 +2,7 @@ package com.example.cardgame.game.ai
 
 import com.example.cardgame.data.enum.FortificationType
 import com.example.cardgame.data.enum.TargetType
+import com.example.cardgame.data.enum.UnitType
 import com.example.cardgame.data.model.campaign.Difficulty
 import com.example.cardgame.data.model.card.FortificationCard
 import com.example.cardgame.data.model.card.TacticCard
@@ -68,15 +69,20 @@ class PatternBasedAI(
 
                 when (card) {
                     is UnitCard -> {
-                        // Deploy units on second row (row 1 for AI)
-                        val deployed = deployUnitEasy(context, cardIndex, targetRow = 1)
+                        // Deploy based on unit type
+                        val targetRow = when (card.unitType) {
+                            UnitType.CAVALRY, UnitType.INFANTRY -> 1 // Front row for melee
+                            UnitType.ARTILLERY, UnitType.MISSILE, UnitType.MUSKET -> 0 // Back row for ranged
+                        }
+
+                        val deployed = deployUnitEasy(context, cardIndex, targetRow)
                         if (deployed) {
                             cardPlayed = true
                             break
                         }
                     }
                     is FortificationCard -> {
-                        // Deploy fortifications on first row (row 0 for AI)
+                        // Deploy fortifications on first row (row 0 for AI) with ranged units
                         val deployed = deployFortificationEasy(context, cardIndex, targetRow = 0)
                         if (deployed) {
                             cardPlayed = true
@@ -97,21 +103,37 @@ class PatternBasedAI(
     }
 
     /**
-     * Deploy unit randomly on specified row
+     * Deploy unit randomly on specified row, with smart fallback
      */
     private fun deployUnitEasy(context: PlayerContext, cardIndex: Int, targetRow: Int): Boolean {
+        val card = context.player.hand[cardIndex] as? UnitCard ?: return false
+
+        // First, try to deploy on the preferred row
         val availableColumns = (0 until gameManager.gameBoard.columns)
             .filter { col ->
                 gameManager.gameBoard.isPositionCompletelyEmpty(targetRow, col)
             }
-            .shuffled() // Randomize deployment
+            .shuffled() // Randomize deployment within the row
 
         for (col in availableColumns) {
             val deployed = context.playCard(cardIndex, gameManager, Pair(targetRow, col))
             if (deployed) return true
         }
 
-        // If target row is full, try any valid position
+        // If preferred row is full, try the other row based on unit type
+        val alternateRow = if (targetRow == 0) 1 else 0
+        val alternateColumns = (0 until gameManager.gameBoard.columns)
+            .filter { col ->
+                gameManager.gameBoard.isPositionCompletelyEmpty(alternateRow, col)
+            }
+            .shuffled()
+
+        for (col in alternateColumns) {
+            val deployed = context.playCard(cardIndex, gameManager, Pair(alternateRow, col))
+            if (deployed) return true
+        }
+
+        // If both rows have no space, try any valid deployment position
         val allValidPositions = gameManager.getValidDeploymentPositions(playerId).shuffled()
         for (pos in allValidPositions) {
             val deployed = context.playCard(cardIndex, gameManager, pos)
@@ -122,11 +144,45 @@ class PatternBasedAI(
     }
 
     /**
-     * Deploy fortification randomly on first row
+     * Deploy fortification on first row with ranged units
      */
     private fun deployFortificationEasy(context: PlayerContext, cardIndex: Int, targetRow: Int): Boolean {
-        // Same logic as units but for fortifications
-        return deployUnitEasy(context, cardIndex, targetRow)
+        val card = context.player.hand[cardIndex] as? FortificationCard ?: return false
+
+        // Fortifications go on row 0 with ranged units
+        val availableColumns = (0 until gameManager.gameBoard.columns)
+            .filter { col ->
+                gameManager.gameBoard.isPositionCompletelyEmpty(targetRow, col)
+            }
+            .shuffled()
+
+        // Try to place fortifications spread out
+        for (col in availableColumns) {
+            val deployed = context.playCard(cardIndex, gameManager, Pair(targetRow, col))
+            if (deployed) return true
+        }
+
+        // If first row is full, try second row
+        val alternateRow = 1
+        val alternateColumns = (0 until gameManager.gameBoard.columns)
+            .filter { col ->
+                gameManager.gameBoard.isPositionCompletelyEmpty(alternateRow, col)
+            }
+            .shuffled()
+
+        for (col in alternateColumns) {
+            val deployed = context.playCard(cardIndex, gameManager, Pair(alternateRow, col))
+            if (deployed) return true
+        }
+
+        // Final fallback: any valid position
+        val allValidPositions = gameManager.getValidDeploymentPositions(playerId).shuffled()
+        for (pos in allValidPositions) {
+            val deployed = context.playCard(cardIndex, gameManager, pos)
+            if (deployed) return true
+        }
+
+        return false
     }
 
     /**
