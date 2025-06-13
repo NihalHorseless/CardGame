@@ -1913,15 +1913,18 @@ Log.d("StartGame",playerDeck.toString())
         }
     }
     private suspend fun simulateAIAttack() {
-        // Get all AI units
-        val aiUnits = opponentContext.units
+        // Get all AI units that can attack
+        val aiUnits = opponentContext.units.filter { it.canAttackThisTurn }
 
-        // Try to attack with each unit
-        for (aiUnit in aiUnits.filter { it.canAttackThisTurn }) {
+        // Process each unit's attack sequentially
+        for (aiUnit in aiUnits) {
+            // Check if unit can still attack (in case game state changed)
+            if (!aiUnit.canAttackThisTurn) continue
+
             // Find the unit's position
             val aiUnitPos = _gameManager.gameBoard.getUnitPosition(aiUnit) ?: continue
 
-            // Find a target (simple AI just attacks the first valid target it finds)
+            // Find valid targets
             val validTargets = opponentContext.getValidAttackTargets(
                 aiUnitPos.first,
                 aiUnitPos.second,
@@ -1929,19 +1932,26 @@ Log.d("StartGame",playerDeck.toString())
             )
 
             if (validTargets.isNotEmpty()) {
-                val target = validTargets.first()
+                // AI strategy: Attack the weakest target first
+                val targetWithHealth = validTargets.mapNotNull { target ->
+                    val targetEnemy = _gameManager.gameBoard.getUnitAt(target.first, target.second)?:_gameManager.gameBoard.getFortificationAt(target.first, target.second)
+                    Log.d("TARGAY","${targetEnemy?.name}")
+                    when (targetEnemy){
+                        is FortificationCard -> targetEnemy?.let { Pair(target, it.health) }
+                        is UnitCard -> targetEnemy?.let { Pair(target, it.health) }
+                        else -> targetEnemy?.let { Pair(target, it.manaCost) } // Honestly didn't know what to fill it in with
+                    }
+                }.sortedBy { it.second } // Sort by health (lowest first)
 
+                val bestTarget = targetWithHealth.firstOrNull()?.first ?: validTargets.first()
 
-                // Execute attack
-                executeAttack(
-                    aiUnitPos.first,
-                    aiUnitPos.second,
-                    target.first,
-                    target.second,
-                    opponentContext
-                )
-                updateAllGameStates()
-                delay(1000)
+                // Execute attack and wait for it to complete
+                if(_gameManager.gameBoard.getUnitAt(bestTarget.first,bestTarget.second) != null)
+                executeAIAttack(aiUnitPos.first,aiUnitPos.second,bestTarget.first, bestTarget.second, opponentContext)
+                else
+                    executeAttackAgainstFortification(aiUnitPos.first,aiUnitPos.second,bestTarget.first, bestTarget.second)
+                // Add delay between attacks for visual clarity
+                delay(500)
 
             } else if (opponentContext.canAttackOpponentDirectly(
                     aiUnitPos.first,
@@ -1951,19 +1961,234 @@ Log.d("StartGame",playerDeck.toString())
             ) {
                 // Direct attack on player
                 val damageAmount = aiUnit.attack
-                viewModelScope.launch {
-                    // Animate player health decrease
-                    animatePlayerHealthDecrease(isPlayer = true, damageAmount = damageAmount) {
-                        // After animation, execute the actual attack
-                        _gameManager.executeDirectAttack(aiUnit, 0)
-                        updateAllGameStates()
-                    }
-                    delay(1000)
-                }
 
+                // Animate player health decrease and wait for completion
+                animatePlayerHealthDecreaseForAI(true, damageAmount)
+
+                // Execute the actual attack
+                _gameManager.executeDirectAttack(aiUnit, 0)
+                updateAllGameStates()
+
+                // Add delay after direct attack
+                delay(500)
+            }
+        }
+    }
+
+    // Helper function to execute attack and wait for all animations to complete
+    private suspend fun executeAIAttack(
+        attackerRow: Int,
+        attackerCol: Int,
+        targetRow: Int,
+        targetCol: Int,
+        context: PlayerContext
+    ) {
+        val attackerUnit = _gameManager.gameBoard.getUnitAt(attackerRow, attackerCol) ?: return
+        val targetUnit =
+            _gameManager.gameBoard.getUnitAt(targetRow, targetCol) ?: return
+
+        // Check if this attack has a counter bonus
+        val hasCounterBonus = _gameManager.hasCounterBonus(attackerUnit, targetUnit)
+        _isCounterBonus.value = hasCounterBonus
+
+        // Get target position for animation
+        val targetPos = cellPositions[Pair(targetRow, targetCol)] ?: return
+
+        // Start attack animation
+        _attackingUnitType.value = attackerUnit.unitType
+        _attackTargetPosition.value = targetPos
+        _isSimpleAttackVisible.value = true
+        playUnitAttackSound(attackerUnit.unitType)
+
+        // Wait for attack animation
+        delay(800)
+        _isSimpleAttackVisible.value = false
+
+        // Calculate damage
+        val damage = if (hasCounterBonus) attackerUnit.attack * 2 else attackerUnit.attack
+
+        // Wait before applying damage
+        delay(300)
+
+        // Store original health
+        val originalHealth = targetUnit.health
+        val willKillTarget = targetUnit.health <= damage
+
+        // Perform the actual attack
+        val attackResult = _gameManager.executeAttackWithContext(
+            context,
+            attackerRow,
+            attackerCol,
+            targetRow,
+            targetCol
+        )
+
+        if (attackResult) {
+            if (willKillTarget) {
+                // Add position to death animation tracking
+                _entitiesInDeathAnimation.value += Pair(targetRow, targetCol)
+
+                // Play death animation and wait for it
+                playDeathAnimationForAI(targetUnit, Pair(targetRow, targetCol))
+            } else {
+                // Animate health decrease and wait
+                val actualDamage = originalHealth - targetUnit.health
+                val tempHealth = targetUnit.health
+                targetUnit.health = originalHealth
+
+                // Use a suspending version of health animation
+                animateHealthDecreaseForAI(targetUnit, actualDamage)
+
+                // Restore actual health
+                targetUnit.health = tempHealth
+            }
+
+            // Reset counter state
+            _isCounterBonus.value = false
+            updateAllGameStates()
+        }
+    }
+
+    // Suspending version of animateHealthDecrease
+    private suspend fun animateHealthDecreaseForAI(unit: Card, damageAmount: Int) {
+        val startHealth = when(unit) {
+            is FortificationCard -> unit.health
+            is UnitCard -> unit.health
+            else -> return
+        }
+
+        var remainingDamage = damageAmount
+
+        // Initialize with current health
+        _visualHealthMap.value = _visualHealthMap.value.toMutableMap().apply {
+            put(unit, startHealth)
+        }
+
+        // Animate health decrements
+        while (remainingDamage > 0) {
+            val currentHealth = _visualHealthMap.value[unit] ?: startHealth
+            _visualHealthMap.value = _visualHealthMap.value.toMutableMap().apply {
+                put(unit, currentHealth - 1)
+            }
+
+            if (remainingDamage % 2 == 0) {
+                soundManager.playSound(SoundType.DAMAGE_TAP, volume = 0.3f)
+            }
+
+            val tickDelay = when {
+                damageAmount > 5 -> 80L
+                else -> 120L
+            }
+            delay(tickDelay)
+            remainingDamage--
+        }
+
+        // Wait before completing
+        delay(400)
+
+        // Remove from visual map
+        _visualHealthMap.value = _visualHealthMap.value.toMutableMap().apply {
+            remove(unit)
+        }
+    }
+
+    // Suspending version for player health animation
+    private suspend fun animatePlayerHealthDecreaseForAI(isPlayer: Boolean, damageAmount: Int) {
+        val player = if (isPlayer) _gameManager.players[0] else _gameManager.players[1]
+        val startHealth = player.health
+        var remainingDamage = damageAmount
+
+        // Set initial visual health
+        if (isPlayer) {
+            _playerVisualHealth.value = startHealth
+        } else {
+            _opponentVisualHealth.value = startHealth
+        }
+
+        // Play initial hit sound
+        soundManager.playSound(SoundType.PLAYER_HIT)
+
+        // Animate health decrements
+        while (remainingDamage > 0) {
+            val currentVisualHealth = if (isPlayer)
+                _playerVisualHealth.value ?: startHealth
+            else
+                _opponentVisualHealth.value ?: startHealth
+
+            if (isPlayer) {
+                _playerVisualHealth.value = currentVisualHealth - 1
+            } else {
+                _opponentVisualHealth.value = currentVisualHealth - 1
+            }
+
+            if (remainingDamage % 3 == 0) {
+                soundManager.playSound(SoundType.PLAYER_HIT, volume = 0.2f)
+            }
+
+            val tickDelay = when {
+                damageAmount > 10 -> 70L
+                damageAmount > 7 -> 90L
+                else -> 180L
+            }
+            delay(tickDelay)
+            remainingDamage--
+        }
+
+        // Small delay after animation
+        delay(300)
+
+        // Clear visual health values
+        if (isPlayer) {
+            _playerVisualHealth.value = null
+        } else {
+            _opponentVisualHealth.value = null
+        }
+    }
+
+    // Suspending version of death animation
+    private suspend fun playDeathAnimationForAI(entity: Card, position: Pair<Int, Int>) {
+        val cellPos = cellPositions[position] ?: return
+
+        when (entity) {
+            is UnitCard -> {
+                _deathEntityType.value = entity.unitType
+                soundManager.playSound(SoundType.UNIT_DEATH)
+            }
+            is FortificationCard -> {
+                _deathEntityType.value = entity.fortType
+                soundManager.playSound(SoundType.FORTIFICATION_DESTROY)
+            }
+            else -> return
+        }
+
+        // Set animation position and make it visible
+        _deathAnimationPosition.value = cellPos
+        _isDeathAnimationVisible.value = true
+
+        // Wait for animation to complete
+        delay(1200)
+
+        // Hide animation
+        _isDeathAnimationVisible.value = false
+
+        // Remove entity from game
+        when (entity) {
+            is UnitCard -> {
+                val unitPos = _gameManager.gameBoard.getUnitPosition(entity)
+                if (unitPos != null) {
+                    _gameManager.gameBoard.removeUnit(unitPos.first, unitPos.second)
+                }
+            }
+            is FortificationCard -> {
+                val fortPos = _gameManager.gameBoard.getFortificationPosition(entity)
+                if (fortPos != null) {
+                    _gameManager.gameBoard.removeFortification(fortPos.first, fortPos.second)
+                }
             }
         }
 
+        // Remove from tracking
+        _entitiesInDeathAnimation.value -= position
     }
     private fun simulateAITurn() {
         viewModelScope.launch {
