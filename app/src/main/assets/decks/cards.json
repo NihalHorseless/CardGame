@@ -9,11 +9,11 @@
     "attack": 3,
     "health": 4,
     "maxHealth": 4,
-    "unitType": "INFANTRY",
-    "unitEra": "ROMAN",
+    "unitType": "MUSKET",
+    "unitEra": "NAPOLEONIC",
     "abilities": [],
     "hasCharge": false,
-    "hasTaunt": true
+    "hasTaunt": false
   },
   {
     "id": 2,
@@ -45,7 +45,7 @@
     "attack": 2,
     "health": 2,
     "maxHealth": 2,
-    "unitType": "INFANTRY",
+    "unitType": "MUSKET",
     "unitEra": "NAPOLEONIC",
     "abilities": [],
     "hasCharge": false,
@@ -136,15 +136,83 @@
     "hasTaunt": false
   },
   {
+    "id": 9,
+    "name": "Town Mob",
+    "description": "Angry mob of town peasants",
+    "manaCost": 1,
+    "imagePath": "unit_roman_legionary",
+    "type": "unit",
+    "attack": 1,
+    "health": 2,
+    "maxHealth": 2,
+    "unitType": "INFANTRY",
+    "unitEra": "NAPOLEONIC",
+    "abilities": [],
+    "hasCharge": false,
+    "hasTaunt": false
+  },
+  {
+    "id": 10,
+    "name": "Cossack Cavalry",
+    "description": "Low cost Light armored Cossack cavalry",
+    "manaCost": 3,
+    "imagePath": "unit_medieval_knight",
+    "type": "unit",
+    "attack": 3,
+    "health": 3,
+    "maxHealth": 3,
+    "unitType": "CAVALRY",
+    "unitEra": "NAPOLEONIC",
+    "abilities": [
+      {
+        "abilityType": "charge"
+      }
+    ],
+    "hasCharge": true,
+    "hasTaunt": false
+  },
+  {
+    "id": 11,
+    "name": "Old Cannons",
+    "description": "18th century cannons that packs quite a punch",
+    "manaCost": 4,
+    "imagePath": "unit_napoleonic_cannon",
+    "type": "unit",
+    "attack": 3,
+    "health": 2,
+    "maxHealth": 2,
+    "unitType": "ARTILLERY",
+    "unitEra": "NAPOLEONIC",
+    "abilities": [],
+    "hasCharge": false,
+    "hasTaunt": false
+  },
+  {
+    "id": 12,
+    "name": "Prussian Infantry",
+    "description": "Disciplined and Iron willed, Prussians are renowned in their master of warfare",
+    "manaCost": 5,
+    "imagePath": "unit_napoleonic_cannon",
+    "type": "unit",
+    "attack": 4,
+    "health": 6,
+    "maxHealth": 6,
+    "unitType": "MUSKET",
+    "unitEra": "NAPOLEONIC",
+    "abilities": [],
+    "hasCharge": false,
+    "hasTaunt": false
+  },
+  {
     "id": 13,
     "name": "Wooden Wall",
     "description": "Basic defensive structure with moderate health",
-    "manaCost": 2,
+    "manaCost": 1,
     "imagePath": "fortification_wooden_wall",
     "type": "fortification",
     "attack": 0,
-    "health": 5,
-    "maxHealth": 5,
+    "health": 3,
+    "maxHealth": 3,
     "fortType": "WALL"
   },
   {
@@ -161,7 +229,7 @@
   },
   {
     "id": 15,
-    "name": "Archer Tower",
+    "name": "Watch Tower",
     "description": "Basic attack tower with range 2",
     "manaCost": 3,
     "imagePath": "fortification_archer_tower",
@@ -173,7 +241,7 @@
   },
   {
     "id": 16,
-    "name": "Watch Tower",
+    "name": "Archer Tower",
     "description": "Advanced attack tower with range 2",
     "manaCost": 5,
     "imagePath": "fortification_watch_tower",
@@ -182,5 +250,31 @@
     "health": 6,
     "maxHealth": 6,
     "fortType": "TOWER"
+  }
+,
+  {
+    "id": 17,
+    "name": "Enceinte",
+    "description": "Continuous line of bastions and curtain walls forming the body of the place",
+    "manaCost": 7,
+    "imagePath": "fortification_watch_tower",
+    "type": "fortification",
+    "attack": 5,
+    "health": 8,
+    "maxHealth": 8,
+    "fortType": "TOWER"
+  }
+,
+  {
+    "id": 18,
+    "name": "Reinforced Wall",
+    "description": "Advanced defensive structure with really high health",
+    "manaCost": 6,
+    "imagePath": "fortification_stone_wall",
+    "type": "fortification",
+    "attack": 0,
+    "health": 12,
+    "maxHealth": 12,
+    "fortType": "WALL"
   }
 ]

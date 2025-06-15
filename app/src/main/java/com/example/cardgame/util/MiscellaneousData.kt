@@ -12,7 +12,7 @@ object MiscellaneousData {
                     "• Cavalry deals double damage to Missile and Artillery units\n" +
                     "• Infantry deals double damage to Cavalry\n" +
                     "• Artillery deals double damage to fortifications",
-            iconResId = R.drawable.eagle_standard,
+            iconResId = R.drawable.counter_icon,
             example = "A Cavalry unit with 5 attack will deal 10 damage to a Missile unit."
         ),
         GameMechanic(
@@ -55,7 +55,7 @@ object MiscellaneousData {
             title = "Charge",
             description = "Units with Charge ability can attack on the same turn they are deployed.\n\n" +
                     "Normal units must wait until the next turn after deployment to attack.",
-            iconResId = R.drawable.attack_cavalry
+            iconResId = R.drawable.charge_icon
         ),
         GameMechanic(
             id = "bayonet",

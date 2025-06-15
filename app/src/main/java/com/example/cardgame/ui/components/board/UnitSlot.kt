@@ -231,7 +231,7 @@ fun UnitSlot(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.attack_cavalry),
+                        painter = painterResource(R.drawable.charge_icon),
                         contentDescription = "Charge",
                         tint = Color.White,
                         modifier = Modifier.size(12.dp)

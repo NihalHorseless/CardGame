@@ -1,7 +1,7 @@
 {
-  "id": "medieval_deck",
-  "name": "Medieval Forces",
-  "description": "A deck focused on medieval warfare with knights, archers, and siege engines",
+  "id": "tactics_deck",
+  "name": "Tactics Deck",
+  "description": "A deck focused on Tactic Cards",
   "cardIds": [
     2, 2, 2, 2, 100, 101, 102, 103, 104,
     100, 101, 102, 103, 104,106,106,106,

@@ -1949,7 +1949,7 @@ Log.d("StartGame",playerDeck.toString())
                 if(_gameManager.gameBoard.getUnitAt(bestTarget.first,bestTarget.second) != null)
                 executeAIAttack(aiUnitPos.first,aiUnitPos.second,bestTarget.first, bestTarget.second, opponentContext)
                 else
-                    executeAttackAgainstFortification(aiUnitPos.first,aiUnitPos.second,bestTarget.first, bestTarget.second)
+                    executeAIAttackAgainstFortification(aiUnitPos.first,aiUnitPos.second,bestTarget.first, bestTarget.second)
                 // Add delay between attacks for visual clarity
                 delay(500)
 
@@ -1972,6 +1972,74 @@ Log.d("StartGame",playerDeck.toString())
                 // Add delay after direct attack
                 delay(500)
             }
+        }
+    }
+    private suspend fun executeAIAttackAgainstFortification(
+        attackerRow: Int,
+        attackerCol: Int,
+        targetRow: Int,
+        targetCol: Int
+    ) {
+        val attackerUnit = _gameManager.gameBoard.getUnitAt(attackerRow, attackerCol) ?: return
+        val targetFort = _gameManager.gameBoard.getFortificationAt(targetRow, targetCol) ?: return
+
+        // Check if this attack has a counter bonus
+        val hasCounterBonus = _gameManager.hasFortificationCounterBonus(attackerUnit)
+        _isCounterBonus.value = hasCounterBonus
+
+        // Get target position for animation
+        val targetPos = cellPositions[Pair(targetRow, targetCol)] ?: return
+
+        // Start attack animation
+        _attackingUnitType.value = attackerUnit.unitType
+        _attackTargetPosition.value = targetPos
+        _isSimpleAttackVisible.value = true
+        playUnitAttackSound(attackerUnit.unitType)
+
+        // Wait for attack animation
+        delay(800)
+        _isSimpleAttackVisible.value = false
+
+        // Calculate damage
+        val damage = if (hasCounterBonus) attackerUnit.attack * 2 else attackerUnit.attack
+
+        // Wait before applying damage
+        delay(300)
+
+        // Store original health
+        val originalHealth = targetFort.health
+        val willKillTarget = targetFort.health <= damage
+
+        // Perform the actual attack
+        val attackResult = _gameManager.executeUnitAttackFortification(
+            attackerUnit,
+            targetRow,
+            targetCol
+        )
+
+        if (attackResult) {
+            if (willKillTarget) {
+                // Add position to death animation tracking
+                _entitiesInDeathAnimation.value += Pair(targetRow, targetCol)
+
+                // Play death animation and wait for it
+                playDeathAnimationForAI(targetFort, Pair(targetRow, targetCol))
+            } else {
+                // Animate health decrease and wait
+                val actualDamage = originalHealth - targetFort.health
+                val tempHealth = targetFort.health
+                targetFort.health = originalHealth
+
+                // Use the suspending version of health animation
+                animateHealthDecreaseForAI(targetFort, actualDamage)
+
+                // Restore actual health
+                targetFort.health = tempHealth
+            }
+
+            // Reset counter state
+            _isCounterBonus.value = false
+            updateAllGameStates()
         }
     }
 
