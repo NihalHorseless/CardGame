@@ -2387,10 +2387,10 @@ Log.d("StartGame",playerDeck.toString())
 
         if (targetPos != null) {
             // Start attack animation (use a distinct attack type for towers)
-            _attackingUnitType.value = UnitType.MISSILE // Use artillery animation for towers
+            _attackingUnitType.value = UnitType.ARTILLERY // Use artillery animation for towers
             _attackTargetPosition.value = targetPos
             _isSimpleAttackVisible.value = true
-            soundManager.playSound(SoundType.MISSILE_ATTACK)
+            soundManager.playSound(SoundType.ARTILLERY_ATTACK)
 
             // Attack logic after animation
             viewModelScope.launch {

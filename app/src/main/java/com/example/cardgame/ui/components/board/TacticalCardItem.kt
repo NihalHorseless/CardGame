@@ -1,9 +1,11 @@
 package com.example.cardgame.ui.components.board
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,12 +39,14 @@ import com.example.cardgame.ui.theme.libreFont
 /**
  * UI component for displaying a Tactic Card in the player's hand or collection
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TacticCardItem(
     card: TacticCard,
     isSelected: Boolean = false,
     isPlayable: Boolean = true,
     onClick: () -> Unit,
+    onLongClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     // Determine card background color based on card type
@@ -68,7 +72,10 @@ fun TacticCardItem(
                 color = if (isSelected) Color(0xFF4CAF50) else Color.Transparent,
                 shape = RoundedCornerShape(8.dp)
             )
-            .clickable(enabled = isPlayable) { onClick() },
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick // This will be handled by the parent
+            ),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {

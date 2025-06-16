@@ -7,6 +7,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -46,6 +47,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -55,6 +57,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.cardgame.R
+import com.example.cardgame.ui.theme.libreFont
 
 @Composable
 fun MainMenuScreen(
@@ -114,7 +117,13 @@ fun MainMenuScreen(
                 )
             )
     ) {
-        // Animated floating cards background
+        Image(
+            painter = painterResource(id = R.drawable.main_screen_background),
+            contentDescription = null,
+            contentScale = ContentScale.FillBounds,
+            modifier = Modifier.fillMaxSize()
+        )
+   /*     // Animated floating cards background
         Box(modifier = Modifier.fillMaxSize()) {
             repeat(10) { index ->
                 val cardXOffset by infiniteTransition.animateFloat(
@@ -154,16 +163,19 @@ fun MainMenuScreen(
 
                 Card(
                     modifier = Modifier
-                        .size(80.dp)
+                        .size(80.dp,112.dp)
                         .offset(x = cardXOffset.dp, y = cardYOffset.dp)
                         .rotate(rotation)
-                        .alpha(0.2f)
-                        .blur(4.dp)
+                        .alpha(0.5f)
+                        .blur(2.dp)
                 ) {
+                    Image(painter = painterResource(R.drawable.card_back), contentDescription = "Card Menu", modifier = Modifier.fillMaxSize())
 
                 }
             }
         }
+
+    */
 
         // Title and menu options
         Column(
@@ -174,10 +186,11 @@ fun MainMenuScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "CARD BATTLER",
+                text = "CONQUERORS GLORY",
                 style = MaterialTheme.typography.headlineSmall.copy(
                     fontSize = 48.sp,
                     fontWeight = FontWeight.ExtraBold,
+                    fontFamily = libreFont,
                     shadow = Shadow(
                         color = Color(0xFF5271FF),
                         offset = Offset(2f, 2f),
@@ -188,19 +201,11 @@ fun MainMenuScreen(
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = "Strategy Card Game",
-                style = MaterialTheme.typography.headlineLarge,
-                color = Color.LightGray,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(64.dp))
+            Spacer(modifier = Modifier.height(176.dp))
 
             MenuButton(
-                text = "Start Game",
+                text = "Custom Game",
                 onClick = onStartGame
             )
 
@@ -225,12 +230,6 @@ fun MainMenuScreen(
                 onClick = onShowGuide
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            MenuButton(
-                text = "Exit Game",
-                onClick = { /* Handle exit */ }
-            )
         }
         // Add a mute button in the top right corner
         IconButton(
@@ -275,7 +274,7 @@ fun MenuButton(
     Box(
         modifier = Modifier
             .scale(scale)
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(2.dp))
             .background(buttonGradient)
             .clickable { onClick() }
             .padding(horizontal = 32.dp, vertical = 12.dp)
@@ -297,4 +296,5 @@ fun MenuButton(
             color = Color.White
         )
     }
+
 }

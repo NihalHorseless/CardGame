@@ -3,12 +3,17 @@ package com.example.cardgame.ui.components.player
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,10 +21,12 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,13 +43,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.example.cardgame.R
+import com.example.cardgame.data.enum.FortificationType
+import com.example.cardgame.data.enum.TacticCardType
 import com.example.cardgame.data.enum.UnitEra
 import com.example.cardgame.data.model.card.Card
 import com.example.cardgame.data.model.card.FortificationCard
@@ -55,8 +66,10 @@ import com.example.cardgame.ui.components.board.UnitTypeIcon
 import com.example.cardgame.ui.theme.bloodDropShape
 import com.example.cardgame.ui.theme.kiteShieldShape
 import com.example.cardgame.ui.theme.libreFont
+import com.example.cardgame.ui.theme.slenderSwordShape
 import com.example.cardgame.ui.theme.thickSwordShape
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PlayerHand(
     cards: List<Card>,
@@ -65,18 +78,20 @@ fun PlayerHand(
     onCardClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // State to track which card's details are being shown
+    var showingCardDetails by remember { mutableStateOf<Card?>(null) }
+
     LazyRow(
         modifier = modifier
             .fillMaxWidth()
             .height(160.dp)
             .padding(4.dp),
-        horizontalArrangement = Arrangement.spacedBy((-20).dp) // Overlapping cards
+        horizontalArrangement = Arrangement.spacedBy((-20).dp)
     ) {
         itemsIndexed(cards) { index, card ->
             val isPlayable = card.manaCost <= playerMana
             val isSelected = index == selectedCardIndex
 
-            // Card hover effect
             var isHovered by remember { mutableStateOf(false) }
             val scale by animateFloatAsState(
                 targetValue = if (isHovered || isSelected) 1.1f else 1f,
@@ -105,53 +120,68 @@ fun PlayerHand(
                     },
                 contentAlignment = Alignment.Center
             ) {
-                // Render different card types differently
                 when (card) {
                     is UnitCard -> {
-                        // Use existing UnitCard rendering
                         HandCard(
                             card = card,
                             isPlayable = isPlayable,
                             isSelected = isSelected,
                             elevation = elevationDp.dp,
-                            onClick = { onCardClick(index) }
+                            onClick = { onCardClick(index) },
+                            onLongClick = { showingCardDetails = card }
                         )
                     }
 
                     is TacticCard -> {
-                        // Use our new TacticCard rendering
-                        TacticCardItem(
-                            card = card,
-                            isPlayable = isPlayable,
-                            isSelected = isSelected,
-                            onClick = { onCardClick(index) },
-                            modifier = Modifier.width(100.dp)
-                        )
+                        Box(
+                            modifier = Modifier
+                                .width(100.dp)
+                                .combinedClickable(
+                                    onClick = { onCardClick(index) },
+                                    onLongClick = { showingCardDetails = card }
+                                )
+                        ) {
+                            TacticCardItem(
+                                card = card,
+                                isPlayable = isPlayable,
+                                isSelected = isSelected,
+                                onClick = { onCardClick(index) },
+                                onLongClick = { showingCardDetails = card}
+                            )
+                        }
                     }
 
                     is FortificationCard -> {
-                        // Use existing FortificationCard rendering
                         HandCard(
                             card = card,
                             isPlayable = isPlayable,
                             isSelected = isSelected,
                             elevation = elevationDp.dp,
-                            onClick = { onCardClick(index) }
+                            onClick = { onCardClick(index) },
+                            onLongClick = { showingCardDetails = card }
                         )
                     }
 
                     else -> {
-                        // Fallback for any other card types
                         GenericCardItem(
                             card = card,
                             isPlayable = isPlayable,
                             isSelected = isSelected,
-                            onClick = { onCardClick(index) }
+                            onClick = { onCardClick(index) },
+                            onLongClick = { showingCardDetails = card }
                         )
                     }
                 }
             }
         }
+    }
+
+    // Show card details dialog if a card is long-pressed
+    showingCardDetails?.let { card ->
+        CardDetailDialog(
+            card = card,
+            onDismiss = { showingCardDetails = null }
+        )
     }
 }
 
@@ -159,13 +189,15 @@ fun PlayerHand(
 /**
  * Individual card in the player's hand
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HandCard(
     card: Card,
     isPlayable: Boolean,
     isSelected: Boolean = false,
     elevation: Dp = 4.dp,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongClick: () -> Unit = {} // Add this parameter
 ) {
     val cardColor = if (card is UnitCard) {
         when (card.unitEra) {
@@ -195,7 +227,10 @@ fun HandCard(
                 color = if (isSelected) Color(0xFF4CAF50) else Color.Transparent,
                 shape = RoundedCornerShape(8.dp)
             )
-            .clickable(enabled = isPlayable) { onClick() },
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick // Add long click support
+            ),
         shape = RoundedCornerShape(8.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -342,20 +377,29 @@ fun HandCard(
 /**
  * Fallback card rendering for unknown card types
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun GenericCardItem(
     card: Card,
     isPlayable: Boolean,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongClick: () -> Unit = {}
 ) {
-    // Use a basic card display for any type we don't specifically handle
-    HandCard(
-        card = card,
-        isPlayable = isPlayable,
-        isSelected = isSelected,
-        onClick = onClick
-    )
+    Box(
+        modifier = Modifier.combinedClickable(
+            onClick = onClick,
+            onLongClick = onLongClick
+        )
+    ) {
+        HandCard(
+            card = card,
+            isPlayable = isPlayable,
+            isSelected = isSelected,
+            onClick = onClick,
+            onLongClick = onLongClick
+        )
+    }
 }
 
 @Composable
@@ -412,5 +456,238 @@ fun CardBack(index: Int) {
                 .align(Alignment.Center)
         )
 
+    }
+}
+@Composable
+fun CardDetailDialog(
+    card: Card,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Transparent)
+                .clickable(onClick = onDismiss),
+            contentAlignment = Alignment.Center
+        ) {
+            Card(
+                modifier = Modifier
+                    .width(300.dp)
+                    .wrapContentHeight()
+                    .clickable { /* Prevent clicks from passing through */ },
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = when (card) {
+                        is UnitCard -> when (card.unitEra) {
+                            UnitEra.ANCIENT -> Color(0xFF8D6E63)
+                            UnitEra.ROMAN -> Color(0xFFB71C1C)
+                            UnitEra.MEDIEVAL -> Color(0xFF1A237E)
+                            UnitEra.NAPOLEONIC -> Color(0xFF4A148C)
+                        }
+                        is TacticCard -> when (card.cardType) {
+                            TacticCardType.DIRECT_DAMAGE -> Color(0xFFB71C1C)
+                            TacticCardType.AREA_EFFECT -> Color(0xFFFF5722)
+                            TacticCardType.BUFF -> Color(0xFF4CAF50)
+                            TacticCardType.DEBUFF -> Color(0xFF7B1FA2)
+                            TacticCardType.SPECIAL -> Color(0xFF1976D2)
+                        }
+                        is FortificationCard -> Color(0xFF795548)
+                        else -> Color(0xFF424242)
+                    }.copy(0.8f)
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Card Name
+                    Text(
+                        text = card.name,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        fontFamily = libreFont,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Card Icon
+                    Box(
+                        modifier = Modifier.size(80.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        when (card) {
+                            is UnitCard -> UnitTypeIcon(
+                                unitType = card.unitType,
+                                modifier = Modifier.size(80.dp)
+                            )
+                            is FortificationCard -> FortificationTypeIcon(
+                                fortType = card.fortType,
+                                modifier = Modifier.size(80.dp)
+                            )
+                            is TacticCard -> TacticTypeIcon(
+                                tacticCardType = card.cardType,
+                                modifier = Modifier.size(80.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Card Description
+                    Text(
+                        text = card.description,
+                        fontSize = 14.sp,
+                        color = Color.White.copy(alpha = 0.9f),
+                        fontFamily = libreFont,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // Stats Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        // Mana Cost
+                        Box(
+                            modifier = Modifier
+                                .size(50.dp)
+                                .background(Color(0xFFC41E3A), bloodDropShape)
+                                .border(2.dp, Color.Gray.copy(0.5f), bloodDropShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = card.manaCost.toString(),
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp
+                            )
+                        }
+
+                        when (card) {
+                            is UnitCard -> {
+                                // Attack
+                                Box(
+                                    modifier = Modifier
+                                        .size(50.dp)
+                                        .background(Color(0xFFFF9800), slenderSwordShape)
+                                        .border(2.dp, Color.Gray.copy(0.5f), slenderSwordShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = card.attack.toString(),
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 20.sp,
+                                        modifier = Modifier.offset(y = (-4).dp)
+                                    )
+                                }
+
+                                // Health
+                                Box(
+                                    modifier = Modifier
+                                        .size(50.dp)
+                                        .background(Color(0xFF4CAF50), kiteShieldShape)
+                                        .border(2.dp, Color.Gray.copy(0.5f), kiteShieldShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = card.health.toString(),
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 20.sp,
+                                        modifier = Modifier.offset(y = (-2).dp)
+                                    )
+                                }
+                            }
+                            is FortificationCard -> {
+                                // Attack (if tower)
+                                if (card.fortType == FortificationType.TOWER) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(50.dp)
+                                            .background(Color(0xFFFF9800), slenderSwordShape)
+                                            .border(2.dp, Color.Gray.copy(0.5f), slenderSwordShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = card.attack.toString(),
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 20.sp,
+                                            modifier = Modifier.offset(y = (-4).dp)
+                                        )
+                                    }
+                                }
+
+                                // Health
+                                Box(
+                                    modifier = Modifier
+                                        .size(50.dp)
+                                        .background(Color(0xFF4CAF50), kiteShieldShape)
+                                        .border(2.dp, Color.Gray.copy(0.5f), kiteShieldShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = card.health.toString(),
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 20.sp,
+                                        modifier = Modifier.offset(y = (-2).dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Special abilities
+                    when (card) {
+                        is UnitCard -> {
+                            if (card.hasCharge || card.hasTaunt || card.abilities.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    if (card.hasCharge) {
+                                        Text(
+                                            text = "• Charge: Can attack immediately",
+                                            fontSize = 12.sp,
+                                            color = Color(0xFFFFC107),
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    }
+                                    if (card.hasTaunt) {
+                                        Text(
+                                            text = "• Taunt: Enemies must attack this unit",
+                                            fontSize = 12.sp,
+                                            color = Color(0xFF795548),
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "Tap anywhere to close",
+                        fontSize = 12.sp,
+                        color = Color.White.copy(alpha = 0.5f),
+                        fontStyle = FontStyle.Italic
+                    )
+                }
+            }
+        }
     }
 }

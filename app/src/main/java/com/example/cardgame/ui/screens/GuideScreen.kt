@@ -86,7 +86,6 @@ fun GuideScreen(
                         text = "GAME GUIDE",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        fontFamily = libreFont,
                         color = Color.White
                     )
 
