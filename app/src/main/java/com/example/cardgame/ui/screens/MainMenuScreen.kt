@@ -186,60 +186,56 @@ fun MainMenuScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "CONQUERORS GLORY",
+                text = "ETERNAL GLORY",
                 style = MaterialTheme.typography.headlineSmall.copy(
-                    fontSize = 48.sp,
+                    fontSize = 36.sp,
                     fontWeight = FontWeight.ExtraBold,
                     fontFamily = libreFont,
                     shadow = Shadow(
-                        color = Color(0xFF5271FF),
+                        color = Color(0xFF0C2D3D),
                         offset = Offset(2f, 2f),
                         blurRadius = 4f
                     )
                 ),
-                color = Color.White,
-                textAlign = TextAlign.Center
-            )
+                color = Color(0xFFC7AD78),
+                textAlign = TextAlign.Center)
 
 
             Spacer(modifier = Modifier.height(176.dp))
 
-            MenuButton(
-                text = "Custom Game",
-                onClick = onStartGame
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            MenuButton(
-                text = "Campaign Mode",
-                onClick = onShowCampaign
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            MenuButton(
-                text = "Deck Builder",
-                onClick = onShowDeckBuilder
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            MenuButton(
-                text = "Game Guide",
-                onClick = onShowGuide
-            )
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+            ) {
+                MenuButton(
+                    text = "Custom Game",
+                    onClick = onStartGame
+                )
+                MenuButton(
+                    text = "Campaign Mode",
+                    onClick = onShowCampaign
+                )
+                MenuButton(
+                    text = "Deck Builder",
+                    onClick = onShowDeckBuilder
+                )
+                MenuButton(
+                    text = "Game Guide",
+                    onClick = onShowGuide
+                )
+            }
 
         }
         // Add a mute button in the top right corner
         IconButton(
             onClick = { onToggleMusicMute() },
             modifier = Modifier
-                .align(Alignment.TopEnd)
+                .align(Alignment.BottomEnd)
                 .padding(16.dp)
                 .size(48.dp)
-                .background(Color(0xFF2D3250).copy(alpha = 0.7f), CircleShape)
-                .border(1.dp, Color(0xFF5271FF), CircleShape)
+                .background(Color(0xFF512602).copy(alpha = 0.7f), CircleShape)
+                .border(1.dp, Color(0xFF0D1B0C), CircleShape)
         ) {
             Icon(
                 painter = painterResource(if (isMusicMuted) R.drawable.baseline_music_off else R.drawable.baseline_music_on),
@@ -265,20 +261,18 @@ fun MenuButton(
 
     val buttonGradient = Brush.horizontalGradient(
         colors = if (isHovered) {
-            listOf(Color(0xFF5271FF), Color(0xFF6E8AFF))
+            listOf(Color(0xFF841B09), Color(0xFF0D3041))
         } else {
-            listOf(Color(0xFF3D55CC), Color(0xFF5271FF))
+            listOf(Color(0xFF841B09), Color(0xFF0D3041))
         }
     )
 
     Box(
         modifier = Modifier
-            .scale(scale)
             .clip(RoundedCornerShape(2.dp))
-            .background(buttonGradient)
             .clickable { onClick() }
             .padding(horizontal = 32.dp, vertical = 12.dp)
-            .pointerInput(Unit) {
+       /*     .pointerInput(Unit) {
                 awaitPointerEventScope {
                     while (true) {
                         val event = awaitPointerEvent()
@@ -288,12 +282,17 @@ fun MenuButton(
                         }
                     }
                 }
-            },
-        contentAlignment = Alignment.Center
+            }
+
+        */
+        ,contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
-            color = Color.White
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF6E3901),
+            fontFamily = libreFont
         )
     }
 

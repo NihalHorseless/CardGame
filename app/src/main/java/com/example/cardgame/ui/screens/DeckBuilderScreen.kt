@@ -191,10 +191,16 @@ fun DeckBuilderScreen(
                         onClick = { onNavigateToEditor(deck.id) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp),
+                            .height(48.dp)
+                            .border(
+                                width = 2.dp,
+                                color =  Color(0xFF0D2E3E),
+                                shape = RoundedCornerShape(2.dp)
+                            ),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF5271FF)
-                        )
+                        ),
+                        shape = RoundedCornerShape(2.dp)
                     ) {
                         Text(
                             text = "Edit Deck",
@@ -215,10 +221,16 @@ fun DeckBuilderScreen(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp),
+                            .height(48.dp)
+                            .border(
+                                width = 2.dp,
+                                color =  Color(0xFF0D2E3E),
+                                shape = RoundedCornerShape(2.dp)
+                            ),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFFE53935)
-                        )
+                        ),
+                        shape = RoundedCornerShape(2.dp)
                     ) {
                         Text(
                             text = "Delete Deck",

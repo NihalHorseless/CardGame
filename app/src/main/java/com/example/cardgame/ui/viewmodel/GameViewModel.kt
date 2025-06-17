@@ -558,7 +558,7 @@ class GameViewModel(
             _gameManager.players[0].setDeck(playerDeck)
             _gameManager.players[1].setDeck(opponentDeck)
 Log.d("StartGame",playerDeck.toString())
-            _opponentName.value = "Opponent"
+            _opponentName.value = "Mediocre Bot"
             _isInCampaign.value = false
 
             // Start the game
@@ -959,7 +959,10 @@ Log.d("StartGame",playerDeck.toString())
                 selectedFortification.fortType == FortificationType.TOWER &&
                 Pair(row, col) in _validAttackTargets.value
             ) {
-                executeFortificationAttack(selectedRow, selectedCol, row, col)
+                viewModelScope.launch {
+                    executeFortificationAttack(selectedRow, selectedCol, row, col)
+                }
+
                 return
             }
         }
@@ -1947,7 +1950,7 @@ Log.d("StartGame",playerDeck.toString())
 
                 // Execute attack and wait for it to complete
                 if(_gameManager.gameBoard.getUnitAt(bestTarget.first,bestTarget.second) != null)
-                executeAIAttack(aiUnitPos.first,aiUnitPos.second,bestTarget.first, bestTarget.second, opponentContext)
+                    executeAIAttack(aiUnitPos.first,aiUnitPos.second,bestTarget.first, bestTarget.second, opponentContext)
                 else
                     executeAIAttackAgainstFortification(aiUnitPos.first,aiUnitPos.second,bestTarget.first, bestTarget.second)
                 // Add delay between attacks for visual clarity
@@ -1972,6 +1975,138 @@ Log.d("StartGame",playerDeck.toString())
                 // Add delay after direct attack
                 delay(500)
             }
+        }
+
+        // NEW: Attack with AI fortifications
+        val aiFortifications = opponentContext.fortifications.filter {
+            it.fortType == FortificationType.TOWER && it.canAttackThisTurn
+        }
+
+        for (tower in aiFortifications) {
+            // Check if tower can still attack (in case game state changed)
+            if (!tower.canAttackThisTurn) continue
+
+            // Find the tower's position
+            val towerPos = _gameManager.gameBoard.getFortificationPosition(tower) ?: continue
+
+            // Find valid targets for the tower
+            val validTargets = getValidAttackTargetsForAIFortification(tower, towerPos.first, towerPos.second)
+
+            if (validTargets.isNotEmpty()) {
+                // AI strategy: Attack the weakest target first
+                val targetWithHealth = validTargets.mapNotNull { target ->
+                    val targetUnit = _gameManager.gameBoard.getUnitAt(target.first, target.second)
+                    targetUnit?.let { Pair(target, it.health) }
+                }.sortedBy { it.second } // Sort by health (lowest first)
+
+                val bestTarget = targetWithHealth.firstOrNull()?.first ?: validTargets.first()
+
+                // Execute fortification attack and wait for it to complete
+                executeFortificationAttack(towerPos.first, towerPos.second, bestTarget.first, bestTarget.second)
+
+                // Add delay between attacks for visual clarity
+                delay(500)
+            }
+        }
+    }
+
+    private fun getValidAttackTargetsForAIFortification(
+        fortification: FortificationCard,
+        row: Int,
+        col: Int
+    ): List<Pair<Int, Int>> {
+        // Only towers can attack
+        if (fortification.fortType != FortificationType.TOWER) return emptyList()
+
+        // If tower can't attack this turn, return empty list
+        if (!fortification.canAttackThisTurn) return emptyList()
+
+        val attackTargets = mutableListOf<Pair<Int, Int>>()
+
+        // Tower attack range is 2
+        val range = 2
+
+        // Check all cells within range
+        for (targetRow in 0 until _gameManager.gameBoard.rows) {
+            for (targetCol in 0 until _gameManager.gameBoard.columns) {
+                // Calculate Manhattan distance
+                val distance = abs(row - targetRow) + abs(col - targetCol)
+
+                // Check if within range and not the same cell
+                if (distance in 1..range) {
+                    // Check if there's an enemy unit at this position (player units for AI)
+                    val targetUnit = _gameManager.gameBoard.getUnitAt(targetRow, targetCol)
+                    if (targetUnit != null) {
+                        val targetUnitOwner = _gameManager.gameBoard.getUnitOwner(targetUnit)
+
+                        // Only include player units (owner == 0)
+                        if (targetUnitOwner == 0) {
+                            attackTargets.add(Pair(targetRow, targetCol))
+                        }
+                    }
+                }
+            }
+        }
+
+        return attackTargets
+    }
+
+    private suspend fun executeFortificationAttack(
+        fortificationRow: Int,
+        fortificationCol: Int,
+        targetRow: Int,
+        targetCol: Int
+    ) {
+        val fortification = _gameManager.gameBoard.getFortificationAt(fortificationRow, fortificationCol) ?: return
+        val targetUnit = _gameManager.gameBoard.getUnitAt(targetRow, targetCol) ?: return
+
+        // Only towers can attack
+        if (fortification.fortType != FortificationType.TOWER) return
+
+        // Get target position for animation
+        val targetPos = cellPositions[Pair(targetRow, targetCol)] ?: return
+
+        // Start attack animation (use artillery animation for towers)
+        _attackingUnitType.value = UnitType.ARTILLERY
+        _attackTargetPosition.value = targetPos
+        _isSimpleAttackVisible.value = true
+        soundManager.playSound(SoundType.ARTILLERY_ATTACK)
+
+        // Wait for attack animation
+        delay(800)
+        _isSimpleAttackVisible.value = false
+
+        // Wait before applying damage
+        delay(300)
+
+        // Store original health
+        val originalHealth = targetUnit.health
+        val willKillTarget = targetUnit.health <= fortification.attack
+
+        // Execute the attack
+        val attackResult = _gameManager.executeFortificationAttack(fortification, targetRow, targetCol)
+
+        if (attackResult) {
+            if (willKillTarget) {
+                // Add position to death animation tracking
+                _entitiesInDeathAnimation.value += Pair(targetRow, targetCol)
+
+                // Play death animation and wait for it
+                playDeathAnimationForAI(targetUnit, Pair(targetRow, targetCol))
+            } else {
+                // Animate health decrease and wait
+                val actualDamage = originalHealth - targetUnit.health
+                val tempHealth = targetUnit.health
+                targetUnit.health = originalHealth
+
+                // Use the suspending version of health animation
+                animateHealthDecreaseForAI(targetUnit, actualDamage)
+
+                // Restore actual health
+                targetUnit.health = tempHealth
+            }
+
+            updateAllGameStates()
         }
     }
     private suspend fun executeAIAttackAgainstFortification(
@@ -2258,25 +2393,346 @@ Log.d("StartGame",playerDeck.toString())
         // Remove from tracking
         _entitiesInDeathAnimation.value -= position
     }
+    private suspend fun playAITacticCards(context: PlayerContext) {
+        val player = context.player
+
+        // Keep trying to play tactic cards until we can't
+        var cardPlayed = true
+        while (cardPlayed && player.hand.isNotEmpty()) {
+            cardPlayed = false
+
+            // Look for tactic cards in hand
+            val tacticCardsWithIndex = player.hand.mapIndexedNotNull { index, card ->
+                if (card is TacticCard && card.manaCost <= player.currentMana) {
+                    index to card
+                } else null
+            }
+
+            if (tacticCardsWithIndex.isEmpty()) break
+
+            // Try to play each tactic card with smart targeting
+            for ((cardIndex, tacticCard) in tacticCardsWithIndex) {
+                val played = playAITacticCardSmart(context, cardIndex, tacticCard)
+                if (played) {
+                    cardPlayed = true
+                    updateAllGameStates()
+                    delay(800) // Animation delay
+                    break // Re-evaluate hand after playing a card
+                }
+            }
+        }
+    }
+
+    // Add this smart tactic card playing function
+    private suspend fun playAITacticCardSmart(context: PlayerContext, cardIndex: Int, card: TacticCard): Boolean {
+        when (card.targetType) {
+            TargetType.NONE -> {
+                // Cards like "Draw 2" that don't need targets - always play these
+                val success = card.play(context.player, gameManager, null)
+                if (success) {
+                    // Show effect animation if applicable
+                    when (card.cardType) {
+                        TacticCardType.SPECIAL -> {
+                            playTacticCardSound(card.cardType)
+                            delay(500)
+                        }
+                        else -> {}
+                    }
+                }
+                return success
+            }
+
+            TargetType.ENEMY -> {
+                // Find the best enemy target based on card type
+                val enemyTargets = getAllPlayerTargets() // Get player's units/fortifications
+
+                if (enemyTargets.isEmpty()) return false
+
+                val bestTarget = when (card.cardType) {
+                    TacticCardType.DIRECT_DAMAGE -> {
+                        // Target the unit with lowest health that can be killed
+                        findBestDamageTarget(enemyTargets, card)
+                    }
+                    TacticCardType.DEBUFF -> {
+                        // Target the strongest enemy unit
+                        findStrongestTarget(enemyTargets)
+                    }
+                    else -> enemyTargets.randomOrNull()
+                }
+
+                bestTarget?.let { target ->
+                    val linearPos = target.first * gameManager.gameBoard.columns + target.second
+                    val success = card.play(context.player, gameManager, linearPos)
+
+                    if (success) {
+                        // Show effect animation
+                        playTacticCardSound(card.cardType)
+                        val targetPos = cellPositions[target]
+                        if (targetPos != null) {
+                            _tacticEffectPosition.value = targetPos
+                            _tacticEffectType.value = card.cardType
+                            _isTacticEffectVisible.value = true
+                            delay(1200) // Wait for animation
+                            _isTacticEffectVisible.value = false
+                        }
+                        return true
+                    }
+                }
+            }
+
+            TargetType.FRIENDLY -> {
+                // Find the best friendly target based on card type
+                val friendlyTargets = getAllAITargets() // Get AI's units/fortifications
+
+                if (friendlyTargets.isEmpty()) return false
+
+                val bestTarget = when (card.cardType) {
+                    TacticCardType.BUFF -> {
+                        // Buff the strongest unit or one about to attack
+                        findBestBuffTarget(friendlyTargets, card)
+                    }
+                    else -> friendlyTargets.randomOrNull()
+                }
+
+                bestTarget?.let { target ->
+                    val linearPos = target.first * gameManager.gameBoard.columns + target.second
+                    val success = card.play(context.player, gameManager, linearPos)
+
+                    if (success) {
+                        // Show effect animation
+                        playTacticCardSound(card.cardType)
+                        val targetPos = cellPositions[target]
+                        if (targetPos != null) {
+                            _tacticEffectPosition.value = targetPos
+                            _tacticEffectType.value = card.cardType
+                            _isTacticEffectVisible.value = true
+                            delay(1200) // Wait for animation
+                            _isTacticEffectVisible.value = false
+                        }
+                        return true
+                    }
+                }
+            }
+
+            TargetType.BOARD, TargetType.ANY -> {
+                // For area effects, find optimal position
+                val bestPosition = when (card.cardType) {
+                    TacticCardType.AREA_EFFECT -> {
+                        // Find position that hits most enemies
+                        findBestAreaEffectPosition()
+                    }
+                    else -> {
+                        // Random valid position
+                        val allPositions = mutableListOf<Pair<Int, Int>>()
+                        for (row in 0 until gameManager.gameBoard.rows) {
+                            for (col in 0 until gameManager.gameBoard.columns) {
+                                allPositions.add(Pair(row, col))
+                            }
+                        }
+                        allPositions.randomOrNull()
+                    }
+                }
+
+                bestPosition?.let { pos ->
+                    val linearPos = pos.first * gameManager.gameBoard.columns + pos.second
+                    val success = card.play(context.player, gameManager, linearPos)
+
+                    if (success) {
+                        // Show effect animation
+                        playTacticCardSound(card.cardType)
+                        val targetPos = cellPositions[pos]
+                        if (targetPos != null) {
+                            _tacticEffectPosition.value = targetPos
+                            _tacticEffectType.value = card.cardType
+                            _isTacticEffectVisible.value = true
+                            delay(1200) // Wait for animation
+                            _isTacticEffectVisible.value = false
+                        }
+                        return true
+                    }
+                }
+            }
+        }
+
+        return false
+    }
+
+// Helper functions for smart targeting
+
+    private fun getAllPlayerTargets(): List<Pair<Int, Int>> {
+        val targets = mutableListOf<Pair<Int, Int>>()
+
+        for (row in 0 until gameManager.gameBoard.rows) {
+            for (col in 0 until gameManager.gameBoard.columns) {
+                // Check for player units
+                val unit = gameManager.gameBoard.getUnitAt(row, col)
+                if (unit != null && gameManager.gameBoard.getUnitOwner(unit) == 0) {
+                    targets.add(Pair(row, col))
+                    continue
+                }
+
+                // Check for player fortifications
+                val fort = gameManager.gameBoard.getFortificationAt(row, col)
+                if (fort != null && gameManager.gameBoard.getFortificationOwner(fort) == 0) {
+                    targets.add(Pair(row, col))
+                }
+            }
+        }
+
+        return targets
+    }
+
+    private fun getAllAITargets(): List<Pair<Int, Int>> {
+        val targets = mutableListOf<Pair<Int, Int>>()
+
+        for (row in 0 until gameManager.gameBoard.rows) {
+            for (col in 0 until gameManager.gameBoard.columns) {
+                // Check for AI units
+                val unit = gameManager.gameBoard.getUnitAt(row, col)
+                if (unit != null && gameManager.gameBoard.getUnitOwner(unit) == 1) {
+                    targets.add(Pair(row, col))
+                    continue
+                }
+
+                // Check for AI fortifications
+                val fort = gameManager.gameBoard.getFortificationAt(row, col)
+                if (fort != null && gameManager.gameBoard.getFortificationOwner(fort) == 1) {
+                    targets.add(Pair(row, col))
+                }
+            }
+        }
+
+        return targets
+    }
+
+    private fun findBestDamageTarget(targets: List<Pair<Int, Int>>, card: TacticCard): Pair<Int, Int>? {
+        // Estimate damage from card (this is a simplified approach)
+        val estimatedDamage = when (card.name.lowercase()) {
+            "fireball" -> 4
+            "lightning bolt" -> 3
+            "magic missile" -> 2
+            else -> 3 // Default estimate
+        }
+
+        // Find units that can be killed by this damage
+        val killableTargets = targets.filter { target ->
+            val unit = gameManager.gameBoard.getUnitAt(target.first, target.second)
+            val fort = gameManager.gameBoard.getFortificationAt(target.first, target.second)
+
+            when {
+                unit != null -> unit.health <= estimatedDamage
+                fort != null -> fort.health <= estimatedDamage
+                else -> false
+            }
+        }
+
+        // If we can kill something, prioritize that
+        if (killableTargets.isNotEmpty()) {
+            // Among killable targets, prioritize high-value units
+            return killableTargets.maxByOrNull { target ->
+                val unit = gameManager.gameBoard.getUnitAt(target.first, target.second)
+                unit?.attack ?: 0
+            }
+        }
+
+        // Otherwise, target the lowest health enemy
+        return targets.minByOrNull { target ->
+            val unit = gameManager.gameBoard.getUnitAt(target.first, target.second)
+            val fort = gameManager.gameBoard.getFortificationAt(target.first, target.second)
+
+            when {
+                unit != null -> unit.health
+                fort != null -> fort.health
+                else -> Int.MAX_VALUE
+            }
+        }
+    }
+
+    private fun findStrongestTarget(targets: List<Pair<Int, Int>>): Pair<Int, Int>? {
+        return targets.maxByOrNull { target ->
+            val unit = gameManager.gameBoard.getUnitAt(target.first, target.second)
+            unit?.attack ?: 0
+        }
+    }
+
+    private fun findBestBuffTarget(targets: List<Pair<Int, Int>>, card: TacticCard): Pair<Int, Int>? {
+        // Prioritize units that can attack this turn
+        val attackingUnits = targets.filter { target ->
+            val unit = gameManager.gameBoard.getUnitAt(target.first, target.second)
+            unit?.canAttackThisTurn == true
+        }
+
+        if (attackingUnits.isNotEmpty()) {
+            // Among attacking units, buff the strongest
+            return attackingUnits.maxByOrNull { target ->
+                val unit = gameManager.gameBoard.getUnitAt(target.first, target.second)
+                unit?.attack ?: 0
+            }
+        }
+
+        // Otherwise, buff the unit with highest attack
+        return targets.maxByOrNull { target ->
+            val unit = gameManager.gameBoard.getUnitAt(target.first, target.second)
+            unit?.attack ?: 0
+        }
+    }
+
+    private fun findBestAreaEffectPosition(): Pair<Int, Int>? {
+        var bestPosition: Pair<Int, Int>? = null
+        var maxEnemies = 0
+
+        // Check each position on the board
+        for (centerRow in 0 until gameManager.gameBoard.rows) {
+            for (centerCol in 0 until gameManager.gameBoard.columns) {
+                var enemyCount = 0
+
+                // Check 3x3 area around this position (radius 1)
+                for (row in (centerRow - 1)..(centerRow + 1)) {
+                    for (col in (centerCol - 1)..(centerCol + 1)) {
+                        if (row in 0 until gameManager.gameBoard.rows &&
+                            col in 0 until gameManager.gameBoard.columns) {
+
+                            // Check for player units
+                            val unit = gameManager.gameBoard.getUnitAt(row, col)
+                            if (unit != null && gameManager.gameBoard.getUnitOwner(unit) == 0) {
+                                enemyCount++
+                            }
+
+                            // Check for player fortifications
+                            val fort = gameManager.gameBoard.getFortificationAt(row, col)
+                            if (fort != null && gameManager.gameBoard.getFortificationOwner(fort) == 0) {
+                                enemyCount++
+                            }
+                        }
+                    }
+                }
+
+                // Update best position if this hits more enemies
+                if (enemyCount > maxEnemies) {
+                    maxEnemies = enemyCount
+                    bestPosition = Pair(centerRow, centerCol)
+                }
+            }
+        }
+
+        return bestPosition
+    }
+
     private fun simulateAITurn() {
         viewModelScope.launch {
-            // AI plays cards
-            delay(500) // Think time
 
-            // Try to play a card
+            delay(500)
+            playAITacticCards(opponentContext)
+
+            delay(500)
             playCardsRandomly(opponentContext)
 
-            // AI moves units
             delay(500)
-
-            // Get movable units
             moveAIUnitsAggressively(opponentContext,_gameManager.gameBoard)
 
-            // AI attacks
             delay(500)
-
             simulateAIAttack()
-            // End AI turn
+
             delay(500)
             _gameManager.turnManager.endTurn()
             updateAllGameStates()
@@ -2364,95 +2820,6 @@ Log.d("StartGame",playerDeck.toString())
         }
 
         return attackTargets
-    }
-
-    /**
-     * Execute an attack from a fortification
-     */
-    private fun executeFortificationAttack(
-        fortificationRow: Int,
-        fortificationCol: Int,
-        targetRow: Int,
-        targetCol: Int
-    ) {
-        val fortification =
-            _gameManager.gameBoard.getFortificationAt(fortificationRow, fortificationCol) ?: return
-
-        // Only towers can attack
-        if (fortification.fortType != FortificationType.TOWER) return
-
-        // Get target position for animation
-        val targetPos = cellPositions[Pair(targetRow, targetCol)]
-        val targetUnit = _gameManager.gameBoard.getUnitAt(targetRow, targetCol) ?: return
-
-        if (targetPos != null) {
-            // Start attack animation (use a distinct attack type for towers)
-            _attackingUnitType.value = UnitType.ARTILLERY // Use artillery animation for towers
-            _attackTargetPosition.value = targetPos
-            _isSimpleAttackVisible.value = true
-            soundManager.playSound(SoundType.ARTILLERY_ATTACK)
-
-            // Attack logic after animation
-            viewModelScope.launch {
-                // Wait for attack animation
-                delay(800)
-                _isSimpleAttackVisible.value = false
-
-                // Wait for damage
-                delay(300)
-
-                // Store original health before attack for animation
-                val originalHealth = targetUnit.health
-
-                // Execute the attack
-                val attackResult =
-                    _gameManager.executeFortificationAttack(fortification, targetRow, targetCol)
-
-                if (attackResult) {
-
-                    // Animate health decrease
-                    val actualDamage = originalHealth - targetUnit.health
-
-                    // Restore health temporarily for animation
-                    val tempHealth = targetUnit.health
-                    targetUnit.health = originalHealth
-
-                    // Animate health decrease
-                    animateHealthDecrease(targetUnit, actualDamage) {
-                        // Restore the actual health once animation completes
-                        targetUnit.health = tempHealth
-
-                        Log.d("AnimateHealth", "ViewModel")
-                        // Reset states
-                        _statusMessage.value = "Tower attack successful!"
-                        _selectedCell.value = null
-                        _validAttackTargets.value = emptyList()
-                        _interactionMode.value = InteractionMode.DEFAULT
-
-                        updateAllGameStates()
-                    }
-
-                } else {
-                    _statusMessage.value = "Attack failed"
-                    _interactionMode.value = InteractionMode.DEFAULT
-                }
-            }
-        } else {
-            // Fallback if position tracking failed
-            val attackResult =
-                _gameManager.executeFortificationAttack(fortification, targetRow, targetCol)
-
-            if (attackResult) {
-                _statusMessage.value = "Tower attack successful!"
-                _selectedCell.value = null
-                _validAttackTargets.value = emptyList()
-                _interactionMode.value = InteractionMode.DEFAULT
-                updateAllGameStates()
-            } else {
-                _statusMessage.value = "Attack failed"
-                _interactionMode.value = InteractionMode.DEFAULT
-            }
-        }
     }
 
     // Property for tracking health change for units

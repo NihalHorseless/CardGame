@@ -241,7 +241,7 @@
   },
   {
     "id": 16,
-    "name": "Archer Tower",
+    "name": "Cannon Tower",
     "description": "Advanced attack tower with range 2",
     "manaCost": 5,
     "imagePath": "fortification_watch_tower",

@@ -1,5 +1,6 @@
 package com.example.cardgame.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -40,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.cardgame.ui.theme.TurkishRed
 import com.example.cardgame.ui.theme.bloodDropShape
 import com.example.cardgame.ui.theme.kiteShieldShape
 import com.example.cardgame.ui.theme.scallopedCircleShape
@@ -185,11 +187,17 @@ fun DeckSelectionScreen(
             modifier = Modifier
                 .fillMaxWidth(0.5f)
                 .height(56.dp)
-                .padding(vertical = 8.dp),
+                .padding(vertical = 8.dp)
+                .border(
+                    width = 4.dp,
+                    color =  Color(0xFF0D2E3E),
+                    shape = RoundedCornerShape(2.dp)
+                ),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF5271FF),
+                containerColor = Color(0xFF5271FF).copy(0.8f),
                 disabledContainerColor = Color(0xFF5271FF).copy(alpha = 0.5f)
-            )
+            ),
+            shape = RoundedCornerShape(2.dp)
         ) {
             Text(
                 text = "START GAME",

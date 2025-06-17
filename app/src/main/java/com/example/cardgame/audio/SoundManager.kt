@@ -53,8 +53,8 @@ class SoundManager(private val context: Context) {
             // Spell effects
             soundMap[SoundType.SPELL_DEBUFF] = soundPool.load(context, R.raw.debuff, 1)
             soundMap[SoundType.SPELL_AREA_EFFECT] = soundPool.load(context, R.raw.tactic_card_explosion, 1)
-            soundMap[SoundType.SPELL_BUFF] = soundPool.load(context, R.raw.fantasy_magic_button_1, 1)
-            soundMap[SoundType.SPELL_SPECIAL] = soundPool.load(context, R.raw.fantasy_magic_button_1, 1)
+            soundMap[SoundType.SPELL_BUFF] = soundPool.load(context, R.raw.buff_effect_sound_two, 1)
+            soundMap[SoundType.SPELL_SPECIAL] = soundPool.load(context, R.raw.buff_effect_sound, 1)
             soundMap[SoundType.SPELL_DIRECT_DAMAGE] = soundPool.load(context, R.raw.rocket_effect, 1)
 
             // Unit and fortification sounds
@@ -72,7 +72,7 @@ class SoundManager(private val context: Context) {
 
             // Game state sounds
             soundMap[SoundType.TURN_END] = soundPool.load(context, R.raw.end_turn_sound, 1)
-            soundMap[SoundType.DEFEAT] = soundPool.load(context, R.raw.game_over, 1)
+            soundMap[SoundType.DEFEAT] = soundPool.load(context, R.raw.game_over_bell, 1)
             soundMap[SoundType.VICTORY] = soundPool.load(context, R.raw.victory_chant, 1)
             soundMap[SoundType.MENU_TAP] = soundPool.load(context, R.raw.menu_click_one, 1)
             soundMap[SoundType.MENU_TAP_TWO] = soundPool.load(context, R.raw.menu_click_two, 1)
