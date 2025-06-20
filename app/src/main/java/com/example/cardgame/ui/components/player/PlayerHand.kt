@@ -1,7 +1,10 @@
 package com.example.cardgame.ui.components.player
 
+import androidx.compose.animation.animateColor
+import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -24,9 +27,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -37,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -55,6 +61,7 @@ import com.example.cardgame.R
 import com.example.cardgame.data.enum.FortificationType
 import com.example.cardgame.data.enum.TacticCardType
 import com.example.cardgame.data.enum.UnitEra
+import com.example.cardgame.data.enum.UnitType
 import com.example.cardgame.data.model.card.Card
 import com.example.cardgame.data.model.card.FortificationCard
 import com.example.cardgame.data.model.card.TacticCard
@@ -63,6 +70,7 @@ import com.example.cardgame.ui.components.board.FortificationTypeIcon
 import com.example.cardgame.ui.components.board.TacticCardItem
 import com.example.cardgame.ui.components.board.TacticTypeIcon
 import com.example.cardgame.ui.components.board.UnitTypeIcon
+import com.example.cardgame.ui.theme.TurkishRed
 import com.example.cardgame.ui.theme.bloodDropShape
 import com.example.cardgame.ui.theme.kiteShieldShape
 import com.example.cardgame.ui.theme.libreFont
@@ -86,7 +94,7 @@ fun PlayerHand(
             .fillMaxWidth()
             .height(160.dp)
             .padding(4.dp),
-        horizontalArrangement = Arrangement.spacedBy((-20).dp)
+        horizontalArrangement = Arrangement.spacedBy(5.dp)
     ) {
         itemsIndexed(cards) { index, card ->
             val isPlayable = card.manaCost <= playerMana
@@ -146,7 +154,7 @@ fun PlayerHand(
                                 isPlayable = isPlayable,
                                 isSelected = isSelected,
                                 onClick = { onCardClick(index) },
-                                onLongClick = { showingCardDetails = card}
+                                onLongClick = { showingCardDetails = card }
                             )
                         }
                     }
@@ -219,19 +227,19 @@ fun HandCard(
             .height(140.dp)
             .shadow(
                 elevation = elevation,
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(4.dp)
             )
             // Add a border if selected
             .border(
-                width = if (isSelected) 2.dp else 0.dp,
-                color = if (isSelected) Color(0xFF4CAF50) else Color.Transparent,
-                shape = RoundedCornerShape(8.dp)
+                width = if (isSelected) 3.dp else 2.dp,
+                color = if (isSelected) Color(0xFF4CAF50) else Color(0xFFD4AF37),
+                shape = RoundedCornerShape(4.dp)
             )
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick // Add long click support
             ),
-        shape = RoundedCornerShape(8.dp)
+        shape = RoundedCornerShape(4.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             // Card Background
@@ -417,9 +425,9 @@ fun OpponentHand(
         items(cardCount) { index ->
             // Card back display
             CardBack(index = index)
-            }
         }
     }
+}
 
 @Composable
 fun CardBack(index: Int) {
@@ -458,6 +466,7 @@ fun CardBack(index: Int) {
 
     }
 }
+
 @Composable
 fun CardDetailDialog(
     card: Card,
@@ -473,221 +482,411 @@ fun CardDetailDialog(
         ) {
             Card(
                 modifier = Modifier
-                    .width(300.dp)
+                    .width(280.dp)
                     .wrapContentHeight()
-                    .clickable { /* Prevent clicks from passing through */ },
-                shape = RoundedCornerShape(16.dp),
+                    .clickable { },
+                shape = RoundedCornerShape(8.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = when (card) {
-                        is UnitCard -> when (card.unitEra) {
-                            UnitEra.ANCIENT -> Color(0xFF8D6E63)
-                            UnitEra.ROMAN -> Color(0xFFB71C1C)
-                            UnitEra.MEDIEVAL -> Color(0xFF1A237E)
-                            UnitEra.NAPOLEONIC -> Color(0xFF4A148C)
-                        }
-                        is TacticCard -> when (card.cardType) {
-                            TacticCardType.DIRECT_DAMAGE -> Color(0xFFB71C1C)
-                            TacticCardType.AREA_EFFECT -> Color(0xFFFF5722)
-                            TacticCardType.BUFF -> Color(0xFF4CAF50)
-                            TacticCardType.DEBUFF -> Color(0xFF7B1FA2)
-                            TacticCardType.SPECIAL -> Color(0xFF1976D2)
-                        }
-                        is FortificationCard -> Color(0xFF795548)
-                        else -> Color(0xFF424242)
-                    }.copy(0.8f)
+                    containerColor = Color.Transparent
                 ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    Color(0xFF2C1810),
+                                    Color(0xFF1A0F08)
+                                )
+                            )
+                        )
+                        .border(
+                            width = 4.dp,
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    Color(0xFFD4AF37),
+                                    Color(0xFF8B6914)
+                                )
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        )
                 ) {
-                    // Card Name
-                    Text(
-                        text = card.name,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        fontFamily = libreFont,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Card Icon
-                    Box(
-                        modifier = Modifier.size(80.dp),
-                        contentAlignment = Alignment.Center
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        when (card) {
-                            is UnitCard -> UnitTypeIcon(
-                                unitType = card.unitType,
-                                modifier = Modifier.size(80.dp)
-                            )
-                            is FortificationCard -> FortificationTypeIcon(
-                                fortType = card.fortType,
-                                modifier = Modifier.size(80.dp)
-                            )
-                            is TacticCard -> TacticTypeIcon(
-                                tacticCardType = card.cardType,
-                                modifier = Modifier.size(80.dp)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Card Description
-                    Text(
-                        text = card.description,
-                        fontSize = 14.sp,
-                        color = Color.White.copy(alpha = 0.9f),
-                        fontFamily = libreFont,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    // Stats Row
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        // Mana Cost
+                        // Card Name with ornate styling
                         Box(
                             modifier = Modifier
-                                .size(50.dp)
-                                .background(Color(0xFFC41E3A), bloodDropShape)
-                                .border(2.dp, Color.Gray.copy(0.5f), bloodDropShape),
-                            contentAlignment = Alignment.Center
+                                .fillMaxWidth()
+                                .background(
+                                    Color(0xFF1A0F08),
+                                    RoundedCornerShape(8.dp)
+                                )
+                                .border(
+                                    width = 1.dp,
+                                    color = Color(0xFFD4AF37),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .padding(vertical = 12.dp, horizontal = 16.dp)
                         ) {
                             Text(
-                                text = card.manaCost.toString(),
-                                color = Color.White,
+                                text = card.name,
+                                fontSize = 22.sp,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 20.sp
+                                color = Color(0xFFD4AF37),
+                                fontFamily = libreFont,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        ManaCost(manaOfCard = card.manaCost)
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        // Card Icon with background
+                        Box(
+                            modifier = Modifier
+                                .size(100.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            when (card) {
+                                is UnitCard -> UnitTypeIcon(
+                                    unitType = card.unitType,
+                                    modifier = Modifier.size(90.dp)
+                                )
+
+                                is FortificationCard -> FortificationTypeIcon(
+                                    fortType = card.fortType,
+                                    modifier = Modifier.size(90.dp)
+                                )
+
+                                is TacticCard -> TacticTypeIcon(
+                                    tacticCardType = card.cardType,
+                                    modifier = Modifier.size(100.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        // Card Description in a styled box
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    Color(0xFF0D0604).copy(alpha = 0.7f),
+                                    RoundedCornerShape(8.dp)
+                                )
+                                .border(
+                                    width = 1.dp,
+                                    color = Color(0xFF8B6914),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .padding(16.dp)
+                        ) {
+                            Text(
+                                text = card.description,
+                                fontSize = 14.sp,
+                                color = Color(0xFFE8D5B7),
+                                fontFamily = libreFont,
+                                textAlign = TextAlign.Center,
+                                lineHeight = 20.sp
                             )
                         }
 
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        // Stats Row
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+
+
+                            when (card) {
+                                is UnitCard -> {
+                                    // Attack
+                                    StatDisplay(
+                                        icon = {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(45.dp)
+                                                    .background(
+                                                        Color(0xFFFF9800),
+                                                        slenderSwordShape
+                                                    )
+                                                    .border(
+                                                        2.dp,
+                                                        Color(0xFFD4AF37),
+                                                        slenderSwordShape
+                                                    ),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = card.attack.toString(),
+                                                    color = Color.White,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 20.sp,
+                                                    modifier = Modifier.offset(y = (-4).dp)
+                                                )
+                                            }
+                                        },
+                                        label = "Attack"
+                                    )
+
+                                    // Health
+                                    StatDisplay(
+                                        icon = {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(45.dp)
+                                                    .background(Color(0xFF4CAF50), kiteShieldShape)
+                                                    .border(
+                                                        2.dp,
+                                                        Color(0xFFD4AF37),
+                                                        kiteShieldShape
+                                                    ),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = card.health.toString(),
+                                                    color = Color.White,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 20.sp,
+                                                    modifier = Modifier.offset(y = (-2).dp)
+                                                )
+                                            }
+                                        },
+                                        label = "Health"
+                                    )
+                                }
+
+                                is FortificationCard -> {
+                                    // Attack (if tower)
+                                    if (card.fortType == FortificationType.TOWER) {
+                                        StatDisplay(
+                                            icon = {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(50.dp)
+                                                        .background(
+                                                            Color(0xFFFF9800),
+                                                            slenderSwordShape
+                                                        )
+                                                        .border(
+                                                            2.dp,
+                                                            Color(0xFFD4AF37),
+                                                            slenderSwordShape
+                                                        ),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Text(
+                                                        text = card.attack.toString(),
+                                                        color = Color.White,
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 20.sp,
+                                                        modifier = Modifier.offset(y = (-4).dp)
+                                                    )
+                                                }
+                                            },
+                                            label = "Attack"
+                                        )
+                                    }
+
+                                    // Health
+                                    StatDisplay(
+                                        icon = {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(50.dp)
+                                                    .background(Color(0xFF4CAF50), kiteShieldShape)
+                                                    .border(
+                                                        2.dp,
+                                                        Color(0xFFD4AF37),
+                                                        kiteShieldShape
+                                                    ),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = card.health.toString(),
+                                                    color = Color.White,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 20.sp,
+                                                    modifier = Modifier.offset(y = (-2).dp)
+                                                )
+                                            }
+                                        },
+                                        label = "Health"
+                                    )
+                                }
+                            }
+                        }
+
+                        // Special abilities
                         when (card) {
                             is UnitCard -> {
-                                // Attack
+                                Spacer(modifier = Modifier.height(20.dp))
                                 Box(
                                     modifier = Modifier
-                                        .size(50.dp)
-                                        .background(Color(0xFFFF9800), slenderSwordShape)
-                                        .border(2.dp, Color.Gray.copy(0.5f), slenderSwordShape),
-                                    contentAlignment = Alignment.Center
+                                        .fillMaxWidth()
+                                        .background(
+                                            Color(0xFF0D0604).copy(alpha = 0.5f),
+                                            RoundedCornerShape(8.dp)
+                                        )
+                                        .border(
+                                            width = 1.dp,
+                                            color = Color(0xFF8B6914),
+                                            shape = RoundedCornerShape(8.dp)
+                                        )
+                                        .padding(12.dp)
                                 ) {
-                                    Text(
-                                        text = card.attack.toString(),
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 20.sp,
-                                        modifier = Modifier.offset(y = (-4).dp)
-                                    )
-                                }
-
-                                // Health
-                                Box(
-                                    modifier = Modifier
-                                        .size(50.dp)
-                                        .background(Color(0xFF4CAF50), kiteShieldShape)
-                                        .border(2.dp, Color.Gray.copy(0.5f), kiteShieldShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = card.health.toString(),
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 20.sp,
-                                        modifier = Modifier.offset(y = (-2).dp)
-                                    )
-                                }
-                            }
-                            is FortificationCard -> {
-                                // Attack (if tower)
-                                if (card.fortType == FortificationType.TOWER) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(50.dp)
-                                            .background(Color(0xFFFF9800), slenderSwordShape)
-                                            .border(2.dp, Color.Gray.copy(0.5f), slenderSwordShape),
-                                        contentAlignment = Alignment.Center
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         Text(
-                                            text = card.attack.toString(),
-                                            color = Color.White,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 20.sp,
-                                            modifier = Modifier.offset(y = (-4).dp)
+                                            text = "Special Abilities",
+                                            fontSize = 14.sp,
+                                            color = Color(0xFFD4AF37),
+                                            fontWeight = FontWeight.Bold
                                         )
+                                        when (card.unitType) {
+
+                                            UnitType.INFANTRY ->
+                                                SpecialStatDisplay(
+                                                    "Counters -> Cavalry",
+                                                    R.drawable.counter_icon
+                                                )
+
+                                            UnitType.CAVALRY -> Column(
+                                                verticalArrangement = Arrangement.Center,
+                                                horizontalAlignment = Alignment.CenterHorizontally
+                                            ) {
+                                                SpecialStatDisplay(
+                                                    "Charge: Can attack immediately",
+                                                    R.drawable.charge_icon
+                                                )
+                                                Spacer(modifier = Modifier.height(8.dp))
+                                                SpecialStatDisplay(
+                                                    "Counters -> Musket and Artillery",
+                                                    R.drawable.counter_icon
+                                                )
+
+                                            }
+
+                                            UnitType.ARTILLERY ->
+                                                SpecialStatDisplay(
+                                                    "Shell: Extra damage to Forts",
+                                                    R.drawable.attack_artillery
+                                                )
+
+                                            UnitType.MISSILE -> TODO()
+
+                                            UnitType.MUSKET -> SpecialStatDisplay(
+                                                "Bayonet: Transition to Infantry",
+                                                R.drawable.bayonet,
+                                                Modifier.size(24.dp)
+                                            )
+                                        }
                                     }
                                 }
 
-                                // Health
-                                Box(
-                                    modifier = Modifier
-                                        .size(50.dp)
-                                        .background(Color(0xFF4CAF50), kiteShieldShape)
-                                        .border(2.dp, Color.Gray.copy(0.5f), kiteShieldShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = card.health.toString(),
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 20.sp,
-                                        modifier = Modifier.offset(y = (-2).dp)
-                                    )
-                                }
                             }
                         }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Dismiss hint
+                        Text(
+                            text = "Tap anywhere to close",
+                            fontSize = 12.sp,
+                            color = Color(0xFF8B6914),
+                            fontStyle = FontStyle.Italic
+                        )
                     }
-
-                    // Special abilities
-                    when (card) {
-                        is UnitCard -> {
-                            if (card.hasCharge || card.hasTaunt || card.abilities.isNotEmpty()) {
-                                Spacer(modifier = Modifier.height(16.dp))
-
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    if (card.hasCharge) {
-                                        Text(
-                                            text = "• Charge: Can attack immediately",
-                                            fontSize = 12.sp,
-                                            color = Color(0xFFFFC107),
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                    }
-                                    if (card.hasTaunt) {
-                                        Text(
-                                            text = "• Taunt: Enemies must attack this unit",
-                                            fontSize = 12.sp,
-                                            color = Color(0xFF795548),
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = "Tap anywhere to close",
-                        fontSize = 12.sp,
-                        color = Color.White.copy(alpha = 0.5f),
-                        fontStyle = FontStyle.Italic
-                    )
                 }
             }
         }
+    }
+}
+
+@Composable
+fun ManaCost(
+    manaOfCard: Int,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(4.dp),
+        horizontalArrangement = Arrangement.End
+    ) {
+        repeat(manaOfCard) {
+            Box(
+                modifier = Modifier
+                    .size(20.dp)
+                    .shadow(
+                        elevation = 1.dp,
+                        shape = bloodDropShape
+                    )
+                    .background(TurkishRed, bloodDropShape)
+                    .border(
+                        width = 1.dp,
+                        color = Color.White.copy(alpha = 0.2f),
+                        shape = bloodDropShape
+                    )
+            )
+        }
+    }
+}
+
+@Composable
+private fun StatDisplay(
+    icon: @Composable () -> Unit,
+    label: String
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        icon()
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            color = Color(0xFFD4AF37),
+            fontFamily = libreFont
+        )
+    }
+}
+
+@Composable
+private fun SpecialStatDisplay(
+    specialStatString: String,
+    specialStatIcon: Int,
+    modifier: Modifier = Modifier.size(16.dp)
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            painter = painterResource(specialStatIcon),
+            contentDescription = "specialStatIcon",
+            tint = Color(0xFFD4AF37),
+            modifier = modifier
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Text(
+            text = specialStatString,
+            fontSize = 12.sp,
+            color = Color(0xFFE8D5B7),
+            fontWeight = FontWeight.Medium
+        )
     }
 }

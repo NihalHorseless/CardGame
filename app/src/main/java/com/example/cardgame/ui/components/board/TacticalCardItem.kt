@@ -64,19 +64,19 @@ fun TacticCardItem(
             .width(100.dp)
             .height(140.dp)
             .shadow(
-                elevation = if (isSelected) 8.dp else 4.dp,
-                shape = RoundedCornerShape(8.dp)
+                elevation = 4.dp,
+                shape = RoundedCornerShape(4.dp)
             )
             .border(
-                width = if (isSelected) 2.dp else 0.dp,
-                color = if (isSelected) Color(0xFF4CAF50) else Color.Transparent,
+                width = if (isSelected) 3.dp else 2.dp,
+                color = if (isSelected) Color(0xFF4CAF50) else Color(0xFFD4AF37),
                 shape = RoundedCornerShape(8.dp)
             )
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick // This will be handled by the parent
             ),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(4.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
         Box(
