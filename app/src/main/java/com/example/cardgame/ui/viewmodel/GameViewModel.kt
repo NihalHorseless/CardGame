@@ -1766,27 +1766,32 @@ Log.d("StartGame",playerDeck.toString())
     private suspend fun moveAIUnitsAggressively(context: PlayerContext, board: Board) {
         val movableUnits = context.getMovableUnits(gameManager)
 
-        // Separate units by type
-        val meleeUnits = movableUnits.filter { unit ->
-            unit.unitType == UnitType.CAVALRY || unit.unitType == UnitType.INFANTRY
-        }
-        val rangedUnits = movableUnits.filter { unit ->
-            unit.unitType == UnitType.ARTILLERY || unit.unitType == UnitType.MISSILE || unit.unitType == UnitType.MUSKET
+        // Check if opponent has no units left
+        val opponentHasUnits = board.getPlayerUnits(0).isNotEmpty() || _gameManager.players[0].hand.isNotEmpty()
+
+        // If opponent has no units, move all units to row 4 for direct attack
+        if (!opponentHasUnits) {
+            moveAllUnitsToRow4(movableUnits, board, context)
+            return
         }
 
-        // Move ranged units first to ensure they stay back
-        moveRangedUnitsToBack(rangedUnits, board, context)
+        // Otherwise, move units based on their type with new aggressive positioning
+        val artilleryUnits = movableUnits.filter { it.unitType == UnitType.ARTILLERY }
+        val musketUnits = movableUnits.filter { it.unitType == UnitType.MUSKET }
+        val infantryUnits = movableUnits.filter { it.unitType == UnitType.INFANTRY }
+        val cavalryUnits = movableUnits.filter { it.unitType == UnitType.CAVALRY }
 
-        // Then move melee units to front positions
-        moveMeleeUnitsToFront(meleeUnits, board, context)
+        // Move units in order: Artillery first (back), then Muskets, then aggressive units
+        moveArtilleryToBackRows(artilleryUnits, board, context)
+        moveMusketToMidRows(musketUnits, board, context)
+        moveAggressiveUnitsToFront(infantryUnits + cavalryUnits, board, context)
     }
 
     /**
-     * Move ranged units to back positions (higher rows for AI)
+     * Move all units to row 4 when opponent has no units left
      */
-    private suspend fun moveRangedUnitsToBack(rangedUnits: List<UnitCard>, board: Board, context: PlayerContext) {
-        // Sort by column for spreading
-        val sortedUnits = rangedUnits.sortedBy { unit ->
+    private suspend fun moveAllUnitsToRow4(units: List<UnitCard>, board: Board, context: PlayerContext) {
+        val sortedUnits = units.sortedBy { unit ->
             board.getUnitPosition(unit)?.second ?: 0
         }
 
@@ -1796,27 +1801,13 @@ Log.d("StartGame",playerDeck.toString())
 
             if (validMoves.isEmpty()) continue
 
-            // Find best position: prefer back rows (row 1 for AI) and spread columns
-            val idealRow = 1 // Second row for AI (their "back")
-
+            // Find the move that gets closest to row 4
             val bestMove = validMoves
                 .sortedBy { move ->
-                    // Priority calculation:
-                    // 1. Distance from ideal row (lower is better)
-                    // 2. Prefer spreading across columns
-                    val rowScore = abs(move.first - idealRow) * 100
-
-                    // Check if column is occupied by another ranged unit
-                    val columnOccupied = rangedUnits.any { otherUnit ->
-                        if (otherUnit == unit) false
-                        else {
-                            val otherPos = board.getUnitPosition(otherUnit)
-                            otherPos?.second == move.second && otherPos.first == idealRow
-                        }
-                    }
-                    val columnScore = if (columnOccupied) 50 else 0
-
-                    rowScore + columnScore
+                    // Priority: Get as close to row 4 as possible
+                    abs(move.first - 4) * 100 +
+                            // Secondary: maintain column spread
+                            abs(move.second - currentPos.second)
                 }
                 .firstOrNull()
 
@@ -1828,7 +1819,6 @@ Log.d("StartGame",playerDeck.toString())
                     targetPos.second,
                     context
                 )
-                Log.d("AIMove", "Best Move: $bestMove ")
                 updateAllGameStates()
                 delay(600)
             }
@@ -1836,24 +1826,10 @@ Log.d("StartGame",playerDeck.toString())
     }
 
     /**
-     * Move melee units to front positions to protect ranged units
+     * Move artillery units to rows 0-1
      */
-    private suspend fun moveMeleeUnitsToFront(meleeUnits: List<UnitCard>, board: Board, context: PlayerContext) {
-        // Track where ranged units are to protect them
-        val rangedPositions = mutableListOf<Pair<Int, Int>>()
-        for (row in 0 until board.rows) {
-            for (col in 0 until board.columns) {
-                val unit = board.getUnitAt(row, col)
-                if (unit != null && board.getUnitOwner(unit) == context.player.id) {
-                    if (unit.unitType in listOf(UnitType.ARTILLERY, UnitType.MISSILE, UnitType.MUSKET)) {
-                        rangedPositions.add(Pair(row, col))
-                    }
-                }
-            }
-        }
-
-        // Sort melee units for spreading
-        val sortedUnits = meleeUnits.sortedBy { unit ->
+    private suspend fun moveArtilleryToBackRows(artilleryUnits: List<UnitCard>, board: Board, context: PlayerContext) {
+        val sortedUnits = artilleryUnits.sortedBy { unit ->
             board.getUnitPosition(unit)?.second ?: 0
         }
 
@@ -1863,41 +1839,25 @@ Log.d("StartGame",playerDeck.toString())
 
             if (validMoves.isEmpty()) continue
 
+            // Ideal rows for artillery: 0-1
             val bestMove = validMoves
                 .sortedBy { move ->
-                    var score = 0
-
-                    // Priority 1: Move toward player (lower rows for AI)
-                    score += move.first * 100
-
-                    // Priority 2: Position in front of ranged units
-                    val protectsRanged = rangedPositions.any { rangedPos ->
-                        // Check if this position would be in front of a ranged unit
-                        move.first < rangedPos.first && // In front (lower row)
-                                abs(move.second - rangedPos.second) <= 1 // Same or adjacent column
+                    val rowScore = when (move.first) {
+                        0 -> 0     // Perfect position
+                        1 -> 10    // Good position
+                        else -> abs(move.first - 0) * 100 // Further is worse
                     }
-                    if (protectsRanged) score -= 200 // Bonus for protecting
 
-                    // Priority 3: Spread across columns
-                    val columnOccupied = meleeUnits.any { otherUnit ->
+                    // Check column spacing
+                    val columnOccupied = artilleryUnits.any { otherUnit ->
                         if (otherUnit == unit) false
                         else {
                             val otherPos = board.getUnitPosition(otherUnit)
-                            otherPos?.second == move.second && otherPos.first == move.first
+                            otherPos?.second == move.second && otherPos.first in 0..1
                         }
                     }
-                    if (columnOccupied) score += 50
 
-                    // Priority 4: Cavalry prefers flanks for potential flanking
-                    if (unit.unitType == UnitType.CAVALRY) {
-                        val flankBonus = when (move.second) {
-                            0, board.columns - 1 -> -30 // Bonus for being on flanks
-                            else -> 0
-                        }
-                        score += flankBonus
-                    }
-
-                    score
+                    rowScore + if (columnOccupied) 50 else 0
                 }
                 .firstOrNull()
 
@@ -1909,7 +1869,136 @@ Log.d("StartGame",playerDeck.toString())
                     targetPos.second,
                     context
                 )
-                Log.d("AIMove", "Best Move: $bestMove ")
+                updateAllGameStates()
+                delay(600)
+            }
+        }
+    }
+
+    /**
+     * Move musket units to rows 1-2
+     */
+    private suspend fun moveMusketToMidRows(musketUnits: List<UnitCard>, board: Board, context: PlayerContext) {
+        val sortedUnits = musketUnits.sortedBy { unit ->
+            board.getUnitPosition(unit)?.second ?: 0
+        }
+
+        for (unit in sortedUnits) {
+            val currentPos = board.getUnitPosition(unit) ?: continue
+            val validMoves = gameManager.getValidMoveDestinations(unit)
+
+            if (validMoves.isEmpty()) continue
+
+            // Ideal rows for muskets: 1-2
+            val bestMove = validMoves
+                .sortedBy { move ->
+                    val rowScore = when (move.first) {
+                        1 -> 0     // Perfect position
+                        2 -> 0     // Also perfect
+                        0 -> 30    // Acceptable but not ideal
+                        else -> abs(move.first - 1.5f).toInt() * 100 // Further is worse
+                    }
+
+                    // Check column spacing
+                    val columnOccupied = musketUnits.any { otherUnit ->
+                        if (otherUnit == unit) false
+                        else {
+                            val otherPos = board.getUnitPosition(otherUnit)
+                            otherPos?.second == move.second && otherPos.first in 1..2
+                        }
+                    }
+
+                    rowScore + if (columnOccupied) 50 else 0
+                }
+                .firstOrNull()
+
+            bestMove?.let { targetPos ->
+                executeMove(
+                    currentPos.first,
+                    currentPos.second,
+                    targetPos.first,
+                    targetPos.second,
+                    context
+                )
+                updateAllGameStates()
+                delay(600)
+            }
+        }
+    }
+
+    /**
+     * Move infantry and cavalry aggressively to rows 2-3
+     */
+    private suspend fun moveAggressiveUnitsToFront(aggressiveUnits: List<UnitCard>, board: Board, context: PlayerContext) {
+        // Sort by type then column - cavalry on flanks, infantry in center
+        val sortedUnits = aggressiveUnits.sortedWith(
+            compareBy(
+                { it.unitType != UnitType.CAVALRY }, // Cavalry first
+                { unit ->
+                    val pos = board.getUnitPosition(unit)?.second ?: 0
+                    if (unit.unitType == UnitType.CAVALRY) {
+                        // Cavalry prefers flanks
+                        minOf(pos, board.columns - 1 - pos)
+                    } else {
+                        // Infantry prefers center
+                        abs(pos - board.columns / 2)
+                    }
+                }
+            )
+        )
+
+        for (unit in sortedUnits) {
+            val currentPos = board.getUnitPosition(unit) ?: continue
+            val validMoves = gameManager.getValidMoveDestinations(unit)
+
+            if (validMoves.isEmpty()) continue
+
+            // Ideal rows for aggressive units: 2-3
+            val bestMove = validMoves
+                .sortedBy { move ->
+                    val rowScore = when (move.first) {
+                        2 -> 0     // Perfect position
+                        3 -> 0     // Also perfect
+                        4 -> 20    // Very aggressive but risky
+                        1 -> 30    // Acceptable fallback
+                        else -> abs(move.first - 2.5f).toInt() * 100
+                    }
+
+                    // Column preference based on unit type
+                    val columnScore = if (unit.unitType == UnitType.CAVALRY) {
+                        // Cavalry prefers flanks for flanking maneuvers
+                        when (move.second) {
+                            0, board.columns - 1 -> 0 // Flanks are ideal
+                            1, board.columns - 2 -> 10 // Near flanks are good
+                            else -> 30 // Center is less ideal for cavalry
+                        }
+                    } else {
+                        // Infantry prefers to spread evenly with slight center bias
+                        val centerDistance = abs(move.second - board.columns / 2)
+                        centerDistance * 5
+                    }
+
+                    // Check if position is already occupied by aggressive units
+                    val positionOccupied = aggressiveUnits.any { otherUnit ->
+                        if (otherUnit == unit) false
+                        else {
+                            val otherPos = board.getUnitPosition(otherUnit)
+                            otherPos == Pair(move.first, move.second)
+                        }
+                    }
+
+                    rowScore + columnScore + if (positionOccupied) 100 else 0
+                }
+                .firstOrNull()
+
+            bestMove?.let { targetPos ->
+                executeMove(
+                    currentPos.first,
+                    currentPos.second,
+                    targetPos.first,
+                    targetPos.second,
+                    context
+                )
                 updateAllGameStates()
                 delay(600)
             }

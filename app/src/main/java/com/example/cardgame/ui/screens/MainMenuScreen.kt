@@ -119,7 +119,7 @@ fun MainMenuScreen(
     ) {
         Image(
             painter = painterResource(id = R.drawable.main_screen_background),
-            contentDescription = null,
+            contentDescription = "Main Menu Background Image",
             contentScale = ContentScale.FillBounds,
             modifier = Modifier.fillMaxSize()
         )
