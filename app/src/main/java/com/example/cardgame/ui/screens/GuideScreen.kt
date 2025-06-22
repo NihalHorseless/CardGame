@@ -18,9 +18,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -34,11 +37,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.ImageLoader
+import coil3.compose.AsyncImage
+import coil3.compose.AsyncImagePainter
+import coil3.gif.GifDecoder
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import com.example.cardgame.R
 import com.example.cardgame.data.model.msc.GameMechanic
 import com.example.cardgame.ui.theme.libreFont
 import com.example.cardgame.util.MiscellaneousData
@@ -169,7 +181,9 @@ fun MechanicDetailScreen(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier.fillMaxSize()
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
     ) {
         // Header
         Row(
@@ -204,14 +218,26 @@ fun MechanicDetailScreen(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Mechanic icon
-            Image(
-                painter = painterResource(id = mechanic.iconResId),
-                contentDescription = mechanic.title,
-                modifier = Modifier.size(80.dp)
-            )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            // GIF Demo Section if available
+            mechanic.gifResId?.let { gifId ->
+                Text(
+                    text = "How it works:",
+                    color = Color.White,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp)
+                )
+
+                MechanicGifPlayer(
+                    gifResId = gifId,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+            }
 
             // Description box
             Box(
@@ -248,6 +274,100 @@ fun MechanicDetailScreen(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun MechanicGifPlayer(
+    gifResId: Int,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val imageLoader = remember {
+        ImageLoader.Builder(context)
+            .components {
+                add(GifDecoder.Factory())
+            }
+            .crossfade(true)
+            .build()
+    }
+
+    var loadState by remember { mutableStateOf<AsyncImagePainter.State>(AsyncImagePainter.State.Empty) }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(300.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color(0xFF1A1A2E))
+            .border(
+                width = 2.dp,
+                color = Color(0xFF5271FF),
+                shape = RoundedCornerShape(8.dp)
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        AsyncImage(
+            model = ImageRequest.Builder(context)
+                .data(gifResId)
+                .crossfade(true)
+                .build(),
+            contentDescription = "Mechanic Demo",
+            imageLoader = imageLoader,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxSize(),
+            onState = { state ->
+                loadState = state
+            }
+        )
+
+        // Loading indicator
+        when (loadState) {
+            is AsyncImagePainter.State.Loading -> {
+                CircularProgressIndicator(
+                    color = Color(0xFF5271FF),
+                    modifier = Modifier.size(48.dp)
+                )
+            }
+            is AsyncImagePainter.State.Error -> {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.baseline_error_24),
+                        contentDescription = "Error",
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Failed to load demo",
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 14.sp
+                    )
+                }
+            }
+            else -> {} // Success or Empty state
+        }
+
+        // "Demo" badge in top-right corner
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(8.dp)
+                .background(
+                    color = Color(0xFF5271FF),
+                    shape = RoundedCornerShape(4.dp)
+                )
+                .padding(horizontal = 8.dp, vertical = 4.dp)
+        ) {
+            Text(
+                text = "DEMO",
+                color = Color.White,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }

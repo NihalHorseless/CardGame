@@ -5,5 +5,6 @@ data class GameMechanic(
     val title: String,
     val description: String,
     val iconResId: Int,
-    val example: String = ""
+    val example: String = "",
+    val gifResId: Int? = null  // Add video resource ID
 )
