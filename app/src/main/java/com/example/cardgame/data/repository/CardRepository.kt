@@ -2,7 +2,11 @@ package com.example.cardgame.data.repository
 
 import com.example.cardgame.data.model.card.Card
 import com.example.cardgame.data.model.card.Deck
+import com.example.cardgame.data.model.card.FortificationCard
+import com.example.cardgame.data.model.card.TacticCard
+import com.example.cardgame.data.model.card.UnitCard
 import com.example.cardgame.data.storage.CardLoader
+import com.example.cardgame.util.CardTestData.sampleDeck
 import java.util.Locale
 
 class CardRepository(
@@ -57,9 +61,25 @@ class CardRepository(
     /**
      * Get information about a deck (works for both player and AI decks)
      */
-    fun getDeckInfo(deckName: String): Deck? {
+    suspend fun getDeckInfo(deckId: String): HashMap<String,Int>? {
         // Try as player deck first, then as AI deck
-        return loadPlayerDeck(deckName) ?: loadAIDeck(deckName)
+        val deck = loadAnyDeck(deckName = deckId)?: sampleDeck
+        var infoHash = HashMap<String,Int>()
+        var tacticsCard = 0
+        var fortCards = 0
+        var unitCards = 0
+
+        for (i in deck.cards) {
+            when (i) {
+                is FortificationCard -> fortCards ++
+                is TacticCard -> tacticsCard ++
+                is UnitCard -> unitCards ++
+            }
+        }
+        infoHash.put("tactics",tacticsCard)
+        infoHash.put("units",unitCards)
+        infoHash.put("forts",fortCards)
+        return infoHash
     }
 
     /**

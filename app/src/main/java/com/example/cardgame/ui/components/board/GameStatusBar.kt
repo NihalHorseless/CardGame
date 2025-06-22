@@ -26,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -60,7 +61,7 @@ fun GameStatusBar(
     ) {
         // Track current rotation state - persists between compositions
         var isTurnChangeInProgress by remember { mutableStateOf(false) }
-        var currentRotation by remember { mutableStateOf(0f) }
+        var currentRotation by remember { mutableFloatStateOf(0f) }
 
         // Animate to target rotation when it changes
         val rotation by animateFloatAsState(

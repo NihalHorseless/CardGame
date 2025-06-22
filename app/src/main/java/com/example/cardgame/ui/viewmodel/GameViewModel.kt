@@ -1,5 +1,6 @@
 package com.example.cardgame.ui.viewmodel
 
+import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableIntStateOf
@@ -21,7 +22,6 @@ import com.example.cardgame.data.model.campaign.CampaignLevel
 import com.example.cardgame.data.model.campaign.Difficulty
 import com.example.cardgame.data.model.campaign.SpecialRule
 import com.example.cardgame.data.model.card.Card
-import com.example.cardgame.data.model.card.Deck
 import com.example.cardgame.data.model.card.FortificationCard
 import com.example.cardgame.data.model.card.TacticCard
 import com.example.cardgame.data.model.card.UnitCard
@@ -188,6 +188,13 @@ class GameViewModel(
     private val _objectiveCompleted = mutableStateOf(false)
     val objectiveCompleted: State<Boolean> = _objectiveCompleted
 
+    @SuppressLint("MutableCollectionMutableState")
+    private val _currentDeckInfo = mutableStateOf<HashMap<String,Int>?>(null)
+    val currentDeckInfo: State<HashMap<String,Int>?> = _currentDeckInfo
+
+    private val _maxMana = mutableIntStateOf(10)
+    val maxMana: State<Int> = _maxMana
+
     init {
         // Load available decks when ViewModel is created
         loadAvailableDecks()
@@ -206,6 +213,13 @@ class GameViewModel(
             loadAvailableDeckNames()
         }
     }
+    fun loadDeckInfo(deckId: String) {
+        viewModelScope.launch {
+            _currentDeckInfo.value = cardRepository.getDeckInfo(deckId = deckId)
+            Log.d("SelectedDeck",cardRepository.getDeckInfo(deckId = deckId).toString())
+        }
+        Log.d("SelectedDeck",currentDeckInfo.value.toString())
+    }
     private val _availableDeckNames = mutableStateOf<List<String>>(emptyList())
     val availableDeckNames: State<List<String>> = _availableDeckNames
 
@@ -216,16 +230,6 @@ class GameViewModel(
         }
     }
 
-    fun loadPlayerDeck(deckName: String) {
-        viewModelScope.launch {
-            val deck = cardRepository.loadAnyDeck(deckName)
-            if (deck != null) {
-                _gameManager.players[0].setDeck(deck)
-            } else {
-                _statusMessage.value = "Failed to load deck: $deckName"
-            }
-        }
-    }
 
     /**
      * Sets the selected deck for the player
@@ -255,14 +259,6 @@ class GameViewModel(
      */
     fun setOpponentDeck(deckName: String) {
         _selectedOpponentDeck.value = deckName
-    }
-
-    /**
-     * Gets detailed information about a specific deck
-     */
-      fun getDeckInfo(deckName: String): Deck? {
-
-        return cardRepository.loadPlayerDeck(deckName)
     }
 
     fun registerCellPosition(row: Int, col: Int, x: Float, y: Float) {
@@ -509,6 +505,10 @@ class GameViewModel(
         return nextLevel ?: campaign.levels.lastOrNull()
     }
 
+    fun setMaxMana(mana: Int) {
+        _maxMana.intValue = mana
+    }
+
     /**
      * Reset all campaign progress
      */
@@ -557,7 +557,11 @@ class GameViewModel(
             // Set player decks
             _gameManager.players[0].setDeck(playerDeck)
             _gameManager.players[1].setDeck(opponentDeck)
-Log.d("StartGame",playerDeck.toString())
+
+            // Apply max mana setting to both players
+            _gameManager.players[0].maxMana = _maxMana.intValue
+            _gameManager.players[1].maxMana = _maxMana.intValue
+
             _opponentName.value = "Mediocre Bot"
             _isInCampaign.value = false
 
@@ -1079,27 +1083,6 @@ Log.d("StartGame",playerDeck.toString())
         }
     }
 
-    /**
-     * Update UI state when unit is selected
-     */
-    private fun updateUnitSelectionState(row: Int, col: Int) {
-        val unit = _gameManager.gameBoard.getUnitAt(row, col) ?: return
-
-        // Show valid movement destinations if unit can move
-        if (playerContext.canUnitMove(row, col, _gameManager)) {
-            _validMoveDestinations.value =
-                playerContext.getValidMoveDestinations(row, col, _gameManager)
-        } else {
-            _validMoveDestinations.value = emptyList()
-        }
-
-        // Show valid attack targets if unit can attack
-        if (unit.canAttackThisTurn) {
-            _validAttackTargets.value = playerContext.getValidAttackTargets(row, col, _gameManager)
-        } else {
-            _validAttackTargets.value = emptyList()
-        }
-    }
 
     /**
      * Execute an attack between units with animations
@@ -1173,7 +1156,7 @@ Log.d("StartGame",playerDeck.toString())
                     // If the attack killed the target unit, trigger death animation
                     if (willKillTarget) {
                         // Add this position to entities in death animation
-                        _entitiesInDeathAnimation.value = _entitiesInDeathAnimation.value + Pair(targetRow, targetCol)
+                        _entitiesInDeathAnimation.value += Pair(targetRow, targetCol)
 
                         // Play death animation
                         playDeathAnimation(targetUnit, Pair(targetRow, targetCol))
@@ -1491,23 +1474,7 @@ Log.d("StartGame",playerDeck.toString())
             simulateAITurn()
         }
     }
-    private suspend fun deployCardForAI() {
-        for (i in opponentContext.player.hand.indices) {
-            val card = opponentContext.player.hand[i]
-            if (card.manaCost <= opponentContext.player.currentMana) {
-                val position = opponentContext.getFirstEmptyPosition()
-                if (position != null) {
-                    val isCardPlayed = opponentContext.playCard(i, _gameManager, position)
-                    if (isCardPlayed) {
-                        updateAllGameStates()
-                        delay(500) // Animation delay
-                        deployCardForAI()
-                        break
-                    }
-                }
-            }
-        }
-    }
+
     private suspend fun playCardsRandomly(context: PlayerContext) {
         val player = context.player
 
@@ -1547,15 +1514,7 @@ Log.d("StartGame",playerDeck.toString())
                             break
                         }
                     }
-                    is TacticCard -> {
-                        // Play tactic cards with random valid targets
-                        break // Implement later
-                        val played = playTacticCardEasy(context, cardIndex, card)
-                        if (played) {
-                            cardPlayed = true
-                            break
-                        }
-                    }
+
                 }
             }
         }
@@ -1565,7 +1524,7 @@ Log.d("StartGame",playerDeck.toString())
      * Deploy unit randomly on specified row, with smart fallback
      */
     private suspend fun deployUnitEasy(context: PlayerContext, cardIndex: Int, targetRow: Int): Boolean {
-        val card = context.player.hand[cardIndex] as? UnitCard ?: return false
+        if (context.player.hand[cardIndex] !is UnitCard) return false
 
         // First, try to deploy on the preferred row
         val availableColumns = (0 until gameManager.gameBoard.columns)
@@ -1618,7 +1577,7 @@ Log.d("StartGame",playerDeck.toString())
      * Deploy fortification on first row with ranged units
      */
     private suspend fun deployFortificationEasy(context: PlayerContext, cardIndex: Int, targetRow: Int): Boolean {
-        val card = context.player.hand[cardIndex] as? FortificationCard ?: return false
+        if (context.player.hand[cardIndex] !is FortificationCard) return false
 
         // Fortifications go on row 0 with ranged units
         val availableColumns = (0 until gameManager.gameBoard.columns)
@@ -1668,101 +1627,6 @@ Log.d("StartGame",playerDeck.toString())
         return false
     }
 
-    /**
-     * Play tactic cards with random targets
-     */
-    private fun playTacticCardEasy(context: PlayerContext, cardIndex: Int, card: TacticCard): Boolean {
-        when (card.targetType) {
-            TargetType.NONE -> {
-                // Cards like "Draw 2" that don't need targets
-                return card.play(context.player, gameManager, null)
-            }
-            TargetType.ENEMY -> {
-                // Find random enemy unit
-                val enemyTargets = getEnemyTargets().shuffled()
-                for (target in enemyTargets) {
-                    val linearPos = target.first * gameManager.gameBoard.columns + target.second
-                    if (card.play(context.player, gameManager, linearPos)) {
-                        return true
-                    }
-                }
-            }
-            TargetType.FRIENDLY -> {
-                // Find random friendly unit
-                val friendlyTargets = getFriendlyTargets().shuffled()
-                for (target in friendlyTargets) {
-                    val linearPos = target.first * gameManager.gameBoard.columns + target.second
-                    if (card.play(context.player, gameManager, linearPos)) {
-                        return true
-                    }
-                }
-            }
-            TargetType.BOARD, TargetType.ANY -> {
-                // Random board position
-                val allPositions = mutableListOf<Pair<Int, Int>>()
-                for (row in 0 until gameManager.gameBoard.rows) {
-                    for (col in 0 until gameManager.gameBoard.columns) {
-                        allPositions.add(Pair(row, col))
-                    }
-                }
-
-                for (pos in allPositions.shuffled()) {
-                    val linearPos = pos.first * gameManager.gameBoard.columns + pos.second
-                    if (card.play(context.player, gameManager, linearPos)) {
-                        return true
-                    }
-                }
-            }
-        }
-        return false
-    }
-    private suspend fun moveUnitsAggressively(context: PlayerContext, board: Board) {
-        val movableUnits = context.getMovableUnits(gameManager)
-
-        // Sort units by column to ensure spreading
-        val sortedUnits = movableUnits.sortedBy { unit ->
-            board.getUnitPosition(unit)?.second ?: 0
-        }
-
-        // Track occupied columns to maintain spread
-        val occupiedColumns = mutableSetOf<Int>()
-
-        for (unit in sortedUnits) {
-            val currentPos = board.getUnitPosition(unit) ?: continue
-            val validMoves = gameManager.getValidMoveDestinations(unit)
-
-            if (validMoves.isEmpty()) continue
-
-            // Find the most aggressive move (lowest row for AI) that maintains spread
-            val bestMove = validMoves
-                .filter { move ->
-                    // Prefer moves to unoccupied columns for spreading
-                    !occupiedColumns.contains(move.second) ||
-                            occupiedColumns.size >= board.columns - 1
-                }
-                .minByOrNull { move ->
-                    // Priority: 1) Move down (toward player), 2) Maintain spread
-                    move.first * 10 + if (occupiedColumns.contains(move.second)) 5 else 0
-                }
-                ?: validMoves.minByOrNull { it.first } // Fallback: just move down
-
-            bestMove?.let { targetPos ->
-                // Execute move
-                executeMove(
-                    currentPos.first,
-                    currentPos.second,
-                    targetPos.first,
-                    targetPos.second,
-                    context
-                )
-                occupiedColumns.add(targetPos.second)
-                Log.d("AIMove", "Best Move: $bestMove ")
-                updateAllGameStates()
-                delay(600)
-
-            }
-        }
-    }
     private suspend fun moveAIUnitsAggressively(context: PlayerContext, board: Board) {
         val movableUnits = context.getMovableUnits(gameManager)
 
@@ -1802,14 +1666,12 @@ Log.d("StartGame",playerDeck.toString())
             if (validMoves.isEmpty()) continue
 
             // Find the move that gets closest to row 4
-            val bestMove = validMoves
-                .sortedBy { move ->
-                    // Priority: Get as close to row 4 as possible
-                    abs(move.first - 4) * 100 +
-                            // Secondary: maintain column spread
-                            abs(move.second - currentPos.second)
-                }
-                .firstOrNull()
+            val bestMove = validMoves.minByOrNull { move ->
+                // Priority: Get as close to row 4 as possible
+                abs(move.first - 4) * 100 +
+                        // Secondary: maintain column spread
+                        abs(move.second - currentPos.second)
+            }
 
             bestMove?.let { targetPos ->
                 executeMove(
@@ -1840,26 +1702,24 @@ Log.d("StartGame",playerDeck.toString())
             if (validMoves.isEmpty()) continue
 
             // Ideal rows for artillery: 0-1
-            val bestMove = validMoves
-                .sortedBy { move ->
-                    val rowScore = when (move.first) {
-                        0 -> 0     // Perfect position
-                        1 -> 10    // Good position
-                        else -> abs(move.first - 0) * 100 // Further is worse
-                    }
-
-                    // Check column spacing
-                    val columnOccupied = artilleryUnits.any { otherUnit ->
-                        if (otherUnit == unit) false
-                        else {
-                            val otherPos = board.getUnitPosition(otherUnit)
-                            otherPos?.second == move.second && otherPos.first in 0..1
-                        }
-                    }
-
-                    rowScore + if (columnOccupied) 50 else 0
+            val bestMove = validMoves.minByOrNull { move ->
+                val rowScore = when (move.first) {
+                    0 -> 0     // Perfect position
+                    1 -> 10    // Good position
+                    else -> abs(move.first - 0) * 100 // Further is worse
                 }
-                .firstOrNull()
+
+                // Check column spacing
+                val columnOccupied = artilleryUnits.any { otherUnit ->
+                    if (otherUnit == unit) false
+                    else {
+                        val otherPos = board.getUnitPosition(otherUnit)
+                        otherPos?.second == move.second && otherPos.first in 0..1
+                    }
+                }
+
+                rowScore + if (columnOccupied) 50 else 0
+            }
 
             bestMove?.let { targetPos ->
                 executeMove(
@@ -1890,27 +1750,25 @@ Log.d("StartGame",playerDeck.toString())
             if (validMoves.isEmpty()) continue
 
             // Ideal rows for muskets: 1-2
-            val bestMove = validMoves
-                .sortedBy { move ->
-                    val rowScore = when (move.first) {
-                        1 -> 0     // Perfect position
-                        2 -> 0     // Also perfect
-                        0 -> 30    // Acceptable but not ideal
-                        else -> abs(move.first - 1.5f).toInt() * 100 // Further is worse
-                    }
-
-                    // Check column spacing
-                    val columnOccupied = musketUnits.any { otherUnit ->
-                        if (otherUnit == unit) false
-                        else {
-                            val otherPos = board.getUnitPosition(otherUnit)
-                            otherPos?.second == move.second && otherPos.first in 1..2
-                        }
-                    }
-
-                    rowScore + if (columnOccupied) 50 else 0
+            val bestMove = validMoves.minByOrNull { move ->
+                val rowScore = when (move.first) {
+                    1 -> 0     // Perfect position
+                    2 -> 0     // Also perfect
+                    0 -> 30    // Acceptable but not ideal
+                    else -> abs(move.first - 1.5f).toInt() * 100 // Further is worse
                 }
-                .firstOrNull()
+
+                // Check column spacing
+                val columnOccupied = musketUnits.any { otherUnit ->
+                    if (otherUnit == unit) false
+                    else {
+                        val otherPos = board.getUnitPosition(otherUnit)
+                        otherPos?.second == move.second && otherPos.first in 1..2
+                    }
+                }
+
+                rowScore + if (columnOccupied) 50 else 0
+            }
 
             bestMove?.let { targetPos ->
                 executeMove(
@@ -1954,42 +1812,40 @@ Log.d("StartGame",playerDeck.toString())
             if (validMoves.isEmpty()) continue
 
             // Ideal rows for aggressive units: 2-3
-            val bestMove = validMoves
-                .sortedBy { move ->
-                    val rowScore = when (move.first) {
-                        2 -> 0     // Perfect position
-                        3 -> 0     // Also perfect
-                        4 -> 20    // Very aggressive but risky
-                        1 -> 30    // Acceptable fallback
-                        else -> abs(move.first - 2.5f).toInt() * 100
-                    }
-
-                    // Column preference based on unit type
-                    val columnScore = if (unit.unitType == UnitType.CAVALRY) {
-                        // Cavalry prefers flanks for flanking maneuvers
-                        when (move.second) {
-                            0, board.columns - 1 -> 0 // Flanks are ideal
-                            1, board.columns - 2 -> 10 // Near flanks are good
-                            else -> 30 // Center is less ideal for cavalry
-                        }
-                    } else {
-                        // Infantry prefers to spread evenly with slight center bias
-                        val centerDistance = abs(move.second - board.columns / 2)
-                        centerDistance * 5
-                    }
-
-                    // Check if position is already occupied by aggressive units
-                    val positionOccupied = aggressiveUnits.any { otherUnit ->
-                        if (otherUnit == unit) false
-                        else {
-                            val otherPos = board.getUnitPosition(otherUnit)
-                            otherPos == Pair(move.first, move.second)
-                        }
-                    }
-
-                    rowScore + columnScore + if (positionOccupied) 100 else 0
+            val bestMove = validMoves.minByOrNull { move ->
+                val rowScore = when (move.first) {
+                    2 -> 0     // Perfect position
+                    3 -> 0     // Also perfect
+                    4 -> 20    // Very aggressive but risky
+                    1 -> 30    // Acceptable fallback
+                    else -> abs(move.first - 2.5f).toInt() * 100
                 }
-                .firstOrNull()
+
+                // Column preference based on unit type
+                val columnScore = if (unit.unitType == UnitType.CAVALRY) {
+                    // Cavalry prefers flanks for flanking maneuvers
+                    when (move.second) {
+                        0, board.columns - 1 -> 0 // Flanks are ideal
+                        1, board.columns - 2 -> 10 // Near flanks are good
+                        else -> 30 // Center is less ideal for cavalry
+                    }
+                } else {
+                    // Infantry prefers to spread evenly with slight center bias
+                    val centerDistance = abs(move.second - board.columns / 2)
+                    centerDistance * 5
+                }
+
+                // Check if position is already occupied by aggressive units
+                val positionOccupied = aggressiveUnits.any { otherUnit ->
+                    if (otherUnit == unit) false
+                    else {
+                        val otherPos = board.getUnitPosition(otherUnit)
+                        otherPos == Pair(move.first, move.second)
+                    }
+                }
+
+                rowScore + columnScore + if (positionOccupied) 100 else 0
+            }
 
             bestMove?.let { targetPos ->
                 executeMove(
@@ -2029,8 +1885,8 @@ Log.d("StartGame",playerDeck.toString())
                     val targetEnemy = _gameManager.gameBoard.getUnitAt(target.first, target.second)?:_gameManager.gameBoard.getFortificationAt(target.first, target.second)
                     Log.d("TARGAY","${targetEnemy?.name}")
                     when (targetEnemy){
-                        is FortificationCard -> targetEnemy?.let { Pair(target, it.health) }
-                        is UnitCard -> targetEnemy?.let { Pair(target, it.health) }
+                        is FortificationCard -> Pair(target, targetEnemy.health)
+                        is UnitCard -> Pair(target, targetEnemy.health)
                         else -> targetEnemy?.let { Pair(target, it.manaCost) } // Honestly didn't know what to fill it in with
                     }
                 }.sortedBy { it.second } // Sort by health (lowest first)
@@ -2500,8 +2356,8 @@ Log.d("StartGame",playerDeck.toString())
             if (tacticCardsWithIndex.isEmpty()) break
 
             // Try to play each tactic card with smart targeting
-            for ((cardIndex, tacticCard) in tacticCardsWithIndex) {
-                val played = playAITacticCardSmart(context, cardIndex, tacticCard)
+            for ((_, tacticCard) in tacticCardsWithIndex) {
+                val played = playAITacticCardSmart(context, tacticCard)
                 if (played) {
                     cardPlayed = true
                     updateAllGameStates()
@@ -2513,7 +2369,7 @@ Log.d("StartGame",playerDeck.toString())
     }
 
     // Add this smart tactic card playing function
-    private suspend fun playAITacticCardSmart(context: PlayerContext, cardIndex: Int, card: TacticCard): Boolean {
+    private suspend fun playAITacticCardSmart(context: PlayerContext, card: TacticCard): Boolean {
         when (card.targetType) {
             TargetType.NONE -> {
                 // Cards like "Draw 2" that don't need targets - always play these
@@ -2578,7 +2434,7 @@ Log.d("StartGame",playerDeck.toString())
                 val bestTarget = when (card.cardType) {
                     TacticCardType.BUFF -> {
                         // Buff the strongest unit or one about to attack
-                        findBestBuffTarget(friendlyTargets, card)
+                        findBestBuffTarget(friendlyTargets)
                     }
                     else -> friendlyTargets.randomOrNull()
                 }
@@ -2744,7 +2600,7 @@ Log.d("StartGame",playerDeck.toString())
         }
     }
 
-    private fun findBestBuffTarget(targets: List<Pair<Int, Int>>, card: TacticCard): Pair<Int, Int>? {
+    private fun findBestBuffTarget(targets: List<Pair<Int, Int>>): Pair<Int, Int>? {
         // Prioritize units that can attack this turn
         val attackingUnits = targets.filter { target ->
             val unit = gameManager.gameBoard.getUnitAt(target.first, target.second)
@@ -3047,21 +2903,18 @@ Log.d("StartGame",playerDeck.toString())
     private val _deathAnimationPosition = mutableStateOf(Pair(0f, 0f))
     val deathAnimationPosition: State<Pair<Float, Float>> = _deathAnimationPosition
 
-    // Track entities that are visually being destroyed but not yet removed from the game state
-    private val entitiesBeingDestroyed = mutableSetOf<Card>()
-
     private val _entitiesInDeathAnimation = mutableStateOf<Set<Pair<Int, Int>>>(emptySet())
     val entitiesInDeathAnimation: State<Set<Pair<Int, Int>>> = _entitiesInDeathAnimation
 
     // Method to trigger death animation
-    fun playDeathAnimation(entity: Card, position: Pair<Int, Int>) {
+    private fun playDeathAnimation(entity: Card, position: Pair<Int, Int>) {
         val cellPos = cellPositions[position] ?: return
 
         // If this entity is already in death animation, don't trigger again
         if (position in _entitiesInDeathAnimation.value) return
 
         // Add position to tracked positions
-        _entitiesInDeathAnimation.value = _entitiesInDeathAnimation.value + position
+        _entitiesInDeathAnimation.value += position
 
         when (entity) {
             is UnitCard -> {
@@ -3108,49 +2961,10 @@ Log.d("StartGame",playerDeck.toString())
             }
 
             // Now that entity is removed from game state, we can remove it from our tracking
-            _entitiesInDeathAnimation.value = _entitiesInDeathAnimation.value - position
+            _entitiesInDeathAnimation.value -= position
 
             // Update game state
             updateAllGameStates()
-        }
-    }
-
-    // Method to handle finding and animating destroyed units
-    fun handleDestroyedEntities() {
-        // Find all recently destroyed units and fortifications that aren't already being animated
-        val destroyedUnits = mutableListOf<Pair<UnitCard, Pair<Int, Int>>>()
-        val destroyedForts = mutableListOf<Pair<FortificationCard, Pair<Int, Int>>>()
-
-        // Find recently dead units
-        for (row in 0 until _gameManager.gameBoard.rows) {
-            for (col in 0 until _gameManager.gameBoard.columns) {
-                // Check units
-                val unit = _gameManager.gameBoard.getUnitAt(row, col)
-                if (unit != null && unit.isDead() && unit !in entitiesBeingDestroyed) {
-                    destroyedUnits.add(Pair(unit, Pair(row, col)))
-                }
-
-                // Check fortifications
-                val fort = _gameManager.gameBoard.getFortificationAt(row, col)
-                if (fort != null && fort.isDestroyed() && fort !in entitiesBeingDestroyed) {
-                    destroyedForts.add(Pair(fort, Pair(row, col)))
-                }
-            }
-        }
-
-        // Process each destroyed entity sequentially
-        viewModelScope.launch {
-            // Process units first
-            for ((unit, position) in destroyedUnits) {
-                playDeathAnimation(unit, position)
-                delay(700) // Wait between multiple animations
-            }
-
-            // Then process fortifications
-            for ((fort, position) in destroyedForts) {
-                playDeathAnimation(fort, position)
-                delay(700) // Wait between multiple animations
-            }
         }
     }
 
