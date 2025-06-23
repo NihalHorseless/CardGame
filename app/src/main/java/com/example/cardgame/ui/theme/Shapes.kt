@@ -1,12 +1,6 @@
 package com.example.cardgame.ui.theme
 
 import androidx.compose.foundation.shape.GenericShape
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Outline
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.LayoutDirection
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -213,13 +207,8 @@ val scallopedCircleShape = GenericShape { size, _ ->
 
     // Draw each scallop
     for (i in 0 until scallops) {
-        val outerAngle1 = startAngle + i * angleStep
         val innerAngle = startAngle + (i + 0.5f) * angleStep
         val outerAngle2 = startAngle + (i + 1) * angleStep
-
-        // Outer point 1 (already at this point when i=0)
-        val outerX1 = centerX + radius * cos(Math.toRadians(outerAngle1.toDouble())).toFloat()
-        val outerY1 = centerY + radius * sin(Math.toRadians(outerAngle1.toDouble())).toFloat()
 
         // Inner point
         val innerX = centerX + innerRadius * cos(Math.toRadians(innerAngle.toDouble())).toFloat()
@@ -230,7 +219,7 @@ val scallopedCircleShape = GenericShape { size, _ ->
         val outerY2 = centerY + radius * sin(Math.toRadians(outerAngle2.toDouble())).toFloat()
 
         // Draw the scallop curve through these three points
-        quadraticBezierTo(
+        quadraticTo(
             innerX, innerY,
             outerX2, outerY2
         )

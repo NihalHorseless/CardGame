@@ -9,6 +9,6 @@ import com.example.cardgame.ui.theme.CardGameTheme
 @Composable
 fun GameOverScreenPreview() {
     CardGameTheme {
-        GameOverScreen(isPlayerWinner = true, onReturnToMainMenu = {})
+        GameOverScreen(isPlayerWinner = true, onReturnToMainMenu = {}, onPlaySound = {})
     }
 }

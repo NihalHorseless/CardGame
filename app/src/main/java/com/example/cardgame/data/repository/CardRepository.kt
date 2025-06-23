@@ -46,7 +46,7 @@ class CardRepository(
     /**
      * Load a predefined player deck by name
      */
-    fun loadPlayerDeck(deckName: String): Deck? {
+    private fun loadPlayerDeck(deckName: String): Deck? {
         return cardLoader.loadDeck(deckName, isAIDeck = false)
     }
 
@@ -76,9 +76,9 @@ class CardRepository(
                 is UnitCard -> unitCards ++
             }
         }
-        infoHash.put("tactics",tacticsCard)
-        infoHash.put("units",unitCards)
-        infoHash.put("forts",fortCards)
+        infoHash["tactics"] = tacticsCard
+        infoHash["units"] = unitCards
+        infoHash["forts"] = fortCards
         return infoHash
     }
 

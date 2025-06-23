@@ -12,6 +12,12 @@ class SoundManager(private val context: Context) {
     private val soundMap = HashMap<SoundType, Int>()
     private var loaded = false
 
+    private val soundThrottleMap = mutableMapOf<SoundType, Long>()
+
+    companion object {
+        const val SOUND_THROTTLE_MS = 50L
+    }
+
 
     fun initialize() {
         // Create audio attributes
@@ -85,6 +91,13 @@ class SoundManager(private val context: Context) {
     }
 
     fun playSound(soundType: SoundType, volume: Float = 1.0f) {
+        val now = System.currentTimeMillis()
+        val lastPlayed = soundThrottleMap[soundType] ?: 0
+        // Makes sure that the sound doesn't get overwhelmed if it gets played more than once at the same time
+        if (now - lastPlayed < SOUND_THROTTLE_MS) return
+
+        soundThrottleMap[soundType] = now
+
         if (loaded && soundMap.containsKey(soundType)) {
             val soundId = soundMap[soundType] ?: return
             soundPool.play(soundId, volume, volume, 1, 0, 1.0f)

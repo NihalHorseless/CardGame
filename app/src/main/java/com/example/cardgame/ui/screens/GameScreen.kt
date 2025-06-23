@@ -14,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.boundsInWindow
@@ -77,7 +78,7 @@ fun GameScreen(
     val validDeploymentPositions by viewModel.validDeploymentPositions
 
     // Map to store cell positions for animations
-    val cellPositionsMap = mutableMapOf<Pair<Int, Int>, Pair<Float, Float>>()
+    val cellPositionsMap = remember { mutableMapOf<Pair<Int, Int>, Pair<Float, Float>>() }
 
     LaunchedEffect(key1 = Unit) {
         if(!viewModel.isInCampaign.value)
@@ -90,7 +91,10 @@ fun GameScreen(
         if (isGameOver) {
             GameOverScreen(
                 isPlayerWinner = isPlayerWinner,
-                onReturnToMainMenu = onNavigateToMain
+                onReturnToMainMenu = onNavigateToMain,
+                onPlaySound = {
+                    viewModel.playGameOverSound(isPlayerWinner = isPlayerWinner)
+                }
             )
         } else {
             if(viewModel.isInCampaign.value) BattlefieldBackground()

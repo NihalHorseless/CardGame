@@ -30,6 +30,7 @@ import com.example.cardgame.data.repository.CardRepository
 import com.example.cardgame.game.Board
 import com.example.cardgame.game.GameManager
 import com.example.cardgame.game.PlayerContext
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -334,7 +335,6 @@ class GameViewModel(
         } else {
             // Fallback if deck not found
             _statusMessage.value = "Opponent deck not found, using default"
-            Log.d("LevelConfig", opponentDeck.toString())
         }
 
         if (opponentDeck == null) {
@@ -1883,7 +1883,6 @@ class GameViewModel(
                 // AI strategy: Attack the weakest target first
                 val targetWithHealth = validTargets.mapNotNull { target ->
                     val targetEnemy = _gameManager.gameBoard.getUnitAt(target.first, target.second)?:_gameManager.gameBoard.getFortificationAt(target.first, target.second)
-                    Log.d("TARGAY","${targetEnemy?.name}")
                     when (targetEnemy){
                         is FortificationCard -> Pair(target, targetEnemy.health)
                         is UnitCard -> Pair(target, targetEnemy.health)
@@ -3074,6 +3073,13 @@ class GameViewModel(
         }
         soundManager.playSound(effectSound)
     }
+    fun playGameOverSound(isPlayerWinner: Boolean) {
+        if (isPlayerWinner) {
+            soundManager.playSound(SoundType.VICTORY)
+        } else {
+            soundManager.playSound(SoundType.DEFEAT)
+        }
+    }
     fun playScreenMusic(screen: String) {
         when (screen) {
             "main_menu" -> musicManager.playMusic(MusicTrack.MAIN_MENU,false)
@@ -3091,9 +3097,12 @@ class GameViewModel(
     fun toggleMusicMute() {
         musicManager.toggleMute()
     }
+    // To avoid potential memory leaks
+    private val animationJobs = mutableListOf<Job>()
 
     override fun onCleared() {
         super.onCleared()
+        animationJobs.forEach { it.cancel() }
         musicManager.release()
     }
 
@@ -3110,12 +3119,6 @@ class GameViewModel(
             // Determine winner
             _isPlayerWinner.value = opponentIsDead && !playerIsDead
 
-            // Play appropriate sound
-            if (_isPlayerWinner.value) {
-                soundManager.playSound(SoundType.VICTORY)
-            } else {
-                soundManager.playSound(SoundType.DEFEAT)
-            }
 
             // If in campaign mode, check objectives and update progress
             if (_isInCampaign.value) {

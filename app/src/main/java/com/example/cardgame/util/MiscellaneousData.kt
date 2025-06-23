@@ -13,7 +13,7 @@ object MiscellaneousData {
                     "• Infantry deals double damage to Cavalry\n" +
                     "• Artillery deals double damage to fortifications",
             iconResId = R.drawable.counter_icon,
-            example = "A Cavalry unit with 5 attack will deal 10 damage to a Missile unit.",
+            example = "A Cavalry unit with 3 attack will deal 6 damage to a Missile unit.",
             gifResId = R.drawable.counter_mechanic
         ),
         GameMechanic(

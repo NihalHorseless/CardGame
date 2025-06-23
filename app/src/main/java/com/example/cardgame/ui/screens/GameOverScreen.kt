@@ -48,10 +48,12 @@ import kotlinx.coroutines.delay
 fun GameOverScreen(
     isPlayerWinner: Boolean,
     onReturnToMainMenu: () -> Unit,
+    onPlaySound: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     // Animation states
     var isVisible by remember { mutableStateOf(false) }
+
     val animatedAlpha by animateFloatAsState(
         targetValue = if (isVisible) 0.9f else 0f,
         animationSpec = tween(1000)
@@ -66,6 +68,7 @@ fun GameOverScreen(
     LaunchedEffect(key1 = Unit) {
         delay(300) // Short delay before starting animation
         isVisible = true
+        onPlaySound()
     }
 
     Box(
