@@ -98,7 +98,7 @@ fun GameOverScreen(
             modifier = Modifier.fillMaxWidth(0.8f)
                 .fillMaxHeight()
         ) {
-            val resultMessage = if (isPlayerWinner) "Victoire!" else "C'est Fini"
+            val resultMessage = if (isPlayerWinner) "Victoire!" else "Défaite!"
             val resultColor = if (isPlayerWinner) Color(0xFFFFD700) else TurkishRed
 
             // Game over header

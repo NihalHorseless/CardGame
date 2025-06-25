@@ -56,6 +56,7 @@ fun CardGameNavigation() {
                     navController.navigate("deck_selection")
                     gameViewModel.stopMusic()
                     gameViewModel.playMenuSoundOne()
+                    gameViewModel.resetWin()
                 },
                 onShowDeckBuilder = {
                     navController.navigate("deck_builder")
@@ -71,6 +72,7 @@ fun CardGameNavigation() {
                     navController.navigate("campaign_selection")
                     gameViewModel.stopMusic()
                     gameViewModel.playMenuSoundOne()
+                    gameViewModel.resetWin()
                 },
                 isMusicMuted = isMusicMuted,
                 onToggleMusicMute = toggleMusicMute

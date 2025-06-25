@@ -30,9 +30,14 @@ import com.example.cardgame.data.repository.CardRepository
 import com.example.cardgame.game.Board
 import com.example.cardgame.game.GameManager
 import com.example.cardgame.game.PlayerContext
+import com.example.cardgame.util.MiscellaneousData.TAG
+import com.example.cardgame.util.globalCoroutineExceptionHandler
+import com.example.cardgame.util.onError
+import com.example.cardgame.util.Result
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.abs
 
 class GameViewModel(
@@ -104,7 +109,7 @@ class GameViewModel(
     private val _opponentHealth = mutableIntStateOf(30)
     val opponentHealth: State<Int> = _opponentHealth
 
-    private val _opponentName = mutableStateOf("Opponent")
+    private val _opponentName = mutableStateOf("Mediocre Bot")
     val opponentName: State<String> = _opponentName
 
     private val _opponentHandSize = mutableIntStateOf(0)
@@ -118,6 +123,12 @@ class GameViewModel(
 
     private val _statusMessage = mutableStateOf("")
     val statusMessage: State<String> = _statusMessage
+
+    private val _errorMessage = mutableStateOf<String?>(null)
+    val errorMessage: State<String?> = _errorMessage
+
+    private val _isLoading = mutableStateOf(false)
+    val isLoading: State<Boolean> = _isLoading
 
     // Animation states
     private val _isCardAnimationVisible = mutableStateOf(false)
@@ -196,6 +207,8 @@ class GameViewModel(
     private val _maxMana = mutableIntStateOf(10)
     val maxMana: State<Int> = _maxMana
 
+
+
     init {
         // Load available decks when ViewModel is created
         loadAvailableDecks()
@@ -204,6 +217,27 @@ class GameViewModel(
         }
     }
 
+    private fun launchSafely(
+        onError: ((Exception) -> Unit)? = null,
+        block: suspend () -> Unit
+    ) {
+        viewModelScope.launch(globalCoroutineExceptionHandler) {
+            try {
+                block()
+            } catch (e: CancellationException) {
+                // Don't catch cancellation exceptions
+                throw e
+            } catch (e: Exception) {
+                Log.e("GameViewModel", "Error in coroutine", e)
+                _errorMessage.value = e.message ?: "An unexpected error occurred"
+                onError?.invoke(e)
+            }
+        }
+    }
+
+    fun resetWin() {
+        _isGameOver.value = false
+    }
     /**
      * Loads the list of available decks from the CardRepository
      */
@@ -520,56 +554,59 @@ class GameViewModel(
 
 
     fun startGame() {
-        // Check if decks are selected
-        val playerDeckName = _selectedPlayerDeck.value
-        val opponentDeckName = _selectedOpponentDeck.value
+        launchSafely(
+            onError = { e ->
+                _statusMessage.value = "Failed to start game: ${e.message}"
+                // Optionally navigate back to menu
+            }
+        ) {
+            _isLoading.value = true
 
-        if (playerDeckName == null || opponentDeckName == null) {
-            _statusMessage.value = "Please select decks for both players"
-            return
-        }
+            val playerDeckName = _selectedPlayerDeck.value
+            val opponentDeckName = _selectedOpponentDeck.value
 
-        // Reset game over state
-        _isGameOver.value = false
-
-        // Use viewModelScope to handle loading decks asynchronously
-        viewModelScope.launch {
-            // Load player deck - check custom decks first, then predefined decks
-            val playerDeck = cardRepository.loadAnyDeck(playerDeckName)
-
-            if (playerDeck == null) {
-                _statusMessage.value = "Failed to load player deck: $playerDeckName"
-                return@launch
+            if (playerDeckName == null || opponentDeckName == null) {
+                throw IllegalStateException("Please select decks for both players")
             }
 
-            // For opponent deck, still use predefined AI decks
-            val opponentDeck = cardRepository.loadAnyDeck(opponentDeckName)
+            // Load decks with error handling
+            val playerDeckResult = cardRepository.loadAnyDeckSafe(playerDeckName)
+            val opponentDeckResult = cardRepository.loadAnyDeckSafe(opponentDeckName)
 
-            if (opponentDeck == null) {
-                _statusMessage.value = "Failed to load opponent deck: $opponentDeckName"
-                return@launch
+            playerDeckResult.onError { e ->
+                throw Exception("Failed to load player deck: ${e.message}")
             }
 
-            // Shuffle decks
+            opponentDeckResult.onError { e ->
+                throw Exception("Failed to load opponent deck: ${e.message}")
+            }
+
+            val playerDeck = (playerDeckResult as? Result.Success)?.data
+                ?: throw Exception("Player deck not found")
+            val opponentDeck = (opponentDeckResult as? Result.Success)?.data
+                ?: throw Exception("Opponent deck not found")
+
+            // Validate decks
+            if (playerDeck.cards.size < 30) {
+                throw IllegalStateException("Player deck must have at least 30 cards")
+            }
+
+            if (opponentDeck.cards.size < 30) {
+                throw IllegalStateException("Opponent deck must have at least 30 cards")
+            }
+
+            // Continue with game initialization...
             playerDeck.shuffle()
             opponentDeck.shuffle()
 
-            // Set player decks
             _gameManager.players[0].setDeck(playerDeck)
             _gameManager.players[1].setDeck(opponentDeck)
 
-            // Apply max mana setting to both players
-            _gameManager.players[0].maxMana = _maxMana.intValue
-            _gameManager.players[1].maxMana = _maxMana.intValue
-
-            _opponentName.value = "Mediocre Bot"
-            _isInCampaign.value = false
-
-            // Start the game
             _gameManager.startGame()
             updateAllGameStates()
 
-            _statusMessage.value = "Game started with decks: $playerDeckName vs $opponentDeckName"
+            _isLoading.value = false
+            _errorMessage.value = null
         }
     }
 
@@ -3102,8 +3139,25 @@ class GameViewModel(
 
     override fun onCleared() {
         super.onCleared()
+
+        // Cancel all ongoing coroutines
         animationJobs.forEach { it.cancel() }
-        musicManager.release()
+        animationJobs.clear()
+
+        // Release audio resources
+        try {
+            musicManager.release()
+            soundManager.release()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error releasing audio resources", e)
+        }
+
+        // Clear large data structures
+        cellPositions.clear()
+        _visualHealthMap.value = emptyMap()
+
+        // Clear game state
+        _gameManager.reset()
     }
 
 

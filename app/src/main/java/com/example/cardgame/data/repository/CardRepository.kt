@@ -1,5 +1,6 @@
 package com.example.cardgame.data.repository
 
+import android.util.Log
 import com.example.cardgame.data.model.card.Card
 import com.example.cardgame.data.model.card.Deck
 import com.example.cardgame.data.model.card.FortificationCard
@@ -7,6 +8,9 @@ import com.example.cardgame.data.model.card.TacticCard
 import com.example.cardgame.data.model.card.UnitCard
 import com.example.cardgame.data.storage.CardLoader
 import com.example.cardgame.util.CardTestData.sampleDeck
+import com.example.cardgame.util.Result
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.util.Locale
 
 class CardRepository(
@@ -92,7 +96,33 @@ class CardRepository(
         // Combine both lists
         return predefinedDecks + customDecks
     }
+    suspend fun loadAnyDeckSafe(deckName: String): Result<Deck?> = withContext(Dispatchers.IO) {
+        try {
+            // First try loading as a custom deck
+            val customDeck = customDeckRepository.loadDeck(deckName)
+            if (customDeck != null) {
+                return@withContext Result.Success(customDeck)
+            }
 
+            // Try predefined decks
+            val deck = loadPlayerDeck(deckName) ?: loadAIDeck(deckName)
+            Result.Success(deck)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading deck: $deckName", e)
+            Result.Error(e, "Failed to load deck: ${e.message}")
+        }
+    }
+
+    suspend fun getAllAvailableDecksSafe(): Result<List<String>> = withContext(Dispatchers.IO) {
+        try {
+            val predefinedDecks = getAvailablePlayerDeckNames()
+            val customDecks = customDeckRepository.getCustomDeckIds()
+            Result.Success(predefinedDecks + customDecks)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading available decks", e)
+            Result.Error(e, "Failed to load deck list")
+        }
+    }
     suspend fun getAllAvailableDeckNames(): List<String> {
         // Get predefined deck names
         val predefinedDecks = getAvailablePlayerDeckNames().map { it ->

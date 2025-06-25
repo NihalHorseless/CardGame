@@ -8,6 +8,7 @@ plugins {
 android {
     namespace = "com.example.cardgame"
     compileSdk = 35
+    android.buildFeatures.buildConfig = true
 
     defaultConfig {
         applicationId = "com.example.cardgame"

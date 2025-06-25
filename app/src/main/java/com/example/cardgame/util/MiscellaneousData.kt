@@ -95,4 +95,5 @@ object MiscellaneousData {
             gifResId = R.drawable.cards_mechanics
         )
     )
+    const val TAG = "EternalGlory"
 }
