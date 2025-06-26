@@ -150,7 +150,7 @@ fun CardGameNavigation() {
                 onNavigateToMain = {
                     if (gameViewModel.isInCampaign.value) {
                         gameViewModel.exitCampaignLevel()
-                        navController.navigate("campaign_level_selection") {
+                        navController.navigate("main_menu") {
                             popUpTo("main_menu") {
                                 saveState = true
                             }

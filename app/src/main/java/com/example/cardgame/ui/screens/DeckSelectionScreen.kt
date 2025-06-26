@@ -40,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -100,7 +101,7 @@ fun DeckSelectionScreen(
     ) {
         // Title
         Text(
-            text = "DECK SELECTION",
+            text = stringResource(R.string.deck_selection_screen_header),
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             color = Color.White,
@@ -133,11 +134,11 @@ fun DeckSelectionScreen(
                             modifier = Modifier
                                 .size(32.dp)
                                 .fillMaxWidth(),
-                            contentDescription = "Deck Select PLayer Icon"
+                            contentDescription = stringResource(R.string.deck_selection_screen_select_player_icon)
                         )
 
                         Text(
-                            "You",
+                            stringResource(R.string.deck_selection_screen_select_player_one),
                             textAlign = TextAlign.Center,
                             color = if (currentSelectedPlayer == 0) Color.White else Color.Gray,
                             modifier = Modifier.fillMaxWidth()
@@ -182,11 +183,11 @@ fun DeckSelectionScreen(
                             modifier = Modifier
                                 .size(32.dp)
                                 .fillMaxWidth(),
-                            contentDescription = "Deck Select Bot Icon"
+                            contentDescription = stringResource(R.string.deck_selection_screen_select_bot_icon)
                         )
 
                         Text(
-                            "Bot",
+                            stringResource(R.string.deck_selection_screen_select_player_two),
                             textAlign = TextAlign.Center,
                             color = if (currentSelectedPlayer == 1) Color.White else Color.Gray,
                             modifier = Modifier.fillMaxWidth()
@@ -245,7 +246,7 @@ fun DeckSelectionScreen(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                        contentDescription = "Previous Deck",
+                        contentDescription = stringResource(R.string.deck_selection_screen_select_previous_deck),
                         tint = if (currentDeckIndex > 0) Color.White else Color.Gray,
                         modifier = Modifier.size(48.dp)
                     )
@@ -287,7 +288,7 @@ fun DeckSelectionScreen(
                         // Deck icon
                         Image(
                             painter = painterResource(R.drawable.card_back),
-                            contentDescription = "Deck Icon",
+                            contentDescription = stringResource(R.string.deck_selection_screen_select_deck_icon),
                             modifier = Modifier.size(120.dp)
                         )
 
@@ -311,14 +312,14 @@ fun DeckSelectionScreen(
 
                         if (isSelected) {
                             Text(
-                                text = "✓ Selected",
+                                text = stringResource(R.string.deck_selection_screen_select_deck_selected),
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = Color(0xFF4CAF50)
                             )
                         } else {
                             Text(
-                                text = "Tap to select",
+                                text = stringResource(R.string.deck_selection_screen_select_deck_not_selected),
                                 fontSize = 14.sp,
                                 color = Color.Gray
                             )
@@ -371,7 +372,7 @@ fun DeckSelectionScreen(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "Next Deck",
+                        contentDescription = stringResource(R.string.deck_selection_screen_next_deck_icon),
                         tint = if (currentDeckIndex < availableDeckNames.size - 1) Color.White else Color.Gray,
                         modifier = Modifier.size(48.dp)
                     )
@@ -387,7 +388,7 @@ fun DeckSelectionScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = "Max Mana",
+                text = stringResource(R.string.deck_selection_screen_max_mana),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color.White,
@@ -437,7 +438,7 @@ fun DeckSelectionScreen(
             shape = RoundedCornerShape(2.dp)
         ) {
             Text(
-                text = "START GAME",
+                text = stringResource(R.string.deck_selection_screen_start_game),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -451,7 +452,7 @@ fun DeckSelectionScreen(
 fun DeckStatItem(text: String, iconRes: Int) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
 
-        Icon(contentDescription = "Deck Stat Item Image",
+        Icon(contentDescription = stringResource(R.string.deck_stat_item_icon),
             painter = painterResource(iconRes),
             modifier = Modifier.size(32.dp).fillMaxWidth(),
             tint = Color.Gray.copy(0.8f))

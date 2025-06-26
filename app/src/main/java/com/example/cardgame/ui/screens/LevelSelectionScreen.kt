@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -128,7 +129,7 @@ fun LevelSelectionScreen(
         // Background Image
         Image(
             painter = painterResource(id = R.drawable.campaign_menu_background),
-            contentDescription = null,
+            contentDescription = stringResource(R.string.level_selection_screen_background_image),
             contentScale = ContentScale.FillBounds,
             modifier = Modifier.fillMaxSize()
         )
@@ -148,7 +149,7 @@ fun LevelSelectionScreen(
                 IconButton(onClick = onBackPressed) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
+                        contentDescription = stringResource(R.string.back_icon),
                         tint = Color.White
                     )
                 }
@@ -237,7 +238,7 @@ fun LevelSelectionScreen(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = "Next Level",
+                            contentDescription = stringResource(R.string.level_selection_screen_next_level_icon),
                             tint = Color.White,
                             modifier = Modifier.size(24.dp)
                         )
@@ -258,7 +259,7 @@ fun LevelSelectionScreen(
                     .padding(16.dp)
             ) {
                 Text(
-                    text = "Select Your Deck",
+                    text = stringResource(R.string.level_selection_screen_select_deck),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium,
                     color = Color.White
@@ -297,7 +298,7 @@ fun LevelSelectionScreen(
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Text(
-                    text = if (isLevelLocked) "LEVEL LOCKED" else "START BATTLE",
+                    text = if (isLevelLocked) stringResource(R.string.level_selection_screen_level_locked) else stringResource(R.string.level_selection_screen_level_unlocked),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -354,7 +355,7 @@ fun OpponentPortrait(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Lock,
-                        contentDescription = "Locked",
+                        contentDescription = stringResource(R.string.level_selection_screen_level_locked_icon),
                         tint = Color.White,
                         modifier = Modifier.size(48.dp)
                     )
@@ -385,7 +386,7 @@ fun OpponentPortrait(
             ) {
                 Image(
                     painter = painterResource(R.drawable.french_medal),
-                    contentDescription = "Level Completed",
+                    contentDescription = stringResource(R.string.level_selection_screen_level_completed_icon),
                     modifier = Modifier
                         .size(48.dp)
                         .alpha(0.9f)
@@ -426,7 +427,7 @@ fun LevelDetailsCard(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = if (isLocked) "Complete the previous level to unlock" else level.description,
+            text = if (isLocked) stringResource(R.string.level_selection_screen_level_locked_text) else level.description,
             fontSize = 12.sp,
             fontFamily = libreFont,
             color = Color.White.copy(alpha = 0.8f),
@@ -439,7 +440,7 @@ fun LevelDetailsCard(
             modifier = Modifier.padding(top = 8.dp)
         ) {
             Text(
-                text = "Difficulty: ",
+                text = stringResource(R.string.level_selection_screen_level_difficulty),
                 fontSize = 16.sp,
                 color = Color.White.copy(alpha = 0.6f)
             )
@@ -466,7 +467,7 @@ fun DifficultyStars(
         repeat(stars) {
             Icon(
                 imageVector = Icons.Filled.Star,
-                contentDescription = null,
+                contentDescription = stringResource(R.string.level_selection_screen_level_difficulty_icon),
                 tint = Color(0xFFFFC107).copy(0.8f),
                 modifier = Modifier.size(20.dp)
             )
@@ -475,7 +476,7 @@ fun DifficultyStars(
         repeat(4 - stars) {
             Icon(
                 imageVector = Icons.Filled.Star,
-                contentDescription = null,
+                contentDescription = stringResource(R.string.level_selection_screen_level_difficulty_icon),
                 tint = Color(0xFF804D15),
                 modifier = Modifier.size(20.dp)
             )
@@ -513,7 +514,7 @@ fun DeckSelectionItem(
             // Deck icon
             Image(
                 painter = painterResource(R.drawable.deck_icon),
-                contentDescription = null,
+                contentDescription = stringResource(R.string.level_selection_screen_level_deck_icon),
                 modifier = Modifier.size(32.dp)
             )
 

@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -744,7 +745,7 @@ fun CardDetailDialog(
                                         verticalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         Text(
-                                            text = "Special Abilities",
+                                            text = stringResource(R.string.player_hand_special_abilities),
                                             fontSize = 14.sp,
                                             color = Color(0xFFD4AF37),
                                             fontWeight = FontWeight.Bold
@@ -753,7 +754,7 @@ fun CardDetailDialog(
 
                                             UnitType.INFANTRY ->
                                                 SpecialStatDisplay(
-                                                    "Counters -> Cavalry",
+                                                    stringResource(R.string.player_hand_counters_cavalry),
                                                     R.drawable.counter_icon
                                                 )
 
@@ -762,12 +763,12 @@ fun CardDetailDialog(
                                                 horizontalAlignment = Alignment.CenterHorizontally
                                             ) {
                                                 SpecialStatDisplay(
-                                                    "Charge: Can attack immediately",
+                                                    stringResource(R.string.player_hand_charge),
                                                     R.drawable.charge_icon
                                                 )
                                                 Spacer(modifier = Modifier.height(8.dp))
                                                 SpecialStatDisplay(
-                                                    "Counters -> Musket and Artillery",
+                                                    stringResource(R.string.player_hand_counters_musket_artillery),
                                                     R.drawable.counter_icon
                                                 )
 
@@ -775,14 +776,14 @@ fun CardDetailDialog(
 
                                             UnitType.ARTILLERY ->
                                                 SpecialStatDisplay(
-                                                    "Shell: Extra damage to Forts",
+                                                    stringResource(R.string.player_hand_shell),
                                                     R.drawable.attack_artillery
                                                 )
 
                                             UnitType.MISSILE -> TODO()
 
                                             UnitType.MUSKET -> SpecialStatDisplay(
-                                                "Bayonet: Transition to Infantry",
+                                                stringResource(R.string.player_hand_bayonet),
                                                 R.drawable.bayonet,
                                                 Modifier.size(24.dp)
                                             )
@@ -797,7 +798,7 @@ fun CardDetailDialog(
 
                         // Dismiss hint
                         Text(
-                            text = "Tap anywhere to close",
+                            text = stringResource(R.string.player_hand_dismiss),
                             fontSize = 12.sp,
                             color = Color(0xFF8B6914),
                             fontStyle = FontStyle.Italic
@@ -870,7 +871,7 @@ private fun SpecialStatDisplay(
     ) {
         Icon(
             painter = painterResource(specialStatIcon),
-            contentDescription = "specialStatIcon",
+            contentDescription = stringResource(R.string.player_hand_special_icon),
             tint = Color(0xFFD4AF37),
             modifier = modifier
         )

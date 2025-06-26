@@ -1,5 +1,6 @@
 package com.example.cardgame.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.EaseOutBack
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -35,6 +36,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -70,6 +72,9 @@ fun GameOverScreen(
         isVisible = true
         onPlaySound()
     }
+    BackHandler(enabled = true) {
+        onReturnToMainMenu()
+    }
 
     Box(
         modifier = modifier
@@ -87,15 +92,16 @@ fun GameOverScreen(
         contentAlignment = Alignment.Center
     ) {
         Image(
-        painter = painterResource(id = if(isPlayerWinner) R.drawable.victory_image else R.drawable.defeat_image),
-        contentDescription = "Game Over Screen Background Image",
-        contentScale = ContentScale.FillBounds,
-        modifier = Modifier.fillMaxSize()
-    )
+            painter = painterResource(id = if (isPlayerWinner) R.drawable.victory_image else R.drawable.defeat_image),
+            contentDescription = stringResource(R.string.game_over_screen_background_image),
+            contentScale = ContentScale.FillBounds,
+            modifier = Modifier.fillMaxSize()
+        )
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth(0.8f)
+            modifier = Modifier
+                .fillMaxWidth(0.8f)
                 .fillMaxHeight()
         ) {
             val resultMessage = if (isPlayerWinner) "Victoire!" else "Défaite!"
@@ -116,7 +122,7 @@ fun GameOverScreen(
             // Buttons with appropriate animations
 
             GameOverButton(
-                text = "Return to Menu",
+                text = stringResource(R.string.game_over_screen_return_text),
                 onClick = onReturnToMainMenu,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = resultColor
@@ -150,7 +156,7 @@ fun GameOverButton(
             .height(56.dp)
             .border(
                 width = 4.dp,
-                color =  Color(0xFF0D222D),
+                color = Color(0xFF0D222D),
                 shape = RoundedCornerShape(2.dp)
             )
             .pointerInput(Unit) {

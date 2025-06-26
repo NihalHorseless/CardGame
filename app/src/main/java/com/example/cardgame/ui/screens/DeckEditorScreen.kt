@@ -68,6 +68,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -166,7 +167,7 @@ fun DeckEditorScreen(
     ) {
         Image(
             painter = painterResource(id = R.drawable.available_cards_background),
-            contentDescription = null,
+            contentDescription = stringResource(R.string.deck_editor_screen_available_cards),
             contentScale = ContentScale.FillBounds,
             modifier = Modifier.fillMaxSize()
         )
@@ -185,7 +186,7 @@ fun DeckEditorScreen(
                 IconButton(onClick = onNavigateBack) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
+                        contentDescription = stringResource(R.string.back_icon),
                         tint = Color.White
                     )
                 }
@@ -223,7 +224,7 @@ fun DeckEditorScreen(
                         ),
                     shape = RoundedCornerShape(2.dp)
                 ) {
-                    Text("Save")
+                    Text(stringResource(R.string.save_text))
                 }
             }
 
@@ -238,7 +239,7 @@ fun DeckEditorScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Available Cards",
+                    text = stringResource(R.string.deck_editor_screen_available_cards),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Medium,
                     fontFamily = libreFont,
@@ -278,7 +279,7 @@ fun DeckEditorScreen(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                        contentDescription = "Previous Page",
+                        contentDescription = stringResource(R.string.back_icon),
                         tint = if (currentPage > 0) Color.White else Color.Gray,
                         modifier = Modifier.size(32.dp)
                     )
@@ -309,7 +310,7 @@ fun DeckEditorScreen(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "Next Page",
+                        contentDescription = stringResource(R.string.next_page_button),
                         tint = if (currentPage < totalPages - 1) Color.White else Color.Gray,
                         modifier = Modifier.size(32.dp)
                     )
@@ -404,7 +405,7 @@ fun SearchBar(
     ) {
         Icon(
             imageVector = Icons.Default.Search,
-            contentDescription = "Search",
+            contentDescription = stringResource(R.string.search_icon),
             tint = Color.White.copy(alpha = 0.7f),
             modifier = Modifier.padding(horizontal = 12.dp)
         )
@@ -429,7 +430,7 @@ fun SearchBar(
             ) {
                 Icon(
                     imageVector = Icons.Default.Clear,
-                    contentDescription = "Clear",
+                    contentDescription = stringResource(R.string.clear_icon),
                     tint = Color.White.copy(alpha = 0.7f)
                 )
             }
@@ -580,7 +581,7 @@ fun DeckCards(
         ) {
             if (cards.isEmpty()) {
                 Text(
-                    text = "Your deck is empty. Add cards from above.",
+                    text = stringResource(R.string.deck_editor_screen_empty_placeholder),
                     color = Color.White.copy(alpha = 0.7f),
                     fontSize = 14.sp,
                     textAlign = TextAlign.Center,
@@ -742,7 +743,7 @@ fun CardDetailOverlay(
                     IconButton(onClick = onDismiss) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = "Close",
+                            contentDescription = stringResource(R.string.close_icon),
                             tint = Color.White
                         )
                     }
@@ -963,7 +964,7 @@ fun NewDeckDialog(
 
                 // Deck name field
                 Text(
-                    text = "Deck Name",
+                    text = stringResource(R.string.deck_editor_screen_deck_name),
                     fontSize = 14.sp,
                     color = Color.White,
                     modifier = Modifier
@@ -975,7 +976,7 @@ fun NewDeckDialog(
                     value = deckName,
                     onValueChange = onDeckNameChange,
                     placeholder = {
-                        Text("Enter deck name", color = Color.White.copy(alpha = 0.5f))
+                        Text(stringResource(R.string.deck_editor_screen_enter_deck), color = Color.White.copy(alpha = 0.5f))
                     },
                     singleLine = true,
                     textStyle = TextStyle(color = Color.White),
@@ -1001,7 +1002,7 @@ fun NewDeckDialog(
 
                 // Deck description field
                 Text(
-                    text = "Deck Description",
+                    text = stringResource(R.string.deck_editor_screen_deck_description),
                     fontSize = 14.sp,
                     color = Color.White,
                     modifier = Modifier
@@ -1013,7 +1014,7 @@ fun NewDeckDialog(
                     value = deckDescription,
                     onValueChange = onDeckDescriptionChange,
                     placeholder = {
-                        Text("Enter deck description", color = Color.White.copy(alpha = 0.5f))
+                        Text(stringResource(R.string.deck_editor_screen_enter_description), color = Color.White.copy(alpha = 0.5f))
                     },
                     textStyle = TextStyle(color = Color.White),
                     colors = TextFieldDefaults.colors(
@@ -1049,7 +1050,7 @@ fun NewDeckDialog(
                         ),
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.cancel))
                     }
 
                     Spacer(modifier = Modifier.width(16.dp))
@@ -1063,7 +1064,7 @@ fun NewDeckDialog(
                         ),
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Create")
+                        Text(stringResource(R.string.create))
                     }
                 }
             }

@@ -1,3 +1,107 @@
 <resources>
     <string name="app_name">CardGame</string>
+    <string name="app_title">ETERNAL GLORY</string>
+
+
+    <string name="player_hand_special_abilities">Special Abilities</string>
+    <string name="player_hand_counters_cavalry">Counters -> Cavalry</string>
+    <string name="player_hand_charge">Charge: Can attack immediately</string>
+    <string name="player_hand_counters_musket_artillery">Counters -> Musket and Artillery</string>
+    <string name="player_hand_shell">Shell: Extra damage to Forts</string>
+    <string name="player_hand_bayonet">Bayonet: Transition to Infantry</string>
+    <string name="player_hand_dismiss">Tap anywhere to close</string>
+    <string name="player_hand_special_icon">specialStatIcon</string>
+
+    <string name="back_icon">Back</string>
+    <string name="search_icon">Search</string>
+    <string name="clear_icon">Clear</string>
+    <string name="close_icon">Close</string>
+    <string name="cancel">Cancel</string>
+    <string name="error">Error</string>
+    <string name="create">Create</string>
+    <string name="deck_stat_item_icon">Deck Stat Item Image</string>
+
+
+
+
+
+    <string name="save_text">Save</string>
+    <string name="next_page_button">Next Page</string>
+
+    <string name="campaign_selection_header">CAMPAIGN SELECTION</string>
+
+    <string name="deck_editor_screen_available_cards">Available Cards</string>
+    <string name="deck_editor_screen_available_cards_icon">Available Cards Icon</string>
+    <string name="deck_editor_screen_empty_placeholder">Your deck is empty. Add cards from above.</string>
+    <string name="deck_editor_screen_create_deck">Create New Deck</string>
+    <string name="deck_editor_screen_deck_name">Deck Name</string>
+    <string name="deck_editor_screen_enter_deck">Enter deck name</string>
+    <string name="deck_editor_screen_deck_description">Deck Description</string>
+    <string name="deck_editor_screen_enter_description">Enter deck description</string>
+
+    <string name="deck_selection_screen_header">DECK SELECTION</string>
+    <string name="deck_selection_screen_select_player_icon">Deck Select PLayer Icon</string>
+    <string name="deck_selection_screen_select_player_one">You</string>
+    <string name="deck_selection_screen_select_bot_icon">Deck Select Bot Icon</string>
+    <string name="deck_selection_screen_select_player_two">Bot</string>
+    <string name="deck_selection_screen_select_previous_deck">Previous Deck</string>
+    <string name="deck_selection_screen_select_deck_icon">Deck Icon</string>
+    <string name="deck_selection_screen_select_deck_selected">✓ Selected</string>
+    <string name="deck_selection_screen_select_deck_not_selected">Tap to select</string>
+    <string name="deck_selection_screen_next_deck_icon">Next Deck</string>
+    <string name="deck_selection_screen_max_mana">Max Mana</string>
+    <string name="deck_selection_screen_start_game">START GAME</string>
+
+    <string name="game_over_screen_background_image">Game Over Screen Background Image</string>
+    <string name="game_over_screen_return_text">Return to Menu</string>
+
+    <string name="guide_screen_header">GAME GUIDE</string>
+    <string name="guide_screen_select_mechanic">Select a game mechanic to learn more</string>
+    <string name="guide_screen_demo">How it works:</string>
+    <string name="guide_screen_demo_gif">Mechanic Demo</string>
+    <string name="guide_screen_demo_gif_fail">Failed to load demo</string>
+    <string name="guide_screen_demo_header">DEMO</string>
+
+    <string name="level_selection_screen_background_image">Level Select Background Image</string>
+    <string name="level_selection_screen_next_level_icon">Level Select Next Level Icon</string>
+    <string name="level_selection_screen_select_deck">Select Your Deck</string>
+    <string name="level_selection_screen_level_locked">LEVEL LOCKED</string>
+    <string name="level_selection_screen_level_unlocked">START BATTLE</string>
+    <string name="level_selection_screen_level_locked_icon">Locked Icon</string>
+    <string name="level_selection_screen_level_completed_icon">Completed Icon</string>
+    <string name="level_selection_screen_level_locked_text">Complete the previous level to unlock</string>
+    <string name="level_selection_screen_level_difficulty">Difficulty: </string>
+    <string name="level_selection_screen_level_difficulty_icon">Difficulty Icon</string>
+    <string name="level_selection_screen_level_deck_icon">Deck Icon</string>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 </resources>

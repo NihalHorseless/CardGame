@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -89,13 +90,13 @@ fun GuideScreen(
                     IconButton(onClick = onBackPressed) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(R.string.back_icon),
                             tint = Color.White
                         )
                     }
 
                     Text(
-                        text = "GAME GUIDE",
+                        text = stringResource(R.string.guide_screen_header),
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -107,7 +108,7 @@ fun GuideScreen(
 
                 // Grid of mechanics
                 Text(
-                    text = "Select a game mechanic to learn more",
+                    text = stringResource(R.string.guide_screen_select_mechanic),
                     fontSize = 16.sp,
                     color = Color.White,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -195,7 +196,7 @@ fun MechanicDetailScreen(
             IconButton(onClick = onBackPressed) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.back_icon),
                     tint = Color.White
                 )
             }
@@ -222,7 +223,7 @@ fun MechanicDetailScreen(
             // GIF Demo Section if available
             mechanic.gifResId?.let { gifId ->
                 Text(
-                    text = "How it works:",
+                    text = stringResource(R.string.guide_screen_demo),
                     color = Color.White,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium,
@@ -313,7 +314,7 @@ fun MechanicGifPlayer(
                 .data(gifResId)
                 .crossfade(true)
                 .build(),
-            contentDescription = "Mechanic Demo",
+            contentDescription = stringResource(R.string.guide_screen_demo_gif),
             imageLoader = imageLoader,
             contentScale = ContentScale.Fit,
             modifier = Modifier.fillMaxSize(),
@@ -337,12 +338,12 @@ fun MechanicGifPlayer(
                 ) {
                     Image(
                         painter = painterResource(R.drawable.baseline_error_24),
-                        contentDescription = "Error",
+                        contentDescription = stringResource(R.string.error),
                         modifier = Modifier.size(48.dp)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Failed to load demo",
+                        text = stringResource(R.string.guide_screen_demo_gif_fail),
                         color = Color.White.copy(alpha = 0.7f),
                         fontSize = 14.sp
                     )
@@ -363,7 +364,7 @@ fun MechanicGifPlayer(
                 .padding(horizontal = 8.dp, vertical = 4.dp)
         ) {
             Text(
-                text = "DEMO",
+                text = stringResource(R.string.guide_screen_demo_header),
                 color = Color.White,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold

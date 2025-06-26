@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -67,13 +68,13 @@ fun CampaignSelectionScreen(
             IconButton(onClick = onBackPressed) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.back_icon),
                     tint = Color.White
                 )
             }
 
             Text(
-                text = "CAMPAIGN SELECTION",
+                text = stringResource(R.string.campaign_selection_header),
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White

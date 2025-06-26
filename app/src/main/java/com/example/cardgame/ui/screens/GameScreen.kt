@@ -81,8 +81,8 @@ fun GameScreen(
     val cellPositionsMap = remember { mutableMapOf<Pair<Int, Int>, Pair<Float, Float>>() }
 
     LaunchedEffect(key1 = Unit) {
-        if(!viewModel.isInCampaign.value)
-        viewModel.startGame()
+        if (!viewModel.isInCampaign.value)
+            viewModel.startGame()
     }
 
     // Wrap everything in a Box to allow overlays
@@ -97,16 +97,16 @@ fun GameScreen(
                 }
             )
         } else {
-            if(viewModel.isInCampaign.value) BattlefieldBackground()
+            if (viewModel.isInCampaign.value) BattlefieldBackground()
             Column(
-                modifier = if(!viewModel.isInCampaign.value) Modifier
+                modifier = if (!viewModel.isInCampaign.value) Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.background)
                 else Modifier.fillMaxSize()
             ) {
                 // Status message
                 if (statusMessage.isNotEmpty()) {
-                    Log.d("StatusMessage",statusMessage)
+                    Log.d("StatusMessage", statusMessage)
                 }
 
                 // Top row with portraits
@@ -115,7 +115,8 @@ fun GameScreen(
                         .fillMaxWidth()
                         .padding(8.dp),
                     verticalAlignment = Alignment.CenterVertically
-                ) {Log.d("Opponent", opponentHealth.toString())
+                ) {
+                    Log.d("Opponent", opponentHealth.toString())
                     // Opponent's portrait
                     PlayerPortrait(
                         playerName = opponentName,
@@ -168,7 +169,7 @@ fun GameScreen(
                         },
                         onAttachBayonet = { row, col ->  // New parameter
                             viewModel.attachBayonet(row, col)
-                        } ,
+                        },
                         registerCellPosition = { row, col, x, y ->
                             viewModel.registerCellPosition(row, col, x, y)
                             cellPositionsMap[Pair(row, col)] = Pair(x, y)
@@ -246,7 +247,9 @@ fun GameScreen(
                 targetX = deathAnimationPosition.first,
                 targetY = deathAnimationPosition.second,
                 onAnimationComplete = { viewModel.onDeathAnimationComplete() },
-                modifier = Modifier.fillMaxSize().zIndex(15f) // Higher zIndex to appear on top
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(15f) // Higher zIndex to appear on top
             )
         }
         if (isTacticEffectVisible) {
@@ -255,7 +258,9 @@ fun GameScreen(
                 cardType = tacticEffectType,
                 targetPosition = tacticEffectPosition,
                 onAnimationComplete = { viewModel.onTacticEffectComplete() },
-                modifier = Modifier.fillMaxSize().zIndex(10f)
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(10f)
             )
         }
 
@@ -267,7 +272,9 @@ fun GameScreen(
                 targetX = cardAnimationPosition.first,
                 targetY = cardAnimationPosition.second,
                 onAnimationComplete = { /* Handled by ViewModel */ },
-                modifier = Modifier.fillMaxSize().zIndex(10f)
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(10f)
             )
         }
 
