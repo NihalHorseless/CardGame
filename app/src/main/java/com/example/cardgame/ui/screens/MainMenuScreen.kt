@@ -59,6 +59,7 @@ fun MainMenuScreen(
     onShowDeckBuilder: () -> Unit,
     onShowCampaign: () -> Unit,
     onShowGuide: () -> Unit,
+    onShowCredits: () -> Unit,
     isMusicMuted: Boolean,
     onToggleMusicMute: () -> Unit
 ) {
@@ -200,6 +201,8 @@ fun MainMenuScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
             ) {
+                Spacer(modifier = Modifier.height(32.dp))
+
                 MenuButton(
                     text = "Custom Game",
                     onClick = onStartGame
@@ -215,6 +218,10 @@ fun MainMenuScreen(
                 MenuButton(
                     text = "Game Guide",
                     onClick = onShowGuide
+                )
+                MenuButton(
+                    text = "Credits",
+                    onClick = onShowCredits
                 )
             }
 

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -25,6 +26,7 @@ import coil3.request.ImageRequest
 import com.example.cardgame.R
 import com.example.cardgame.data.enum.FortificationType
 import com.example.cardgame.data.enum.UnitType
+import com.example.cardgame.util.ImageLoadingUtils
 import kotlinx.coroutines.delay
 
 @Composable
@@ -86,13 +88,9 @@ fun GifAttackAnimation(
 
     // Setup Coil's ImageLoader with GIF decoder
     val context = LocalContext.current
-    val imageLoader = remember {
-        ImageLoader.Builder(context)
-            .components {
-                add(GifDecoder.Factory())
-            }
-            .build()
-    }
+
+    val imageLoader = remember { ImageLoadingUtils.createImageLoader(context) }
+
     val animationRes = when (unitType) {
         UnitType.CAVALRY -> R.drawable.blood_splash
         UnitType.INFANTRY -> R.drawable.blood_splash
@@ -135,6 +133,14 @@ fun GifAttackAnimation(
         LaunchedEffect(isVisible) {
             delay(1000) // Adjust this duration to match your GIF length
             onAnimationComplete()
+        }
+        DisposableEffect(isVisible) {
+            onDispose {
+                if (!isVisible) {
+                    // Cancel any pending requests
+                    imageLoader.shutdown()
+                }
+            }
         }
     }
 }

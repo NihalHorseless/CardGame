@@ -569,6 +569,7 @@ class GameViewModel(
                 throw IllegalStateException("Please select decks for both players")
             }
 
+
             // Load decks with error handling
             val playerDeckResult = cardRepository.loadAnyDeckSafe(playerDeckName)
             val opponentDeckResult = cardRepository.loadAnyDeckSafe(opponentDeckName)
@@ -602,12 +603,42 @@ class GameViewModel(
             _gameManager.players[0].setDeck(playerDeck)
             _gameManager.players[1].setDeck(opponentDeck)
 
+            _opponentName.value = "Mediocre Bot"
+            _isInCampaign.value = false
+
             _gameManager.startGame()
             updateAllGameStates()
 
             _isLoading.value = false
             _errorMessage.value = null
         }
+    }
+    fun pauseGame() {
+        // Pause any ongoing animations
+        animationJobs.forEach { it.cancel() }
+        animationJobs.clear()
+    }
+
+    fun resumeGame() {
+        // Resume game state if needed
+        updateAllGameStates()
+    }
+
+    fun cleanupResources() {
+        // Cancel all coroutines
+        animationJobs.forEach { it.cancel() }
+        animationJobs.clear()
+
+        // Clear animation states
+        _isSimpleAttackVisible.value = false
+        _isCardAnimationVisible.value = false
+        _isTacticEffectVisible.value = false
+        _isDeathAnimationVisible.value = false
+
+        // Clear large collections
+        cellPositions.clear()
+        _visualHealthMap.value = emptyMap()
+        _entitiesInDeathAnimation.value = emptySet()
     }
 
     /**

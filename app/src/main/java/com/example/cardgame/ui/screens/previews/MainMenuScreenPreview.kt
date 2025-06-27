@@ -36,6 +36,7 @@ fun MainMenuScreenPreview() {
                 onShowDeckBuilder = {},
                 onShowCampaign = {},
                 onShowGuide = {},
+                onShowCredits = {},
                 isMusicMuted = false,
                 onToggleMusicMute = {}
             )

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -21,6 +22,9 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.cardgame.ui.components.board.BattlefieldBackground
 import com.example.cardgame.ui.components.board.GameBoard
 import com.example.cardgame.ui.components.board.GameStatusBar
@@ -80,9 +84,35 @@ fun GameScreen(
     // Map to store cell positions for animations
     val cellPositionsMap = remember { mutableMapOf<Pair<Int, Int>, Pair<Float, Float>>() }
 
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+
     LaunchedEffect(key1 = Unit) {
         if (!viewModel.isInCampaign.value)
             viewModel.startGame()
+    }
+
+    DisposableEffect(LocalLifecycleOwner.current) {
+
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_PAUSE -> {
+                    // Pause animations and release resources
+                    viewModel.pauseGame()
+                }
+                Lifecycle.Event.ON_RESUME -> {
+                    viewModel.resumeGame()
+                }
+                Lifecycle.Event.ON_DESTROY -> {
+                    // Clean up resources
+                    viewModel.cleanupResources()
+                }
+                else -> {}
+            }
+        }
+        lifecycle.addObserver(observer)
+        onDispose {
+            lifecycle.removeObserver(observer)
+        }
     }
 
     // Wrap everything in a Box to allow overlays

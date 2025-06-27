@@ -12,6 +12,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.cardgame.ui.screens.CampaignSelectionScreen
+import com.example.cardgame.ui.screens.CreditsScreen
 import com.example.cardgame.ui.screens.DeckBuilderScreen
 import com.example.cardgame.ui.screens.DeckEditorScreen
 import com.example.cardgame.ui.screens.DeckSelectionScreen
@@ -65,6 +66,11 @@ fun CardGameNavigation() {
                 },
                 onShowGuide = {
                     navController.navigate("guide")
+                    gameViewModel.playMenuSoundOne()
+                    gameViewModel.stopMusic()
+                },
+                onShowCredits = {
+                    navController.navigate("credits")
                     gameViewModel.playMenuSoundOne()
                     gameViewModel.stopMusic()
                 },
@@ -199,6 +205,14 @@ fun CardGameNavigation() {
         }
         composable("guide") {
             GuideScreen(
+                onBackPressed = {
+                    navController.popBackStack()
+                    gameViewModel.playMenuSoundOne()
+                }
+            )
+        }
+        composable("credits") {
+            CreditsScreen(
                 onBackPressed = {
                     navController.popBackStack()
                     gameViewModel.playMenuSoundOne()
