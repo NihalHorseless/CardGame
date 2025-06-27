@@ -10,7 +10,9 @@ data class CreditItem(
     val author: String,
     val source: String,
     val license: String,
-    val url: String? = null
+    val url: String? = null,
+    val licenseUrl: String? = null,
+    val changes: String? = null
 )
 
 object GameCredits {
@@ -65,13 +67,6 @@ object GameCredits {
                     source = "opengameart.org",
                     license = "CC BY 3.0",
                     url = "https://opengameart.org/content/rumbleexplosion"
-                ),
-                CreditItem(
-                    assetName = "Sword Slash",
-                    author = "Author Name",
-                    source = "Freesound.org",
-                    license = "CC BY 3.0",
-                    url = "https://freesound.org/..."
                 ),
                 CreditItem(
                     assetName = "Debuff Effect",
@@ -293,9 +288,9 @@ object GameCredits {
             title = "Special Thanks",
             items = listOf(
                 CreditItem(
-                    assetName = "Game Development Feedback",
-                    author = "My Family and Dear Friends",
-                    source = "Love",
+                    assetName = "To My Family and Dear Friends",
+                    author = "Peace and Love",
+                    source = "",
                     license = "",
                     url = null
                 )

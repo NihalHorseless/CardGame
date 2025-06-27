@@ -63,6 +63,8 @@ dependencies {
     implementation("androidx.room:room-runtime:$room_version")
     implementation("androidx.room:room-ktx:$room_version")
     ksp("androidx.room:room-compiler:$room_version")
+    // For Licensing
+    implementation("com.google.android.gms:play-services-oss-licenses:17.1.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

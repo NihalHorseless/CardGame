@@ -1,0 +1,267 @@
+THIRD-PARTY LICENSES AND ATTRIBUTIONS
+
+This application uses the following third-party assets and libraries:
+
+================================================================================
+MUSIC
+================================================================================
+
+1. Main Menu Theme - Abdelazer: Rondeau
+   Author: Henry Purcell
+   Source: https://musopen.org/music/11130-abdelazer-z-570/
+   License: CC0 1.0 Universal (Public Domain)
+   License URL: https://creativecommons.org/publicdomain/zero/1.0/
+   Changes: Audio file was trimmed and converted to OGG format
+
+2. Level Selection - Sarabande
+   Author: George Friedrich Handel
+   Source: https://musopen.org/music/6208-suite-in-d-minor-hwv-437/
+   License: CC0 1.0 Universal (Public Domain)
+   License URL: https://creativecommons.org/publicdomain/zero/1.0/
+   Changes: Audio file was trimmed and converted to OGG format
+
+3. Deck Editor - Tales From Vienna Woods
+   Author: Johann Strauss II
+   Source: https://musopen.org/music/9896-tales-from-the-vienna-woods-op-325/
+   License: CC0 1.0 Universal (Public Domain)
+   License URL: https://creativecommons.org/publicdomain/zero/1.0/
+   Changes: Audio file was trimmed and converted to OGG format
+
+================================================================================
+SOUND EFFECTS
+================================================================================
+
+All sound effects licensed under CC BY 3.0 require attribution.
+License details: https://creativecommons.org/licenses/by/3.0/
+
+1. Sword Slash
+   Author: Mateusz_Chenc
+   Source: https://freesound.org/people/Mateusz_Chenc/sounds/547600/
+   License: CC BY 3.0
+   Changes: No changes made
+
+2. Card Sounds
+   Author: Kenney
+   Source: https://opengameart.org/content/54-casino-sound-effects-cards-dice-chips
+   License: CC BY 3.0
+   Changes: Selected specific sounds from pack
+
+3. Musket Fire
+   Author: Michel Baradari
+   Source: https://opengameart.org/content/rumbleexplosion
+   License: CC BY 3.0
+   Changes: No changes made
+
+4. Debuff Effect
+   Author: qubodup
+   Source: https://opengameart.org/content/energy-drain
+   License: CC BY 3.0
+   Changes: No changes made
+
+5. Turn End Sound
+   Author: rodincoil
+   Source: https://freesound.org/people/rodincoil/sounds/271945/
+   License: CC BY 3.0
+   Changes: No changes made
+
+6. Horse Move
+   Author: gurek
+   Source: https://freesound.org/people/gurek/sounds/547967/
+   License: CC BY 3.0
+   Changes: No changes made
+
+7. Infantry Tap
+   Author: stib
+   Source: https://freesound.org/people/stib/sounds/240732/
+   License: CC BY 3.0
+   Changes: No changes made
+
+8. Infantry Move
+   Author: Yap_Audio_Production
+   Source: https://freesound.org/people/Yap_Audio_Production/sounds/218998/
+   License: CC BY 3.0
+   Changes: No changes made
+
+9. Horse Tap
+   Author: bruno.auzet
+   Source: https://freesound.org/people/bruno.auzet/sounds/538438/
+   License: CC BY 3.0
+   Changes: No changes made
+
+10. Artillery Attack
+    Author: EvanBoyerman
+    Source: https://freesound.org/people/EvanBoyerman/sounds/388528/
+    License: CC BY 3.0
+    Changes: No changes made
+
+11. Fort Tap
+    Author: thanvannispen
+    Source: https://freesound.org/people/thanvannispen/sounds/29986/
+    License: CC BY 3.0
+    Changes: No changes made
+
+12. Fort Destruction
+    Author: iwanPlays
+    Source: https://freesound.org/people/iwanPlays/sounds/567249/
+    License: CC BY 3.0
+    Changes: No changes made
+
+13. Opponent Hit
+    Author: spookymodem
+    Source: https://opengameart.org/content/wall-impact
+    License: CC BY 3.0
+    Changes: No changes made
+
+14. Menu Tap
+    Author: DoKashiteru
+    Source: https://opengameart.org/content/3-heal-spells
+    License: CC BY 3.0
+    Changes: Selected specific sound from pack
+
+15. Unit Hit
+    Author: saangosu
+    Source: https://freesound.org/people/saangosu/sounds/781093/
+    License: CC BY 3.0
+    Changes: No changes made
+
+16. Bayonet Sheathe
+    Author: giddster
+    Source: https://freesound.org/people/giddster/sounds/484298/
+    License: CC BY 3.0
+    Changes: No changes made
+
+17. Level Start
+    Author: bart
+    Source: https://opengameart.org/content/level-up-sound-effects
+    License: CC BY 3.0
+    Changes: Selected specific sound from pack
+
+18. Tactical Rocket Sound
+    Author: belloq
+    Source: https://freesound.org/people/belloq/sounds/41459/
+    License: CC BY 3.0
+    Changes: No changes made
+
+19. Unit Death
+    Author: Rock Savage
+    Source: https://freesound.org/people/Rock%20Savage/sounds/81042/
+    License: CC BY 3.0
+    Changes: No changes made
+
+20. Game Over Bell
+    Author: dsp9000
+    Source: https://freesound.org/people/dsp9000/sounds/76405/
+    License: CC BY 3.0
+    Changes: No changes made
+
+21. Special Cards
+    Author: EminYILDIRIM
+    Source: https://freesound.org/people/EminYILDIRIM/sounds/621206/
+    License: CC BY 3.0
+    Changes: No changes made
+
+22. Buff Cards
+    Author: EminYILDIRIM
+    Source: https://freesound.org/people/EminYILDIRIM/sounds/563662/
+    License: CC BY 3.0
+    Changes: No changes made
+
+23. Victory
+    Author: FunWithSound
+    Source: https://freesound.org/people/FunWithSound/sounds/456967/
+    License: CC BY 3.0
+    Changes: No changes made
+
+================================================================================
+IMAGES & ICONS
+================================================================================
+
+1. Charge and Counter Icons
+   Author: Game Skills Vectors
+   Source: https://www.svgrepo.com/svg/320316/all-for-one
+   License: CC Attribution License
+   License URL: https://creativecommons.org/licenses/by/4.0/
+   Changes: Color modifications applied
+
+2. Range Icon
+   Author: Icooon Mono
+   Source: https://www.svgrepo.com/svg/477512/shooting
+   License: Public Domain
+   Changes: No changes made
+
+3. Movement Icon
+   Author: Noah Jacobus
+   Source: https://www.svgrepo.com/svg/535741/wind
+   License: Public Domain
+   Changes: No changes made
+
+4. Hourglass Icon
+   Author: AnastasiyaArtDesign
+   Source: https://designbundles.net/anastasiyaartdesign/1941621-hourglass-and-nature-silhoueette-svg-outdoors-land
+   License: Commercial Use Allowed (as per source terms)
+   Changes: Converted to Android drawable format
+
+================================================================================
+ANIMATIONS
+================================================================================
+
+1. Melee Attack Animations
+   Author: jasontomlee
+   Source: https://jasontomlee.itch.io/blood-fx
+   License: CC BY 4.0
+   License URL: https://creativecommons.org/licenses/by/4.0/
+   Changes: Converted to GIF format for Android
+
+2. Tactical Explosion Animation
+   Author: ansimuz
+   Source: https://ansimuz.itch.io/explosion-animations-pack
+   License: Free for commercial use (as stated by author)
+   Changes: Selected specific animations from pack
+
+3. Various Animations
+   Author: codemanu
+   Source: https://codemanu.itch.io/vfx-free-pack
+   License: Public Domain
+   Changes: Selected specific animations from pack
+
+================================================================================
+FONTS
+================================================================================
+
+1. Libre Caslon Display
+   Author: Pablo Impallari
+   Source: https://fonts.google.com/specimen/Libre+Caslon+Display
+   License: SIL Open Font License 1.1
+   License URL: https://scripts.sil.org/OFL
+   Changes: No changes made
+
+================================================================================
+CUSTOM ARTWORK
+================================================================================
+
+Unless otherwise specified above, all remaining in-game images, backgrounds, UI elements, and promotional artwork were created either:
+
+- by the developer
+- or generated using AI tools and further modified by the developer.
+
+These assets are original works and do not require attribution to third parties.
+================================================================================
+SOFTWARE LIBRARIES
+================================================================================
+
+This application uses various open-source libraries. Their licenses can be
+viewed within the application under Settings > Open Source Licenses.
+
+Key libraries include:
+- Jetpack Compose (Apache 2.0)
+- Kotlin Coroutines (Apache 2.0)
+- Room Database (Apache 2.0)
+- Coil (Apache 2.0)
+- Gson (Apache 2.0)
+
+================================================================================
+
+For questions about these licenses or to report issues, please contact:
+onuraslanfb07@gmail.com
+
+Last updated: 28/06/2025
