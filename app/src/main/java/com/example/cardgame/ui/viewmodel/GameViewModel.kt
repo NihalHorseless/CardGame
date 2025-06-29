@@ -141,6 +141,10 @@ class GameViewModel(
     private val _isSimpleAttackVisible = mutableStateOf(false)
     val isSimpleAttackVisible: State<Boolean> = _isSimpleAttackVisible
 
+    // Add this property to GameViewModel class (with other state properties)
+    private val _isAttackAnimationInProgress = mutableStateOf(false)
+    val isAttackAnimationInProgress: State<Boolean> = _isAttackAnimationInProgress
+
     private val _attackingUnitType = mutableStateOf(UnitType.INFANTRY)
     val attackingUnitType: State<UnitType> = _attackingUnitType
 
@@ -393,6 +397,7 @@ class GameViewModel(
         _gameManager.players[0].currentMana = level.startingMana
         _gameManager.players[1].currentMana = level.startingMana
 
+
         // Apply special rules
         applySpecialRules(level.specialRules)
     }
@@ -401,6 +406,7 @@ class GameViewModel(
      * Apply special rules to the game
      */
     private fun applySpecialRules(rules: List<SpecialRule>) {
+
         rules.forEach { rule ->
             when (rule) {
                 is SpecialRule.StartingBoard -> {
@@ -456,6 +462,7 @@ class GameViewModel(
 
                 is SpecialRule.ModifiedMana -> {
                     _gameManager.players[0].maxMana += rule.amount
+                    return
                 }
 
                 is SpecialRule.CustomObjective -> {
@@ -463,6 +470,8 @@ class GameViewModel(
                 }
             }
         }
+        // Apply max mana setting to both players
+        _gameManager.players[0].maxMana = 10
     }
 
     /**
@@ -602,6 +611,10 @@ class GameViewModel(
 
             _gameManager.players[0].setDeck(playerDeck)
             _gameManager.players[1].setDeck(opponentDeck)
+
+            // Apply max mana setting to both players
+            _gameManager.players[0].maxMana = _maxMana.intValue
+            _gameManager.players[1].maxMana = _maxMana.intValue
 
             _opponentName.value = "Mediocre Bot"
             _isInCampaign.value = false
@@ -961,6 +974,12 @@ class GameViewModel(
      */
     fun onCellClick(row: Int, col: Int) {
         if (!_isPlayerTurn.value) return
+
+        if (_isAttackAnimationInProgress.value) {
+            _statusMessage.value = "Please wait for the current attack to complete"
+            return
+        }
+
         when (_interactionMode.value) {
             InteractionMode.DEPLOY -> {
                 // Handle unit/fortification deployment
@@ -1166,6 +1185,9 @@ class GameViewModel(
         val attackerUnit = _gameManager.gameBoard.getUnitAt(attackerRow, attackerCol) ?: return
         val targetUnit = _gameManager.gameBoard.getUnitAt(targetRow, targetCol) ?: return
 
+        // Sets animation in progress flag
+        _isAttackAnimationInProgress.value = true
+
         // Check if this attack has a counter bonus
         val hasCounterBonus = _gameManager.hasCounterBonus(attackerUnit, targetUnit)
         _isCounterBonus.value = hasCounterBonus
@@ -1253,6 +1275,7 @@ class GameViewModel(
                     _interactionMode.value = InteractionMode.DEFAULT
                     _isCounterBonus.value = false
                 }
+                _isAttackAnimationInProgress.value = false
             }
         } else {
             // Fallback if position tracking failed
@@ -1282,6 +1305,7 @@ class GameViewModel(
                 _interactionMode.value = InteractionMode.DEFAULT
                 _isCounterBonus.value = false
             }
+            _isAttackAnimationInProgress.value = false
         }
     }
 
@@ -1302,6 +1326,9 @@ class GameViewModel(
 
         val targetFort = _gameManager.gameBoard.getFortificationAt(targetRow, targetCol)
             ?: return
+
+        // Sets animation in progress flag
+        _isAttackAnimationInProgress.value = true
 
 
         // Check if this attack has a counter bonus
@@ -1373,6 +1400,7 @@ class GameViewModel(
                     _interactionMode.value = InteractionMode.DEFAULT
                     _isCounterBonus.value = false
                 }
+                _isAttackAnimationInProgress.value = false
             }
         } else {
             // Fallback if position tracking failed
@@ -1393,6 +1421,7 @@ class GameViewModel(
                 _interactionMode.value = InteractionMode.DEFAULT
                 _isCounterBonus.value = false
             }
+            _isAttackAnimationInProgress.value = false
         }
     }
 

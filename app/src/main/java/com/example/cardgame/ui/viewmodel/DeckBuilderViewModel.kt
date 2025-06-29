@@ -64,7 +64,9 @@ class DeckBuilderViewModel(
     fun loadAvailableCards() {
         viewModelScope.launch {
             _isLoading.value = true
-            val cards = deckBuilderRepository.getAllAvailableCards()
+            val cards = deckBuilderRepository.getAllAvailableCards().sortedBy { card ->
+                card.manaCost
+            }
             _availableCards.value = cards
             _filteredCards.value = cards
             _isLoading.value = false
@@ -112,7 +114,8 @@ class DeckBuilderViewModel(
                 playMenuSoundOne()
                 _statusMessage.value = "Created new deck: ${newDeck.name}"
             } else {
-                _statusMessage.value = "Cannot create more decks (maximum ${DeckBuilderRepository.MAX_CUSTOM_DECKS})"
+                _statusMessage.value =
+                    "Cannot create more decks (maximum ${DeckBuilderRepository.MAX_CUSTOM_DECKS})"
             }
             _isLoading.value = false
         }
@@ -291,12 +294,15 @@ class DeckBuilderViewModel(
     private fun playCardRemovedSound() {
         soundManager?.playSound(SoundType.FOOT_UNIT_TAP)
     }
+
     fun playEditorMusic() {
-        musicManager?.playMusic(MusicTrack.DECK_EDITOR,true)
+        musicManager?.playMusic(MusicTrack.DECK_EDITOR, true)
     }
+
     fun stopMusic() {
         musicManager?.stopMusic()
     }
+
     override fun onCleared() {
         super.onCleared()
         musicManager?.release()

@@ -228,3 +228,23 @@ val scallopedCircleShape = GenericShape { size, _ ->
     // Close the path
     close()
 }
+// Add this to your Shapes.kt file or create a new shape file
+val diamondShape = GenericShape { size, _ ->
+    val width = size.width
+    val height = size.height
+
+    // Start at top center
+    moveTo(width / 2, 0f)
+
+    // Move to right corner
+    lineTo(width, height / 2)
+
+    // Move to bottom center
+    lineTo(width / 2, height)
+
+    // Move to left corner
+    lineTo(0f, height / 2)
+
+    // Close the path back to top
+    close()
+}

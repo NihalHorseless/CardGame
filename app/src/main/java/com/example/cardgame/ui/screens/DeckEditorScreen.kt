@@ -470,17 +470,10 @@ fun CompactCardItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-
     Box(
         modifier = modifier
-            .shadow(
-                elevation = 4.dp,
-                shape = RoundedCornerShape(2.dp)
-            )
             .clip(RoundedCornerShape(2.dp))
-            .background(
-                Color.Transparent
-            )
+            .background(Color.Transparent)
             .clickable(onClick = onClick)
             .padding(4.dp),
         contentAlignment = Alignment.Center
@@ -490,44 +483,50 @@ fun CompactCardItem(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.fillMaxHeight()
         ) {
-            Spacer(modifier = Modifier.size(12.dp))
-            // Card icon
-            when (card) {
-                is UnitCard -> {
-                    UnitTypeIcon(
-                        unitType = card.unitType,
-                        modifier = Modifier
-                            .size(32.dp)
-                            .alpha(0.75f)
-                    )
-                }
+            Spacer(modifier = Modifier.size(6.dp))
 
-                is FortificationCard -> {
-                    FortificationTypeIcon(
-                        fortType = card.fortType,
-                        modifier = Modifier
-                            .size(32.dp)
-                            .alpha(0.75f)
-                    )
-                }
-
-                is TacticCard -> {
-                    TacticTypeIcon(
-                        tacticCardType = card.cardType,
-                        modifier = Modifier
-                            .size(32.dp)
-                            .alpha(0.75f)
-                    )
-                }
-
-                else -> {
-                    // Fallback
-                    Icon(
-                        painter = painterResource(R.drawable.magic_effect_icon),
-                        contentDescription = "Default Card Icon",
-                        tint = Color.White,
-                        modifier = Modifier.size(32.dp)
-                    )
+            // Diamond background with icon
+            Box(
+                modifier = Modifier
+                    .size(48.dp) // Adjust size as needed
+                    ,
+                contentAlignment = Alignment.Center
+            ) {
+                // Card icon inside the diamond
+                when (card) {
+                    is UnitCard -> {
+                        CardBackground()
+                        UnitTypeIcon(
+                            unitType = card.unitType,
+                            modifier = Modifier
+                                .size(28.dp) // Slightly smaller than diamond
+                                .alpha(0.8f)
+                        )
+                    }
+                    is FortificationCard -> {
+                        FortificationTypeIcon(
+                            fortType = card.fortType,
+                            modifier = Modifier
+                                .size(36.dp)
+                                .alpha(0.8f)
+                        )
+                    }
+                    is TacticCard -> {
+                        TacticTypeIcon(
+                            tacticCardType = card.cardType,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .alpha(0.8f)
+                        )
+                    }
+                    else -> {
+                        Icon(
+                            painter = painterResource(R.drawable.magic_effect_icon),
+                            contentDescription = "Default Card Icon",
+                            tint = Color.White,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
                 }
             }
 
@@ -542,9 +541,8 @@ fun CompactCardItem(
                 textAlign = TextAlign.Center,
                 fontFamily = libreFont,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                modifier = Modifier.fillMaxWidth()
             )
-
         }
     }
 }
@@ -1072,3 +1070,27 @@ fun NewDeckDialog(
     }
 }
 
+@Composable
+fun CardBackground(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier.fillMaxSize()
+    ) {
+        // Main battlefield image
+        Image(
+            painter = painterResource(id = R.drawable.icon_background_two),
+            contentDescription = null,
+            contentScale = ContentScale.FillBounds,
+            modifier = Modifier.fillMaxSize()
+                .alpha(0.80f)
+        )
+
+        // Optional: Add a semi-transparent overlay to ensure game elements are visible
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Color(0xFF2D3250).copy(alpha = 0.25f)
+                )
+        )
+    }
+}

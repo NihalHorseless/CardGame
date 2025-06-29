@@ -287,7 +287,8 @@ fun HandCard(
                 contentAlignment = Alignment.Center
             ) {
                 when (card) {
-                    is UnitCard -> UnitTypeIcon(
+                    is UnitCard ->
+                        UnitTypeIcon(
                         unitType = card.unitType,
                         modifier = Modifier.size(40.dp)
                     )

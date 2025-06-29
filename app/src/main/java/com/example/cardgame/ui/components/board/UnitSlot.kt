@@ -273,6 +273,7 @@ fun UnitTypeIcon(
     unitType: UnitType,
     modifier: Modifier = Modifier
 ) {
+
     val imageRes: Int = when (unitType) {
         UnitType.INFANTRY -> R.drawable.rifle_with_bayonet
         UnitType.CAVALRY -> R.drawable.unit_type_cavalry
