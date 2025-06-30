@@ -15,7 +15,6 @@ import com.example.cardgame.R
 import com.example.cardgame.data.model.campaign.Campaign
 import com.example.cardgame.data.model.campaign.CampaignLevel
 import com.example.cardgame.data.model.campaign.Difficulty
-import com.example.cardgame.data.model.campaign.SpecialRule
 import com.example.cardgame.ui.screens.LevelSelectionScreen
 import com.example.cardgame.ui.theme.CardGameTheme
 

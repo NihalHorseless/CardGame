@@ -36,64 +36,10 @@ class PlayerContext(val player: Player, val gameBoard: Board) {
     }
 
     /**
-     * Gets a unit at a specific position index (linear position).
-     * This is a compatibility method for code that expects a linear position.
-     */
-    fun getUnitAtPosition(position: Int): UnitCard? {
-        val (row, col) = linearToGridPosition(position)
-        return getUnitAt(row, col)
-    }
-
-    /**
-     * Checks if any of the player's units have taunt ability.
-     */
-    fun hasTauntUnit(): Boolean {
-        return units.any { it.hasTaunt }
-    }
-
-    /**
-     * Gets all taunt units owned by this player.
-     */
-    fun getTauntUnits(): List<UnitCard> {
-        return units.filter { it.hasTaunt }
-    }
-
-    /**
-     * Checks if the player's deployment zone is full.
-     */
-    fun isBoardFull(): Boolean {
-        return gameBoard.isDeploymentZoneFull(player.id)
-    }
-
-    /**
      * Gets the first empty position in the player's deployment zone.
      */
     fun getFirstEmptyPosition(): Pair<Int, Int>? {
         return gameBoard.getFirstEmptyPositionInDeploymentZone(player.id)
-    }
-    /**
-     * Converts a linear position index to a 2D board position.
-     * This is useful for backward compatibility with code that uses linear positions.
-     */
-    private fun linearToGridPosition(position: Int): Pair<Int, Int> {
-        // For a 5x5 board, we need to adjust the calculation
-        val row = if (player.id == 0)
-            gameBoard.rows - 1 - (position / gameBoard.columns)
-        else
-            position / gameBoard.columns
-        val col = position % gameBoard.columns
-        return Pair(row, col)
-    }
-
-    /**
-     * Converts a 2D board position to a linear position index.
-     * This is useful for backward compatibility with code that uses linear positions.
-     */
-    fun gridToLinearPosition(row: Int, col: Int): Int {
-        return if (player.id == 0)
-            (gameBoard.rows - 1 - row) * gameBoard.columns + col
-        else
-            row * gameBoard.columns + col
     }
 
     /**
@@ -101,31 +47,6 @@ class PlayerContext(val player: Player, val gameBoard: Board) {
      */
     fun isInDeploymentZone(row: Int, col: Int): Boolean {
         return gameBoard.isInDeploymentZone(row, player.id)
-    }
-
-    /**
-     * Places a unit on the board at the specified position.
-     * Returns true if placement was successful.
-     */
-    fun placeUnit(unit: UnitCard, row: Int, col: Int): Boolean {
-        // Check if position is in player's deployment zone
-        if (!isInDeploymentZone(row, col)) return false
-
-        return gameBoard.placeUnit(unit, row, col, player.id)
-    }
-
-    /**
-     * Places a fortification on the board at the specified position.
-     * Returns true if placement was successful.
-     */
-    fun placeFortification(fortification: FortificationCard, row: Int, col: Int): Boolean {
-        // Check if position is in player's deployment zone
-        if (!isInDeploymentZone(row, col)) return false
-
-        // Check if the position is completely empty (no units and no fortifications)
-        if (!gameBoard.isPositionCompletelyEmpty(row, col)) return false
-
-        return gameBoard.placeFortification(fortification, row, col, player.id)
     }
 
     /**
@@ -272,13 +193,6 @@ class PlayerContext(val player: Player, val gameBoard: Board) {
         return targets
     }
     /**
-     * Gets valid deployment positions for the current player.
-     */
-    fun getValidDeploymentPositions(gameManager: GameManager): List<Pair<Int, Int>> {
-        return gameManager.getValidDeploymentPositions(player.id)
-    }
-
-    /**
      * Checks if a unit can perform a direct attack on the opponent.
      * Updated for new taunt rules - checks if opponent has any taunt units.
      */
@@ -294,40 +208,6 @@ class PlayerContext(val player: Player, val gameBoard: Board) {
 
         // Only units at the opponent's edge can attack directly
         return (player.id == 0 && row == 0) || (player.id == 1 && row == gameBoard.rows - 1)
-    }
-
-    /**
-     * Gets all units in the player's deployment zone.
-     */
-    fun getUnitsInDeploymentZone(): List<UnitCard> {
-        return units.filter { unit ->
-            val position = gameBoard.getUnitPosition(unit) ?: return@filter false
-            isInDeploymentZone(position.first, position.second)
-        }
-    }
-
-    /**
-     * Gets all units in the neutral zone (row 2 in a 5x5 board).
-     */
-    fun getUnitsInNeutralZone(): List<UnitCard> {
-        return units.filter { unit ->
-            val position = gameBoard.getUnitPosition(unit) ?: return@filter false
-            position.first == gameBoard.rows / 2 // Middle row
-        }
-    }
-
-    /**
-     * Gets all units in the opponent's zone.
-     */
-    fun getUnitsInOpponentZone(): List<UnitCard> {
-        return units.filter { unit ->
-            val position = gameBoard.getUnitPosition(unit) ?: return@filter false
-            if (player.id == 0) {
-                position.first < gameBoard.rows / 2 // Player 0's units in top half
-            } else {
-                position.first > gameBoard.rows / 2 // Player 1's units in bottom half
-            }
-        }
     }
 
     /**

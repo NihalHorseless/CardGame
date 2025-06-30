@@ -50,13 +50,6 @@ class TauntManager(private val gameBoard: Board) {
         }
     }
 
-    /**
-     * Checks if a unit can be targeted for an attack
-     */
-    fun canUnitBeTargeted(targetUnit: UnitCard): Boolean {
-        // Taunt units can always be targeted
-        return targetUnit.hasTaunt || !isProtectedByTaunt(targetUnit)
-    }
 
     /**
      * Checks if a player has any taunt units on the board
@@ -65,10 +58,4 @@ class TauntManager(private val gameBoard: Board) {
         return gameBoard.getPlayerUnits(playerId).any { it.hasTaunt }
     }
 
-    /**
-     * Gets all taunt units for a player
-     */
-    fun getTauntUnits(playerId: Int): List<UnitCard> {
-        return gameBoard.getPlayerUnits(playerId).filter { it.hasTaunt }
-    }
 }

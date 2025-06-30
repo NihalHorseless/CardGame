@@ -6,10 +6,6 @@ class TurnManager(private val gameManager: GameManager) {
     var currentPlayer: Player? = null
     private var turnNumber: Int = 0
 
-    // Keep track of the current player context
-    private val currentPlayerContext: PlayerContext?
-        get() = currentPlayer?.let { gameManager.getPlayerContext(it) }
-
     fun startGame() {
         turnNumber = 1
         currentPlayer = gameManager.players[0]

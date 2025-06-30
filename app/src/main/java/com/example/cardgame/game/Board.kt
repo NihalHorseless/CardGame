@@ -149,17 +149,6 @@ class Board(val rows: Int = 5, val columns: Int = 5) {
         return isPositionEmpty(row, col) && getFortificationAt(row, col) == null
     }
 
-    /**
-     * Clears all fortifications from the board.
-     */
-    fun clearAllFortifications() {
-        for (row in 0 until rows) {
-            for (col in 0 until columns) {
-                fortificationGrid[row][col] = null
-            }
-        }
-        fortificationOwners.clear()
-    }
 
     /**
      * Gets all units belonging to a specific player.
@@ -175,21 +164,6 @@ class Board(val rows: Int = 5, val columns: Int = 5) {
      */
     fun isPositionEmpty(row: Int, col: Int): Boolean {
         return getUnitAt(row, col) == null && getFortificationAt(row, col) == null
-    }
-
-
-    /**
-     * Gets all units on the board.
-     */
-    fun getAllUnits(): List<UnitCard> {
-        return unitOwners.keys.toList()
-    }
-
-    /**
-     * Checks if a unit with taunt ability exists for the specified player.
-     */
-    fun hasTauntUnit(playerId: Int): Boolean {
-        return getPlayerUnits(playerId).any { it.hasTaunt }
     }
 
     /**
@@ -235,21 +209,6 @@ class Board(val rows: Int = 5, val columns: Int = 5) {
     }
 
     /**
-     * Gets all units adjacent to the specified position.
-     */
-    fun getAdjacentUnits(row: Int, col: Int): List<UnitCard> {
-        val adjacentPositions = listOf(
-            Pair(row - 1, col), // above
-            Pair(row + 1, col), // below
-            Pair(row, col - 1), // left
-            Pair(row, col + 1)  // right
-        )
-
-        return adjacentPositions
-            .mapNotNull { (r, c) -> getUnitAt(r, c) }
-    }
-
-    /**
      * Checks if a position is in a player's deployment zone.
      */
     fun isInDeploymentZone(row: Int, playerId: Int): Boolean {
@@ -261,10 +220,4 @@ class Board(val rows: Int = 5, val columns: Int = 5) {
         }
     }
 
-    /**
-     * Gets the number of units a player has on the board.
-     */
-    fun getPlayerUnitCount(playerId: Int): Int {
-        return getPlayerUnits(playerId).size
-    }
 }

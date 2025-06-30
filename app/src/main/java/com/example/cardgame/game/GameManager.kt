@@ -108,25 +108,12 @@ class GameManager {
         gameBoard.clearAllUnits()
     }
 
-    private fun initializePlayer(player: Player) {
-        // Shuffle deck
-        player.deck.shuffle()
-
-        // Draw initial hand
-        repeat(3) { player.drawCard() }
-    }
-
     fun setEntityDestructionCallback(callback: (Card, Pair<Int, Int>) -> Unit) {
         entityDestructionCallback = callback
     }
 
-    fun markEntityForAnimation(entity: Card) {
+    private fun markEntityForAnimation(entity: Card) {
         entitiesBeingAnimated.add(entity)
-    }
-
-    // Method to unmark an entity (called after animation and removal)
-    fun unmarkEntityForAnimation(entity: Card) {
-        entitiesBeingAnimated.remove(entity)
     }
 
     // Modify checkForDestroyedUnits
@@ -177,13 +164,6 @@ class GameManager {
         return players.firstOrNull { it != player }
     }
 
-    /**
-     * Get the opponent context for a player.
-     */
-    fun getOpponentContextOf(playerContext: PlayerContext): PlayerContext? {
-        val opponent = getOpponentOf(playerContext.player) ?: return null
-        return getPlayerContext(opponent)
-    }
 
     private fun checkWinCondition() {
         // Game is over if any player's health is 0 or less
@@ -336,21 +316,6 @@ class GameManager {
         return getFortificationDamageMultiplier(attacker) > 1.0f
     }
 
-    /**
-     * Get a description of why the counter bonus applies
-     */
-    fun getCounterDescription(attacker: UnitCard, defender: UnitCard): String? {
-        return when {
-            attacker.unitType == UnitType.CAVALRY &&
-                    (defender.unitType == UnitType.MISSILE || defender.unitType == UnitType.ARTILLERY) ->
-                "Cavalry is effective against ${defender.unitType.name.lowercase()} units!"
-
-            attacker.unitType == UnitType.INFANTRY && defender.unitType == UnitType.CAVALRY ->
-                "Infantry is effective against cavalry units!"
-
-            else -> null
-        }
-    }
 
 
     /**

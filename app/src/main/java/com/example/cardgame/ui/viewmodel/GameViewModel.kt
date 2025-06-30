@@ -34,6 +34,7 @@ import com.example.cardgame.util.MiscellaneousData.TAG
 import com.example.cardgame.util.globalCoroutineExceptionHandler
 import com.example.cardgame.util.onError
 import com.example.cardgame.util.Result
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -870,19 +871,6 @@ class GameViewModel(
                 if (fort != null && _gameManager.gameBoard.getFortificationOwner(fort) == 1) {
                     targets.add(Pair(row, col))
                 }
-            }
-        }
-
-        return targets
-    }
-
-    private fun getBoardTargets(): List<Pair<Int, Int>> {
-        // Return all board positions
-        val targets = mutableListOf<Pair<Int, Int>>()
-
-        for (row in 0 until _gameManager.gameBoard.rows) {
-            for (col in 0 until _gameManager.gameBoard.columns) {
-                targets.add(Pair(row, col))
             }
         }
 
@@ -2760,7 +2748,7 @@ class GameViewModel(
     }
 
     private fun simulateAITurn() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
 
             delay(500)
             playAITacticCards(opponentContext)

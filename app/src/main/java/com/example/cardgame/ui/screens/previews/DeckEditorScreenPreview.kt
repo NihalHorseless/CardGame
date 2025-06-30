@@ -1,3 +1,5 @@
+@file:Suppress("EmptyMethod", "EmptyMethod", "EmptyMethod")
+
 package com.example.cardgame.ui.screens.previews
 
 import android.annotation.SuppressLint

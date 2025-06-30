@@ -56,14 +56,14 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
     // GSON for serialization
-    implementation ("com.google.code.gson:gson:2.12.1")
+    implementation (libs.gson)
     // Coil
     implementation(libs.coil.compose)
     implementation(libs.coil3.coil.gif)
     // Room
-    implementation("androidx.room:room-runtime:$room_version")
-    implementation("androidx.room:room-ktx:$room_version")
-    ksp("androidx.room:room-compiler:$room_version")
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
     // For Licensing
     implementation("com.google.android.gms:play-services-oss-licenses:17.1.0")
 
