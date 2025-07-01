@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,13 +7,21 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
+val keystoreProperties = Properties().apply {
+    val keystoreFile = rootProject.file("keystore.properties")
+    if (keystoreFile.exists()) {
+        load(keystoreFile.inputStream())
+    }
+}
+
 android {
-    namespace = "com.example.cardgame"
+
+    namespace = "io.github.nihalhorseless.eternalglory"
     compileSdk = 35
     android.buildFeatures.buildConfig = true
 
     defaultConfig {
-        applicationId = "com.example.cardgame"
+        applicationId = "io.github.nihalhorseless.eternalglory"
         minSdk = 24
         compileSdk = 35
         targetSdk = 35
@@ -20,14 +30,29 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+    signingConfigs {
+        create("release") {
+            if (keystoreProperties.isNotEmpty()) {
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+            }
+        }
+    }
 
     buildTypes {
-        release {
+        getByName("release") {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
+        }
+
+        getByName("debug") {
+            // Debug builds are unsigned by default
         }
     }
     compileOptions {
