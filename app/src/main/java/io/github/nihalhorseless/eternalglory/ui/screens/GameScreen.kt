@@ -1,6 +1,5 @@
 package io.github.nihalhorseless.eternalglory.ui.screens
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -134,10 +133,6 @@ fun GameScreen(
                     .background(MaterialTheme.colorScheme.background)
                 else Modifier.fillMaxSize()
             ) {
-                // Status message
-                if (statusMessage.isNotEmpty()) {
-                    Log.d("StatusMessage", statusMessage)
-                }
 
                 // Top row with portraits
                 Row(
@@ -146,7 +141,6 @@ fun GameScreen(
                         .padding(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Log.d("Opponent", opponentHealth.toString())
                     // Opponent's portrait
                     PlayerPortrait(
                         playerName = opponentName,

@@ -1,6 +1,5 @@
 package io.github.nihalhorseless.eternalglory.data.repository
 
-import android.util.Log
 import io.github.nihalhorseless.eternalglory.data.model.card.Card
 import io.github.nihalhorseless.eternalglory.data.model.card.Deck
 import io.github.nihalhorseless.eternalglory.data.model.card.FortificationCard
@@ -17,7 +16,6 @@ class CardRepository(
     private val cardLoader: CardLoader,
     private val customDeckRepository: CustomDeckRepository
 ) {
-    private val TAG = "CardRepository"
 
     /**
      * Get all cards
@@ -108,7 +106,6 @@ class CardRepository(
             val deck = loadPlayerDeck(deckName) ?: loadAIDeck(deckName)
             Result.Success(deck)
         } catch (e: Exception) {
-            Log.e(TAG, "Error loading deck: $deckName", e)
             Result.Error(e, "Failed to load deck: ${e.message}")
         }
     }
@@ -119,7 +116,6 @@ class CardRepository(
             val customDecks = customDeckRepository.getCustomDeckIds()
             Result.Success(predefinedDecks + customDecks)
         } catch (e: Exception) {
-            Log.e(TAG, "Error loading available decks", e)
             Result.Error(e, "Failed to load deck list")
         }
     }

@@ -1,15 +1,16 @@
 package io.github.nihalhorseless.eternalglory.util
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
-import android.util.Log
 import io.github.nihalhorseless.eternalglory.BuildConfig
 import kotlinx.coroutines.CoroutineExceptionHandler
 import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 class CrashHandler private constructor(private val context: Context) : Thread.UncaughtExceptionHandler {
 
@@ -17,6 +18,7 @@ class CrashHandler private constructor(private val context: Context) : Thread.Un
 
     companion object {
         private const val TAG = "CrashHandler"
+        @SuppressLint("StaticFieldLeak")
         private var instance: CrashHandler? = null
 
         fun init(context: Context) {
@@ -31,8 +33,8 @@ class CrashHandler private constructor(private val context: Context) : Thread.Un
         try {
             saveCrashLog(throwable)
             // In production, you'd send this to a crash reporting service
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in crash handler", e)
+        } catch (_: Exception) {
+
         }
 
         // Let the default handler deal with it
@@ -62,14 +64,12 @@ class CrashHandler private constructor(private val context: Context) : Thread.Un
                 if (!exists()) mkdirs()
                 File(this, filename).writeText(crashLog)
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to save crash log", e)
+        } catch (_: Exception) {
         }
     }
 }
 
 // Global Coroutine Exception Handler
 val globalCoroutineExceptionHandler = CoroutineExceptionHandler { context, throwable ->
-    Log.e("CoroutineException", "Unhandled coroutine exception", throwable)
     // Send to crash reporting service
 }

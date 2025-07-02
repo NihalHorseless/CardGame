@@ -1,6 +1,8 @@
 package io.github.nihalhorseless.eternalglory.data.storage
 
-import android.util.Log
+import com.google.gson.JsonDeserializationContext
+import com.google.gson.JsonDeserializer
+import com.google.gson.JsonElement
 import io.github.nihalhorseless.eternalglory.data.enum.TacticCardType
 import io.github.nihalhorseless.eternalglory.data.enum.TargetType
 import io.github.nihalhorseless.eternalglory.data.model.card.TacticCard
@@ -8,9 +10,6 @@ import io.github.nihalhorseless.eternalglory.data.model.effect.TacticEffect
 import io.github.nihalhorseless.eternalglory.data.model.effect.TacticEffectFactory
 import io.github.nihalhorseless.eternalglory.game.GameManager
 import io.github.nihalhorseless.eternalglory.game.Player
-import com.google.gson.JsonDeserializationContext
-import com.google.gson.JsonDeserializer
-import com.google.gson.JsonElement
 import java.lang.reflect.Type
 
 /**
@@ -39,7 +38,6 @@ class TacticCardDeserializer : JsonDeserializer<TacticCard> {
             TacticCardType.valueOf(jsonObject.get("cardType").asString)
         } catch (e: Exception) {
             // Log the issue
-            Log.w("TacticCardDeserializer", "Failed to parse cardType, using SPECIAL as default")
             TacticCardType.SPECIAL  // Default type
         }
         val targetType = TargetType.valueOf(jsonObject.get("targetType").asString)

@@ -1,7 +1,6 @@
 package io.github.nihalhorseless.eternalglory.ui.viewmodel
 
 import android.annotation.SuppressLint
-import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -30,10 +29,9 @@ import io.github.nihalhorseless.eternalglory.data.repository.CardRepository
 import io.github.nihalhorseless.eternalglory.game.Board
 import io.github.nihalhorseless.eternalglory.game.GameManager
 import io.github.nihalhorseless.eternalglory.game.PlayerContext
-import io.github.nihalhorseless.eternalglory.util.MiscellaneousData.TAG
+import io.github.nihalhorseless.eternalglory.util.Result
 import io.github.nihalhorseless.eternalglory.util.globalCoroutineExceptionHandler
 import io.github.nihalhorseless.eternalglory.util.onError
-import io.github.nihalhorseless.eternalglory.util.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -233,7 +231,6 @@ class GameViewModel(
                 // Don't catch cancellation exceptions
                 throw e
             } catch (e: Exception) {
-                Log.e("GameViewModel", "Error in coroutine", e)
                 _errorMessage.value = e.message ?: "An unexpected error occurred"
                 onError?.invoke(e)
             }
@@ -256,9 +253,7 @@ class GameViewModel(
     fun loadDeckInfo(deckId: String) {
         viewModelScope.launch {
             _currentDeckInfo.value = cardRepository.getDeckInfo(deckId = deckId)
-            Log.d("SelectedDeck",cardRepository.getDeckInfo(deckId = deckId).toString())
         }
-        Log.d("SelectedDeck",currentDeckInfo.value.toString())
     }
     private val _availableDeckNames = mutableStateOf<List<String>>(emptyList())
     val availableDeckNames: State<List<String>> = _availableDeckNames
@@ -382,7 +377,6 @@ class GameViewModel(
         }
         opponentDeck.shuffle()
 
-        Log.d("LevelConfig", opponentDeck.toString())
 
         // Set player and opponent health
         _gameManager.players[0].health = level.startingHealth
@@ -393,7 +387,6 @@ class GameViewModel(
             Difficulty.LEGENDARY -> 60
         }
         _opponentHealth.intValue = _gameManager.players[1].health
-        Log.d("LevelConfig", "${_gameManager.players[1].health}  $opponentHealth")
         // Set starting mana
         _gameManager.players[0].currentMana = level.startingMana
         _gameManager.players[1].currentMana = level.startingMana
@@ -935,13 +928,11 @@ class GameViewModel(
 
         // Update board
         updateBoardState()
-        Log.d("LevelConfigD", _opponentHealth.intValue.toString())
         // Update player stats
         _playerMana.intValue = _gameManager.players[0].currentMana
         _playerMaxMana.intValue = _gameManager.players[0].maxMana
         _playerHealth.intValue = _gameManager.players[0].health
         _opponentHealth.intValue = _gameManager.players[1].health
-        Log.d("LevelConfigD", _opponentHealth.intValue.toString())
 
         // Update opponent stats
         _opponentHandSize.intValue = _gameManager.players[1].hand.size
@@ -1153,7 +1144,6 @@ class GameViewModel(
                 _validMoveDestinations.value = emptyList()
                 _validAttackTargets.value = emptyList()
             }
-            Log.d("AIMove", "Position : $moveResult Status: $_statusMessage ")
 
         }
     }
@@ -1251,7 +1241,6 @@ class GameViewModel(
                             // Restore the actual health once animation completes
                             targetUnit.health = tempHealth
 
-                            Log.d("AnimateHealth", "ViewModel")
                             // Reset counter state
                             _isCounterBonus.value = false
 
@@ -1371,13 +1360,11 @@ class GameViewModel(
                         // Restore the actual health once animation completes
                         targetFort.health = tempHealth
 
-                        Log.d("AnimateHealth", "ViewModel")
                         // Reset  states
                         resetSelectionStates()
 
                         // Reset counter state
                         _isCounterBonus.value = false
-                        Log.d("FortHealthVDamage", "Damage: $damage  Fort Health: $targetFortHealth")
 
 
                         updateAllGameStates()
@@ -3196,8 +3183,8 @@ class GameViewModel(
         try {
             musicManager.release()
             soundManager.release()
-        } catch (e: Exception) {
-            Log.e(TAG, "Error releasing audio resources", e)
+        } catch (_: Exception) {
+
         }
 
         // Clear large data structures

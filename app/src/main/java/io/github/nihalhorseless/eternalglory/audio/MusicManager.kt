@@ -2,7 +2,6 @@ package io.github.nihalhorseless.eternalglory.audio
 
 import android.content.Context
 import android.media.MediaPlayer
-import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import io.github.nihalhorseless.eternalglory.R
@@ -64,8 +63,8 @@ class MusicManager(private val context: Context) {
 
             currentTrack = track
 
-        } catch (e: Exception) {
-            Log.e("MusicManager", "Error playing music: ${e.message}")
+        } catch (_: Exception) {
+
         }
     }
     /**

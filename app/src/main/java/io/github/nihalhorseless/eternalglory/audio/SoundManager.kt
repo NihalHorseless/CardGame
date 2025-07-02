@@ -3,7 +3,6 @@ package io.github.nihalhorseless.eternalglory.audio
 import android.content.Context
 import android.media.AudioAttributes
 import android.media.SoundPool
-import android.util.Log
 import io.github.nihalhorseless.eternalglory.R
 
 class SoundManager(private val context: Context) {
@@ -85,8 +84,8 @@ class SoundManager(private val context: Context) {
             soundMap[SoundType.MENU_SCROLL] = soundPool.load(context, R.raw.menu_page_turn, 1)
             soundMap[SoundType.LEVEL_START] = soundPool.load(context,R.raw.level_start,1)
 
-        } catch (e: Exception) {
-            Log.e("SoundManager", "Error loading sounds: ${e.message}")
+        } catch (_: Exception) {
+
         }
     }
 

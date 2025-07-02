@@ -1,19 +1,17 @@
 package io.github.nihalhorseless.eternalglory.data.storage
 
 import android.content.Context
-import android.util.Log
+import com.google.gson.GsonBuilder
+import com.google.gson.reflect.TypeToken
 import io.github.nihalhorseless.eternalglory.data.model.abilities.Ability
 import io.github.nihalhorseless.eternalglory.data.model.card.Card
 import io.github.nihalhorseless.eternalglory.data.model.card.Deck
 import io.github.nihalhorseless.eternalglory.data.model.card.TacticCard
-import com.google.gson.GsonBuilder
-import com.google.gson.reflect.TypeToken
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
 class CardLoader(context: Context) {
 
-    private val TAG = "CardLoader"
     private val appContext = context.applicationContext
 
     // Create separate Gson instances for different card types
@@ -62,10 +60,9 @@ class CardLoader(context: Context) {
             // Cache the cards for quick access
             cards.forEach { card -> cardCache[card.id] = card }
 
-            Log.d(TAG, "Loaded ${cards.size} standard cards from $fileName")
             return cards
         } catch (e: Exception) {
-            Log.e(TAG, "Error loading standard cards from $fileName", e)
+
             return emptyList()
         }
     }
@@ -86,10 +83,9 @@ class CardLoader(context: Context) {
             // Cache the tactic cards
             tacticCards.forEach { card -> cardCache[card.id] = card }
 
-            Log.d(TAG, "Loaded ${tacticCards.size} tactic cards from $fileName")
             return tacticCards
         } catch (e: Exception) {
-            Log.e(TAG, "Error loading tactic cards from $fileName", e)
+
             return emptyList()
         }
     }
@@ -128,7 +124,6 @@ class CardLoader(context: Context) {
 
             // Parse the deck JSON
             val deckData = standardGson.fromJson(jsonString, DeckDefinition::class.java)
-            Log.d(TAG, "Loaded deck definition: ${deckData.name} with ${deckData.cardIds.size} cards")
 
             // Make sure all cards are loaded
             if (cardCache.isEmpty()) {
@@ -138,13 +133,9 @@ class CardLoader(context: Context) {
             // Create the deck by looking up each card ID
             val cardList = deckData.cardIds.mapNotNull { cardId ->
                 val card = getCardById(cardId)
-                if (card == null) {
-                    Log.w(TAG, "Card with ID $cardId not found for deck $deckName")
-                }
                 card
             }
 
-            Log.d(TAG, "Successfully loaded ${cardList.size}/${deckData.cardIds.size} cards for deck")
 
             val deck = Deck(
                 id = deckData.id,
@@ -160,7 +151,6 @@ class CardLoader(context: Context) {
             return deck
         } catch (e: Exception) {
             // Don't try recursive loading - just log and return null
-            Log.e(TAG, "Error loading deck: $deckName from ${if(isAIDeck) "AI" else "player"} path", e)
             return null
         }
     }
@@ -175,10 +165,9 @@ class CardLoader(context: Context) {
                 .map { it.removeSuffix(".json") }
 
 
-            Log.d(TAG, "Found ${deckNames.size} player decks: ${deckNames.joinToString()}")
             return deckNames
         } catch (e: Exception) {
-            Log.e(TAG, "Error listing available player decks", e)
+
             return emptyList()
         }
     }
@@ -191,10 +180,8 @@ class CardLoader(context: Context) {
                 .filter { it.endsWith("deck.json") }
                 .map { it.removeSuffix(".json") }
 
-            Log.d(TAG, "Found ${deckNames.size} AI decks: ${deckNames.joinToString()}")
             return deckNames
         } catch (e: Exception) {
-            Log.e(TAG, "Error listing available AI decks", e)
             return emptyList()
         }
     }

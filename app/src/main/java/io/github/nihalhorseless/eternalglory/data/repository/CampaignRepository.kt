@@ -2,19 +2,17 @@ package io.github.nihalhorseless.eternalglory.data.repository
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.util.Log
+import com.google.gson.Gson
+import io.github.nihalhorseless.eternalglory.data.model.campaign.BoardSetup
 import io.github.nihalhorseless.eternalglory.data.model.campaign.Campaign
 import io.github.nihalhorseless.eternalglory.data.model.campaign.CampaignLevel
 import io.github.nihalhorseless.eternalglory.data.model.campaign.Difficulty
 import io.github.nihalhorseless.eternalglory.data.model.campaign.SpecialRule
-import io.github.nihalhorseless.eternalglory.data.model.campaign.BoardSetup
-import com.google.gson.Gson
 
 /**
  * Repository for accessing and managing campaign data
  */
 class CampaignRepository(private val context: Context) {
-    private val TAG = "CampaignRepository"
     private val PREFS_NAME = "campaign_prefs"
     private val COMPLETED_LEVELS_KEY = "completed_levels"
 
@@ -86,9 +84,8 @@ class CampaignRepository(private val context: Context) {
         try {
             val json = gson.toJson(completedLevels)
             prefs.edit().putString("${COMPLETED_LEVELS_KEY}_$campaignId", json).apply()
-            Log.d(TAG, "Saved progress for campaign $campaignId: $completedLevels")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error saving campaign progress", e)
+        } catch (_: Exception) {
+
         }
     }
 
@@ -102,7 +99,6 @@ class CampaignRepository(private val context: Context) {
         return try {
             gson.fromJson(json, Array<String>::class.java).toList()
         } catch (e: Exception) {
-            Log.e(TAG, "Error loading completed levels", e)
             emptyList()
         }
     }

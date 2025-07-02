@@ -1,6 +1,5 @@
 package io.github.nihalhorseless.eternalglory.game
 
-import android.util.Log
 import io.github.nihalhorseless.eternalglory.data.enum.FortificationType
 import io.github.nihalhorseless.eternalglory.data.enum.GameState
 import io.github.nihalhorseless.eternalglory.data.enum.UnitType
@@ -84,7 +83,6 @@ class GameManager {
             it.hand.clear()
             it.drawInitialHand(3)
         }
-        Log.d("GameManager" ,players[1].health.toString())
 
         // Clear the board
         gameBoard.clearAllUnits()
