@@ -123,6 +123,23 @@ class GameViewModel(
     private val _statusMessage = mutableStateOf("")
     val statusMessage: State<String> = _statusMessage
 
+    private var statusMessageJob: Job? = null
+
+    fun setStatusMessage(message: String, duration: Long = 3000L) {
+        // Cancel any existing message job
+        statusMessageJob?.cancel()
+
+        _statusMessage.value = message
+
+        // Auto-clear the message after duration
+        if (message.isNotEmpty()) {
+            statusMessageJob = viewModelScope.launch {
+                delay(duration)
+              _statusMessage.value = ""
+            }
+        }
+    }
+
     private val _errorMessage = mutableStateOf<String?>(null)
     val errorMessage: State<String?> = _errorMessage
 
@@ -277,7 +294,7 @@ class GameViewModel(
             if (deck != null) {
                 _gameManager.players[0].setDeck(deck)
             } else {
-                _statusMessage.value = "Failed to load deck: $deckName"
+                setStatusMessage("Failed to load deck: $deckName")
             }
         }
     }
@@ -317,14 +334,14 @@ class GameViewModel(
         // Load PLayer Deck
         val playerDeckName = _selectedPlayerDeck.value
         if (playerDeckName == null) {
-            _statusMessage.value = "Select a proper Deck name"
+            setStatusMessage("Select a proper Deck name")
             return
         }
         viewModelScope.launch {
             val playerDeck = cardRepository.loadAnyDeck(playerDeckName)
 
             if (playerDeck == null) {
-                _statusMessage.value = "Failed to load player deck: $playerDeckName"
+                setStatusMessage("Failed to load player deck: $playerDeckName")
                 return@launch
             }
             playerDeck.shuffle()
@@ -368,11 +385,11 @@ class GameViewModel(
             _gameManager.players[1].setDeck(opponentDeck)
         } else {
             // Fallback if deck not found
-            _statusMessage.value = "Opponent deck not found, using default"
+            setStatusMessage("Opponent deck not found, using default")
         }
 
         if (opponentDeck == null) {
-            _statusMessage.value = "Failed to load opponent deck: $opponentDeck"
+            setStatusMessage("Failed to load opponent deck: $opponentDeck")
             return
         }
         opponentDeck.shuffle()
@@ -503,8 +520,6 @@ class GameViewModel(
             // Save progress
             campaignRepository.updateCampaign(updatedCampaign)
 
-            // Update message
-            _statusMessage.value = "Level completed!"
         }
     }
 
@@ -559,7 +574,7 @@ class GameViewModel(
     fun startGame() {
         launchSafely(
             onError = { e ->
-                _statusMessage.value = "Failed to start game: ${e.message}"
+                setStatusMessage("Failed to start game: ${e.message}")
                 // Optionally navigate back to menu
             }
         ) {
@@ -699,7 +714,7 @@ class GameViewModel(
             is UnitCard, is FortificationCard -> {
                 // Check if player has enough mana
                 if (_playerMana.intValue < card.manaCost) {
-                    _statusMessage.value = "Not enough mana!"
+                    setStatusMessage("Not enough mana!")
                     return
                 }
 
@@ -710,7 +725,7 @@ class GameViewModel(
                 // Get valid deployment positions
                 _validDeploymentPositions.value = getValidDeploymentPositions(0) // 0 is player ID
 
-                _statusMessage.value = "Select a position to deploy"
+                setStatusMessage("Select a position to deploy")
             }
 
             is TacticCard -> {
@@ -731,7 +746,7 @@ class GameViewModel(
     private fun handleTacticCardSelection(card: TacticCard, cardIndex: Int) {
         // Check if player has enough mana
         if (_playerMana.intValue < card.manaCost) {
-            _statusMessage.value = "Not enough mana!"
+            setStatusMessage("Not enough mana!")
             return
         }
         // Deselect cell
@@ -745,12 +760,12 @@ class GameViewModel(
                 // Cards that don't need targets (like card draw) can be played immediately
                 val success = card.play(_gameManager.players[0], _gameManager, null)
                 if (success) {
-                    _statusMessage.value = "${card.name} played successfully"
+                    setStatusMessage("${card.name} played successfully")
                     updateAllGameStates()
                     // Deselect Card
                     _selectedCardIndex.value = null
                 } else {
-                    _statusMessage.value = "Failed to play ${card.name}"
+                    setStatusMessage("Failed to play ${card.name}")
                 }
             }
 
@@ -770,7 +785,7 @@ class GameViewModel(
                     else -> emptyList()
                 }
 
-                _statusMessage.value = "Select a target for ${card.name}"
+                setStatusMessage("Select a target for ${card.name}")
             }
         }
     }
@@ -784,7 +799,7 @@ class GameViewModel(
 
         // Check if this is a valid target position
         if (Pair(row, col) !in _validDeploymentPositions.value) {
-            _statusMessage.value = "Invalid target"
+            setStatusMessage("Invalid target")
             return
         }
 
@@ -814,7 +829,7 @@ class GameViewModel(
             // Deselect Card
             _selectedCardIndex.value = null
         } else {
-            _statusMessage.value = "Failed to play ${card.name}"
+            setStatusMessage("Failed to play ${card.name}")
         }
     }
 
@@ -877,7 +892,7 @@ class GameViewModel(
 
         // Check if position is valid
         if (!_validDeploymentPositions.value.contains(Pair(row, col))) {
-            _statusMessage.value = "Cannot deploy here"
+            setStatusMessage("Cannot deploy here")
             return
         }
 
@@ -898,7 +913,6 @@ class GameViewModel(
         _selectedCardIndex.value = null
         _validDeploymentPositions.value = emptyList()
         _interactionMode.value = InteractionMode.DEFAULT
-        _statusMessage.value = "Deployment cancelled"
     }
 
     /**
@@ -955,7 +969,7 @@ class GameViewModel(
         if (!_isPlayerTurn.value) return
 
         if (_isAttackAnimationInProgress.value) {
-            _statusMessage.value = "Please wait for the current attack to complete"
+            setStatusMessage("Please wait for the current attack to complete")
             return
         }
 
@@ -965,7 +979,7 @@ class GameViewModel(
                 if (_validDeploymentPositions.value.contains(Pair(row, col))) {
                     deployCardAtPosition(row, col)
                 } else {
-                    _statusMessage.value = "Cannot deploy at this position"
+                    setStatusMessage("Cannot deploy at this position")
                 }
                 return
             }
@@ -975,7 +989,7 @@ class GameViewModel(
                 if (_validDeploymentPositions.value.contains(Pair(row, col))) {
                     handleTacticCardTargeting(row, col)
                 } else {
-                    _statusMessage.value = "Invalid target"
+                    setStatusMessage("Invalid target")
                 }
                 return
             }
@@ -1055,14 +1069,14 @@ class GameViewModel(
             if (playerContext.canUnitMove(row, col, _gameManager)) {
                 _validMoveDestinations.value =
                     playerContext.getValidMoveDestinations(row, col, _gameManager)
-                _statusMessage.value = "Select a destination to move to, or a target to attack."
+                setStatusMessage("Select a destination to move to, or a target to attack.")
             } else {
                 _validMoveDestinations.value = emptyList()
 
                 if (clickedUnit.canAttackThisTurn) {
-                    _statusMessage.value = "Select a target to attack."
+                    setStatusMessage("Select a target to attack.")
                 } else {
-                    _statusMessage.value = "This unit has already acted this turn."
+                    setStatusMessage("This unit has already acted this turn.")
                 }
             }
         }
@@ -1091,7 +1105,7 @@ class GameViewModel(
             _selectedCell.value = null
             _validMoveDestinations.value = emptyList()
             _validAttackTargets.value = emptyList()
-            _statusMessage.value = ""
+            setStatusMessage("")
         }
     }
 
@@ -1116,7 +1130,6 @@ class GameViewModel(
             val moveResult = context.moveUnit(fromRow, fromCol, toRow, toCol, _gameManager)
 
             if (moveResult) {
-                _statusMessage.value = "Unit moved successfully."
                 playUnitMovementSound(unit.unitType)
 
                 // Update the selected cell to the new position
@@ -1129,7 +1142,6 @@ class GameViewModel(
                 if (unit.canAttackThisTurn) {
                     _validAttackTargets.value =
                         playerContext.getValidAttackTargets(toRow, toCol, _gameManager)
-                    _statusMessage.value = "Select a target to attack or click elsewhere to cancel."
                 } else {
                     _validAttackTargets.value = emptyList()
 
@@ -1139,7 +1151,7 @@ class GameViewModel(
 
                 updateAllGameStates()
             } else {
-                _statusMessage.value = "Move failed."
+                setStatusMessage("Move failed.")
                 _selectedCell.value = null
                 _validMoveDestinations.value = emptyList()
                 _validAttackTargets.value = emptyList()
@@ -1248,7 +1260,7 @@ class GameViewModel(
                         }
                     }
                 } else {
-                    _statusMessage.value = "Cannot attack with this unit"
+                    setStatusMessage("Cannot attack with this unit")
                     _interactionMode.value = InteractionMode.DEFAULT
                     _isCounterBonus.value = false
                 }
@@ -1278,7 +1290,7 @@ class GameViewModel(
 
                 updateAllGameStates()
             } else {
-                _statusMessage.value = "Cannot attack with this unit"
+                setStatusMessage("Cannot attack with this unit")
                 _interactionMode.value = InteractionMode.DEFAULT
                 _isCounterBonus.value = false
             }
@@ -1371,7 +1383,7 @@ class GameViewModel(
                     }
 
                 } else {
-                    _statusMessage.value = "Cannot attack this fortification"
+                    setStatusMessage("Cannot attack this fortification")
                     _interactionMode.value = InteractionMode.DEFAULT
                     _isCounterBonus.value = false
                 }
@@ -1392,7 +1404,7 @@ class GameViewModel(
 
                 updateAllGameStates()
             } else {
-                _statusMessage.value = "Cannot attack this fortification"
+                setStatusMessage("Cannot attack this fortification")
                 _interactionMode.value = InteractionMode.DEFAULT
                 _isCounterBonus.value = false
             }
@@ -1420,17 +1432,16 @@ class GameViewModel(
                     _gameManager.executeDirectAttackWithContext(playerContext, row, col)
 
                 if (attackResult) {
-                    _statusMessage.value = "Direct attack successful!"
                     _selectedCell.value = null
                     _validAttackTargets.value = emptyList()
                     _validMoveDestinations.value = emptyList()
                     updateAllGameStates()
                 } else {
-                    _statusMessage.value = "Cannot attack opponent directly"
+                    setStatusMessage("Cannot attack opponent directly")
                 }
             }
         } else {
-            _statusMessage.value = "This unit cannot reach the opponent"
+            setStatusMessage("This unit cannot reach the opponent")
         }
     }
 
@@ -1443,19 +1454,19 @@ class GameViewModel(
         // Check if card can be played
         if (cardIndex >= playerContext.player.hand.size || cardIndex < 0) return
         if (playerContext.player.hand[cardIndex].manaCost > playerContext.player.currentMana) {
-            _statusMessage.value = "Not enough mana"
+            setStatusMessage("Not enough mana")
             return
         }
 
         // Check if the position is valid
         if (!_gameManager.gameBoard.isPositionEmpty(targetRow, targetCol)) {
-            _statusMessage.value = "This position is already occupied"
+            setStatusMessage("This position is already occupied")
             return
         }
 
         // Check if the position is in the player's deployment zone
         if (!playerContext.isInDeploymentZone(targetRow, targetCol)) {
-            _statusMessage.value = "You can only deploy in your zone"
+            setStatusMessage("You can only deploy in your zone")
             return
         }
 
@@ -1481,10 +1492,9 @@ class GameViewModel(
                 )
 
                 if (isCardPlayed) {
-                    _statusMessage.value = "Card played successfully"
                     updateAllGameStates()
                 } else {
-                    _statusMessage.value = "Cannot play this card"
+                    setStatusMessage("Cannot play this card")
                 }
             }
         } else {
@@ -1496,10 +1506,9 @@ class GameViewModel(
             )
 
             if (isCardPlayed) {
-                _statusMessage.value = "Card played successfully"
                 updateAllGameStates()
             } else {
-                _statusMessage.value = "Cannot play this card"
+                setStatusMessage("Cannot play this card")
             }
         }
     }
@@ -1514,7 +1523,7 @@ class GameViewModel(
         // Check if card can be played
         if (cardIndex >= playerContext.player.hand.size || cardIndex < 0) return
         if (playerContext.player.hand[cardIndex].manaCost > playerContext.player.currentMana) {
-            _statusMessage.value = "Not enough mana"
+            setStatusMessage("Not enough mana")
             return
         }
 
@@ -1522,7 +1531,7 @@ class GameViewModel(
         val position = playerContext.getFirstEmptyPosition()
 
         if (position == null) {
-            _statusMessage.value = "No space to deploy"
+            setStatusMessage("No space to deploy")
             return
         }
 
@@ -2779,17 +2788,17 @@ class GameViewModel(
             _validAttackTargets.value = attackTargets
 
             if (attackTargets.isNotEmpty()) {
-                _statusMessage.value = "Select a target to attack with your tower"
+                setStatusMessage("Select a target to attack with your tower")
             } else {
-                _statusMessage.value = "No valid targets in range"
+                setStatusMessage("No valid targets in range")
             }
         } else {
             _validAttackTargets.value = emptyList()
 
             if (fortification.fortType == FortificationType.TOWER) {
-                _statusMessage.value = "This tower has already attacked this turn"
+                setStatusMessage("This tower has already attacked this turn")
             } else {
-                _statusMessage.value = "Walls cannot attack"
+                setStatusMessage("Walls cannot attack")
             }
         }
     }
@@ -3055,13 +3064,13 @@ class GameViewModel(
 
         // Check if it's a MUSKET unit
         if (unit.unitType != UnitType.MUSKET) {
-            _statusMessage.value = "Only MUSKET units can use bayonets"
+            setStatusMessage("Only MUSKET units can use bayonets")
             return
         }
 
         // Check if the unit has already moved or attacked this turn
         if (!playerContext.canUnitMove(row, col, _gameManager)) {
-            _statusMessage.value = "Unit has already acted this turn and cannot attach bayonet"
+            setStatusMessage("Unit has already acted this turn and cannot attach bayonet")
             return
         }
 
@@ -3072,7 +3081,7 @@ class GameViewModel(
         soundManager.playSound(SoundType.BAYONET_SHEATHE)
 
         // Update the message
-        _statusMessage.value = "Bayonet attached! Unit transformed to INFANTRY but cannot move or attack this turn"
+        setStatusMessage("Unit transformed to INFANTRY but cannot move or attack this turn")
 
         // Update game state to reflect changes
         updateAllGameStates()

@@ -28,6 +28,7 @@ import io.github.nihalhorseless.eternalglory.ui.components.board.BattlefieldBack
 import io.github.nihalhorseless.eternalglory.ui.components.board.GameBoard
 import io.github.nihalhorseless.eternalglory.ui.components.board.GameStatusBar
 import io.github.nihalhorseless.eternalglory.ui.components.board.PlayerPortrait
+import io.github.nihalhorseless.eternalglory.ui.components.board.StatusMessage
 import io.github.nihalhorseless.eternalglory.ui.components.effects.CardSlotAnimation
 import io.github.nihalhorseless.eternalglory.ui.components.effects.GifAttackAnimation
 import io.github.nihalhorseless.eternalglory.ui.components.effects.GifDeathAnimation
@@ -248,6 +249,15 @@ fun GameScreen(
                 }
             }
         }
+        if (!isGameOver) {
+            StatusMessage(
+                message = statusMessage,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 160.dp) // Adjust based on your bottom UI height
+                    .zIndex(20f) // Ensure it appears above other UI elements
+            )
+        }
 
         // Animation layers
         // Attack animation
@@ -304,3 +314,4 @@ fun GameScreen(
 
     }
 }
+
